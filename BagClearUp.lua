@@ -9,11 +9,11 @@ end
 
 BagCleanUpVar = 
 {
-	gray = false,
-	white = false,
-	green = false,
-	blue = false,
-	purple = false,
+	Gray = false,
+	White = false,
+	Green = false,
+	Blue = false,
+	Purple = false,
 	
 	grayMin = 0,
 	grayMax = 0,
@@ -40,6 +40,10 @@ BagCleanUpVar =
 	maxCheckedpurple = false
 	
 }
+
+local BagCleanUpColorTexture = {0,0, .6,.6,.6, 1,1,1, 0,1,0, .2,.2,1, 1,0,1 }
+local BagCleanUpColor = { "Gray", "White", "Green", "Blue", "Purple" }
+local BagCleanUpTypes = { "Junk", "Common", "Uncommon", "Rare", "Epic"}
 
 function GetRarity(ilvl)
 	if ilvl == 0 then
@@ -81,27 +85,27 @@ function BagClearUpButton_Click(self, event, ...)
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl = GetItemInfo(link);
 								
-				if (BagCleanUpVar.gray == true and quality == 0  
+				if (BagCleanUpVar.Gray == true and quality == 0  
 					and PassMin(ilvl, BagCleanUpVar.grayMin, BagCleanUpVar.minCheckedgray) 
 					and PassMax(ilvl, BagCleanUpVar.grayMax, BagCleanUpVar.maxCheckedgray)) then
 						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.white == true and quality == 1 
+				elseif (BagCleanUpVar.White == true and quality == 1 
 					and PassMin(ilvl, BagCleanUpVar.whiteMin, BagCleanUpVar.minCheckedwhite) 
 					and PassMax(ilvl, BagCleanUpVar.whiteMax, BagCleanUpVar.maxCheckedwhite)) then
 						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.green == true and quality == 2 
+				elseif (BagCleanUpVar.Green == true and quality == 2 
 					and PassMin(ilvl, BagCleanUpVar.greenMin, BagCleanUpVar.minCheckedgreen) 
 					and PassMax(ilvl, BagCleanUpVar.greenMax, BagCleanUpVar.maxCheckedgreen)) then
 						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.blue   == true and quality == 3 
+				elseif (BagCleanUpVar.Blue   == true and quality == 3 
 					and PassMin(ilvl, BagCleanUpVar.blueMin, BagCleanUpVar.minCheckedblue) 
 					and PassMax(ilvl, BagCleanUpVar.blueMax, BagCleanUpVar.maxCheckedblue)) then
 						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.white == purple and quality == 4 
+				elseif (BagCleanUpVar.Purple == true and quality == 4 
 					and PassMin(ilvl, BagCleanUpVar.purpleMin, BagCleanUpVar.minCheckedpurple) 
 					and PassMax(ilvl, BagCleanUpVar.purpleMax, BagCleanUpVar.maxCheckedpurple)) then
 						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
@@ -115,24 +119,33 @@ end
 function BagCleanUp_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton");
 	self:RegisterEvent("ADDON_LOADED")
+	--self:RegisterEvent("CHAT_MSG_LOOT")
 end
 
 function BagCleanUp_OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "BagClearUp" then
 		self:UnregisterEvent("ADDON_LOADED")	
-		if BagCleanUpVar ~= nil then
-			BagCleanUpVar.tab = 1;
-			CreateCheckButtons();			
-			BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.grayMin)
-			BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.grayMax)			
-			BagCleanUpCheckButtonGray:SetChecked(BagCleanUpVar.gray)
-			BagCleanUpCheckButtonWhite:SetChecked(BagCleanUpVar.white)
-			BagCleanUpCheckButtonGreen:SetChecked(BagCleanUpVar.green)
-			BagCleanUpCheckButtonBlue:SetChecked(BagCleanUpVar.blue)
-			BagCleanUpCheckButtonPurple:SetChecked(BagCleanUpVar.purple)			
-			BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedgray)
-			BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedgray)
+		CreateCheckButtons();					
+		CreateSliders();	
+		if BagCleanUpVar ~= nil then			
+			BagCleanUpVar.tab = 1;					
+			BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.grayMin)
+			BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.grayMax)			
+			BagCleanUpCheckButtonGray:SetChecked(BagCleanUpVar.Gray)
+			BagCleanUpCheckButtonWhite:SetChecked(BagCleanUpVar.White)
+			BagCleanUpCheckButtonGreen:SetChecked(BagCleanUpVar.Green)
+			BagCleanUpCheckButtonBlue:SetChecked(BagCleanUpVar.Blue)
+			BagCleanUpCheckButtonPurple:SetChecked(BagCleanUpVar.Purple)			
+			BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedgray)
+			BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedgray)
 		_G["BagCleanUpCheckButtonGray"]:Show();
+
+	--elseif event == "CHAT_MSG_LOOT" and ... ~= nill then	
+	--	if string.find( ... , "You receive") ~= nil then
+	--		local bulk = string.match( ... , "You receive loot: (.+)%.");
+	--		local _, _, dItemID = string.find(bulk, ".*|Hitem:(%d+):.*");
+	--		local _, dItemLink = GetItemInfo(dItemID);
+	--		print("Parsed: " .. dItemLink);
 		end
 	end	
 end
@@ -143,30 +156,30 @@ function BagCleanUp_SliderOnLoad(self, event, ...)
 	_G[self:GetName() .. 'High']:SetText(maxSize);	
 end
 
-function BagCleanUp_SliderDown(self, event, ...)
+function BagCleanUpSlider_DownButton(self, event, ...)
 	local parent = self:GetParent();	
 	local value = _G[parent:GetName() .. "Slider"]:GetValue() - _G[parent:GetName() .. "Slider"]:GetValueStep();
 	_G[parent:GetName() .. "Slider"]:SetValue( math.floor(value));
 	UpdateMinAndMax(self, math.floor(value));
 end
 
-function BagCleanUp_SliderUp(self, event, ...)
+function BagCleanUpSlider_UpButton(self, event, ...)
 	local parent = self:GetParent();
 	local value = _G[parent:GetName() .. "Slider"]:GetValue() + _G[parent:GetName() .. "Slider"]:GetValueStep();
 	_G[parent:GetName() .. "Slider"]:SetValue(math.floor(value));
 	UpdateMinAndMax(self, math.floor(value))	
 end
 
-function BagCleanUp_ValueChanged(self, value)
+function BagCleanUpSlider_SliderValueChanged(self, value)
 	local parent = self:GetParent();
-	_G[parent:GetName() .. "SliderStringValue"]:SetText(math.floor(value));
+	_G[parent:GetName() .. "SliderValue"]:SetText(math.floor(value));
 	UpdateMinAndMax(self, math.floor(value))
 end
 
 function UpdateMinAndMax(self, value)
 	local parent = self:GetParent();
 	
-	if (parent:GetName() == "BagCleanUpMinILevel") then
+	if (parent:GetName() == "BagCleanUpSliderMin") then
 		if BagCleanUpVar.tab == 1 then
 			BagCleanUpVar.grayMin = value;
 		elseif BagCleanUpVar.tab == 2 then
@@ -193,20 +206,20 @@ function UpdateMinAndMax(self, value)
 	end
 end
 
-function CheckBox_Click(self, button, down)
+function BagCleanUpSlider_CheckBoxClick(self, button, down)
 	local btn = self:GetParent():GetName() .. "CheckButton";		
 	
 	if (btn .. "Gray" == self:GetName()) then
-		BagCleanUpVar.gray = self:GetChecked();
+		BagCleanUpVar.Gray = self:GetChecked();
 	elseif (btn .. "White" == self:GetName()) then
-		BagCleanUpVar.white = self:GetChecked();
+		BagCleanUpVar.White = self:GetChecked();
 	elseif (btn .. "Green" == self:GetName()) then
-		BagCleanUpVar.green = self:GetChecked();
+		BagCleanUpVar.Green = self:GetChecked();
 	elseif (btn .. "Blue" == self:GetName()) then
-		BagCleanUpVar.blue = self:GetChecked();
+		BagCleanUpVar.Blue = self:GetChecked();
 	elseif (btn .. "Purple" == self:GetName()) then
-		BagCleanUpVar.purple = self:GetChecked();
-	elseif (btn .. "Min" == self:GetName()) then
+		BagCleanUpVar.Purple = self:GetChecked();
+	elseif string.find(self:GetName(), "Min") ~= nil then
 		if BagCleanUpVar.tab == 1 then
 			BagCleanUpVar.minCheckedgray = self:GetChecked();
 		elseif BagCleanUpVar.tab == 2 then
@@ -218,7 +231,7 @@ function CheckBox_Click(self, button, down)
 		elseif BagCleanUpVar.tab == 5 then
 			BagCleanUpVar.minCheckedpurple = self:GetChecked();
 		end		
-	elseif (btn .. "Max" == self:GetName()) then
+	elseif string.find(self:GetName(), "Max") ~= nil then
 		if BagCleanUpVar.tab == 1 then
 			BagCleanUpVar.maxCheckedgray = self:GetChecked();
 		elseif BagCleanUpVar.tab == 2 then
@@ -233,59 +246,56 @@ function CheckBox_Click(self, button, down)
 	end
 end
 
-local BagCleanUpColorTexture = {0,0, .6,.6,.6, 1,1,1, 0,1,0, .2,.2,1, 1,0,1 }
-local BagCleanUpColor = { "Gray", "White", "Green", "Blue", "Purple" }
-local BagCleanUpTypes = { "Junk", "Common", "Uncommon", "Rare", "Epic"}
-
 function BagCleanUpTab_Click(self, event, ...)		
 	local parent = self:GetParent():GetName(); 	
+		print(BagCleanUpVar.tab)
+		print(BagCleanUpColor[BagCleanUpVar.tab])
 	_G["BagCleanUpCheckButton" .. BagCleanUpColor[BagCleanUpVar.tab]]:Hide();
 	
 	if (parent .. "Gray" == self:GetName()) then	
 		BagCleanUpVar.tab = 1;	
-		BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.grayMin)
-		BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.grayMax)	
-		BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedgray)
-		BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedgray)		
+		BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.grayMin)
+		BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.grayMax)	
+		BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedgray)
+		BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedgray)		
 		_G["BagCleanUpCheckButtonGray"]:Show();
 	elseif (parent .. "White" == self:GetName()) then	
 		BagCleanUpVar.tab = 2	
-		BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.whiteMin)
-		BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.whiteMax)		
-		BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedwhite)
-		BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedwhite)
+		BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.whiteMin)
+		BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.whiteMax)		
+		BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedwhite)
+		BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedwhite)
 		_G["BagCleanUpCheckButtonWhite"]:Show();
 	elseif (parent .. "Green" == self:GetName()) then	
 		BagCleanUpVar.tab = 3	
-		BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.greenMin)
-		BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.greenMax)	
-		BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedgreen)
-		BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedgreen)		
+		BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.greenMin)
+		BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.greenMax)	
+		BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedgreen)
+		BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedgreen)		
 		_G["BagCleanUpCheckButtonGreen"]:Show();
 	elseif (parent .. "Blue" == self:GetName()) then	
 		BagCleanUpVar.tab = 4
-		BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.blueMin)
-		BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.blueMax)		
-		BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedblue)
-		BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedblue)
+		BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.blueMin)
+		BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.blueMax)		
+		BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedblue)
+		BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedblue)
 		_G["BagCleanUpCheckButtonBlue"]:Show();
 	elseif (parent .. "Purple" == self:GetName()) then		
 		BagCleanUpVar.tab = 5
-		BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.purpleMin)
-		BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.purpleMax)		
-		BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedpurple)
-		BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedpurple)
+		BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar.purpleMin)
+		BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar.purpleMax)		
+		BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedpurple)
+		BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedpurple)
 		_G["BagCleanUpCheckButtonPurple"]:Show();
 	end	
 end
 
 function CreateCheckButtons()
 	local index = 1;
-
 	for _, color in ipairs(BagCleanUpColor) do
 		local btn = CreateFrame("CheckButton", "BagCleanUpCheckButton" .. color, BagCleanUp, "UICheckButtonTemplate")
 		btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -30);
-		btn:SetScript("OnClick", CheckBox_Click)
+		btn:SetScript("OnClick", BagCleanUpSlider_CheckBoxClick)
 		fontstring = btn:CreateFontString("BagCleanUpCheckBtn" .. color .. "FontString", "ARTWORK", "GameFontNormal")
 		fontstring:SetTextColor(BagCleanUpColorTexture[3 * index], BagCleanUpColorTexture[3*index + 1], BagCleanUpColorTexture[3 * index + 2] )
 		fontstring:SetText("Filter " .. BagCleanUpTypes[index] .. " Items")
@@ -298,6 +308,14 @@ function CreateCheckButtons()
 	_G["BagCleanUpCheckButtonGray"]:Show()
 end
 
+function CreateSliders()
+	local min = CreateFrame("Frame", "$parentSliderMin", BagCleanUp, "BagCleanUpSliderTemplate")
+	min:SetPoint("TOP", "$parent", "TOP", 0, -75)
+	_G[min:GetName() .. 'SliderTitle']:SetText("Minimum Item Level");	
+	local max = CreateFrame("Frame", "$parentSliderMax", BagCleanUp, "BagCleanUpSliderTemplate")
+	max:SetPoint("TOP", "$parentSliderMin", "TOP", 0, -50)
+	_G[max:GetName() .. 'SliderTitle']:SetText("Maximum Item Level");		
+	end
 
 
 
@@ -322,3 +340,5 @@ end
 
 
 
+-- Notes:
+-- Consider a reset/Clear button. 
