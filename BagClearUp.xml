@@ -247,17 +247,7 @@
 			</Scripts>
 		</Button>
 	</Frames>		
-</Frame>
-
-<Button name="$parentUpdate" parent="BagCleanUp" inherits="ButtonFrameTemplate" id="5" text="Update">
-	<Anchors>
-		<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" />
-	</Anchors>
-	<Scripts>
-		<OnClick function="BagUpdate" />
-	</Scripts>
-</Button>
-		
+</Frame>		
 </Ui>
 
 

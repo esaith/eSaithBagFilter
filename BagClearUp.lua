@@ -7,7 +7,7 @@ function SlashCmdList.BAGCLEANUP(msg, editbox)
 	end
 end
 
-local BagCleanUpVar = 
+BagCleanUpVar = 
 {
 	gray = false,
 	white = false,
@@ -73,8 +73,6 @@ function PassMax(ilvl, maxlvl, required)
 	end
 end
 
-
-
 function BagClearUpButton_Click(self, event, ...)
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 0, GetContainerNumSlots(bag) do
@@ -86,34 +84,27 @@ function BagClearUpButton_Click(self, event, ...)
 				if (BagCleanUpVar.gray == true and quality == 0  
 					and PassMin(ilvl, BagCleanUpVar.grayMin, BagCleanUpVar.minCheckedgray) 
 					and PassMax(ilvl, BagCleanUpVar.grayMax, BagCleanUpVar.maxCheckedgray)) then
-						print ("ilvl: " .. ilvl)
-						print("grayMin: " .. BagCleanUpVar.grayMin)
-						print("grayMax: ".. BagCleanUpVar.grayMax)
-						print("minChecked: " .. tostring(BagCleanUpVar.minCheckedgray))
-						print ("maxChecked: " .. tostring(BagCleanUpVar.maxCheckedgray))
-						print("PassMin: " .. tostring( PassMin(ilvl, BagCleanUpVar.grayMin, BagCleanUpVar.minCheckedgray) ))
-						print("PassMax: " .. tostring( PassMax(ilvl, BagCleanUpVar.grayMax, BagCleanUpVar.maxCheckedgray))) 
-						print (itemName .. ", rare: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " should be sold: " .. link)
+						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
 				elseif (BagCleanUpVar.white == true and quality == 1 
 					and PassMin(ilvl, BagCleanUpVar.whiteMin, BagCleanUpVar.minCheckedwhite) 
 					and PassMax(ilvl, BagCleanUpVar.whiteMax, BagCleanUpVar.maxCheckedwhite)) then
-						print (itemName .. " has a rarity of " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " should be sold" .. link)
+						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
 				elseif (BagCleanUpVar.green == true and quality == 2 
 					and PassMin(ilvl, BagCleanUpVar.greenMin, BagCleanUpVar.minCheckedgreen) 
 					and PassMax(ilvl, BagCleanUpVar.greenMax, BagCleanUpVar.maxCheckedgreen)) then
-						print (itemName .. " has a rarity of " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " should be sold" .. link)
+						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
 				elseif (BagCleanUpVar.blue   == true and quality == 3 
 					and PassMin(ilvl, BagCleanUpVar.blueMin, BagCleanUpVar.minCheckedblue) 
 					and PassMax(ilvl, BagCleanUpVar.blueMax, BagCleanUpVar.maxCheckedblue)) then
-						print (itemName .. " has a rarity of " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " should be sold" .. link)
+						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
 				elseif (BagCleanUpVar.white == purple and quality == 4 
 					and PassMin(ilvl, BagCleanUpVar.purpleMin, BagCleanUpVar.minCheckedpurple) 
 					and PassMax(ilvl, BagCleanUpVar.purpleMax, BagCleanUpVar.maxCheckedpurple)) then
-						print (itemName .. " has a rarity of " .. GetRarity(quality) .. " , ilvl: " .. ilvl .. " should be sold" .. link)
+						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 						UseContainerItem(bag, slot)
 				end
 			end
@@ -130,22 +121,17 @@ function BagCleanUp_OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "BagClearUp" then
 		self:UnregisterEvent("ADDON_LOADED")	
 		if BagCleanUpVar ~= nil then
-			print("variable not nil")
 			BagCleanUpVar.tab = 1;
-			CreateCheckButtons();
-			
-			
+			CreateCheckButtons();			
 			BagCleanUpMinILevelSlider:SetValue(BagCleanUpVar.grayMin)
 			BagCleanUpMaxILevelSlider:SetValue(BagCleanUpVar.grayMax)			
 			BagCleanUpCheckButtonGray:SetChecked(BagCleanUpVar.gray)
-			print("Gray flag bool: " .. tostring(BagCleanUpVar.gray))
-			--BagCleanUpCheckButtonWhite:SetChecked(BagCleanUpVar.white)
-			--BagCleanUpCheckButtonGreen:SetChecked(BagCleanUpVar.green)
-			--BagCleanUpCheckButtonBlue:SetChecked(BagCleanUpVar.blue)
-			--BagCleanUpCheckButtonPurple:SetChecked(BagCleanUpVar.purple)	
-			
-			--BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedgray)
-			--	BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedgray)
+			BagCleanUpCheckButtonWhite:SetChecked(BagCleanUpVar.white)
+			BagCleanUpCheckButtonGreen:SetChecked(BagCleanUpVar.green)
+			BagCleanUpCheckButtonBlue:SetChecked(BagCleanUpVar.blue)
+			BagCleanUpCheckButtonPurple:SetChecked(BagCleanUpVar.purple)			
+			BagCleanUpMinILevelCheckButtonMin:SetChecked(BagCleanUpVar.minCheckedgray)
+			BagCleanUpMaxILevelCheckButtonMax:SetChecked(BagCleanUpVar.maxCheckedgray)
 		_G["BagCleanUpCheckButtonGray"]:Show();
 		end
 	end	
@@ -209,12 +195,9 @@ end
 
 function CheckBox_Click(self, button, down)
 	local btn = self:GetParent():GetName() .. "CheckButton";		
-	print("btn name: " .. btn)
-	print("self name: " .. self:GetName())
 	
 	if (btn .. "Gray" == self:GetName()) then
 		BagCleanUpVar.gray = self:GetChecked();
-		print("BagCleanUpVar.gray: " .. tostring(self:GetChecked()))
 	elseif (btn .. "White" == self:GetName()) then
 		BagCleanUpVar.white = self:GetChecked();
 	elseif (btn .. "Green" == self:GetName()) then
@@ -314,18 +297,6 @@ function CreateCheckButtons()
 
 	_G["BagCleanUpCheckButtonGray"]:Show()
 end
-
-
-function BagUpdate(self, event, ...)
-
-	for k, v in pairs(BagCleanUpVar) do
-		print(k, v)
-	end
-	
-end
-
-
-
 
 
 
