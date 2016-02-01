@@ -1,0 +1,291 @@
+﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                   xsi:schemaLocation="http://www.blizzard.com/wow/ui/ 
+                   ..\..\FrameXML\UI.xsd">
+<Script File="BagClearUp.lua"/>
+<Button name="BagClearUpButton" parent="MerchantRepairAllButton" movable="true" enableMouse="true" hidden="false"
+	frameStrata="HIGH" topLevel="true">
+	<Size x="50" y="50"/>
+	<Anchors>
+		<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parent" x="45" y="45"/>
+	</Anchors>
+	<Layers>
+		<Layer level="HIGH">
+			<Texture name="$parentTexture" file="Interface\BUTTONS\UI-GroupLoot-Coin-Up" >
+				<Size x="40" y="40"/>
+				<Anchors>
+					<Anchor point="CENTER" relativePoint="CENTER" />
+				</Anchors>
+			</Texture>			
+		</Layer>
+	</Layers>
+	<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-GroupLoot-Coin-Highlight" >
+		<Size x="40" y="40"/>
+		<Anchors>
+			<Anchor point="CENTER" relativePoint="CENTER" />
+		</Anchors>
+	</PushedTexture>
+	<Scripts>
+		<OnClick function="BagClearUpButton_Click" />		
+	</Scripts>
+</Button>
+
+<Frame name="BagCleanUp" parent="UIParent" hidden="true" frameStrata="MEDIUM" inherits="BasicFrameTemplateWithInset" movable="true">
+	<Size x="325" y="375" />
+	<Anchors>
+		<Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
+	</Anchors>			
+	<Layers>
+		<Layer level="BACKGROUND" setAllPoints="true">
+			<Texture name="$parentBackground">
+				<Color r="1.0" g="1.0" b="1.0" a=".8" />
+			</Texture>
+			<FontString name="$parentTitle" inherits="GameFontNormal" text="Bag Clean Up Options">
+				<Anchors>
+					<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" y="-5"/>
+				</Anchors>
+			</FontString>
+		</Layer>
+	</Layers>
+	<Scripts>	
+		<OnLoad function="BagCleanUp_OnLoad"/>		
+		<OnEvent function="BagCleanUp_OnEvent" />
+		<OnDragStart>self:StartMoving();</OnDragStart>
+		<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+	</Scripts>
+</Frame>
+<Frame name="$parentMinILevel" parent="BagCleanUp" frameStrata="MEDIUM" hidden="false">	
+	<Size x="300" y="50" />
+	<Anchors>
+			<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" y="-80" />
+	</Anchors>		
+	<Frames>			
+		<CheckButton name="$parentCheckButtonMin" inherits="UICheckButtonTemplate">
+			<Size x="30" y="30" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" />
+			</Anchors>
+			<Scripts>
+				<OnClick function="CheckBox_Click" />
+			</Scripts>
+		</CheckButton>
+		<Button name="$parentSliderDown">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parentCheckButtonMin" relativePoint="RIGHT" x="1" />
+			</Anchors>
+			<Layers>
+				<Layer level="LAYOUT" setAllPoints="true">
+					<Texture name="$parentBackground" file="Interface\BUTTONS\UI-MinusButton-Up" />
+				</Layer>
+			</Layers>
+			<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-MinusButton-Down" />
+			<Scripts>		
+				<OnClick function="BagCleanUp_SliderDown"/>
+			</Scripts>
+		</Button>
+		<Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="800" defaultValue="50" valueStep="1">
+			<Size x="200"  y="20"/>
+			<Anchors>				
+				<Anchor point="LEFT" relativeTo="$parentSliderDown" relativePoint="RIGHT" x="3"/>
+			</Anchors>
+			<Layers>
+				<Layer>
+					<FontString name="$parentString" inherits="GameFontNormal" text="Minimum Item Level">
+						<Anchors>
+							<Anchor point="TOP" relativeTo="$parent" relativePoint="BOTTOM" />
+						</Anchors>
+						<Color r=".7" g=".7" b="0" />
+					</FontString>
+					<FontString name="$parentStringValue" inherits="GameFontNormal" text="x">
+						<Anchors>
+							<Anchor point="CENTER" relativeTo="$parentSlider" relativePoint="CENTER"/>
+						</Anchors>
+						<Color r=".7" g=".7" b="0" />
+					</FontString>
+				</Layer>
+			</Layers>
+			<Scripts>
+				<OnLoad function="BagCleanUp_SliderOnLoad" />
+				<OnValueChanged function="BagCleanUp_ValueChanged" />
+			</Scripts>
+		</Slider>
+		<Button name="$parentSliderUp">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parentSlider" relativePoint="RIGHT" x="5"/>
+			</Anchors>
+			<Layers>
+				<Layer level="LAYOUT" setAllPoints="true">
+					<Texture name="$parentBackground" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Up" />
+				</Layer>
+			</Layers>
+			<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Down" />
+			<Scripts>
+				<OnClick function="BagCleanUp_SliderUp"/>
+			</Scripts>
+		</Button>
+	</Frames>
+</Frame>
+<Frame name="$parentMaxILevel" parent="BagCleanUp" frameStrata="MEDIUM" hidden="false">	
+	<Size x="300" y="50" />
+	<Anchors>
+			<Anchor point="TOP" relativeTo="$parentMinILevel" relativePoint="BOTTOM"  y="-5"/>
+	</Anchors>	
+	<Frames>
+		<CheckButton name="$parentCheckButtonMax" inherits="UICheckButtonTemplate">
+			<Size x="30" y="30" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" />
+			</Anchors>
+			<Scripts>
+				<OnClick function="CheckBox_Click" />
+			</Scripts>
+		</CheckButton>
+		<Button name="$parentSliderDown">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parentCheckButtonMax" relativePoint="RIGHT" x="1"/>
+			</Anchors>
+			<Layers>
+				<Layer level="LAYOUT" setAllPoints="true">
+					<Texture name="$parentBackground" file="Interface\BUTTONS\UI-MinusButton-Up" />
+				</Layer>
+			</Layers>
+			<PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-MinusButton-Down" />
+			<Scripts>		
+				<OnClick function="BagCleanUp_SliderDown"/>
+			</Scripts>
+		</Button>
+		<Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="800" defaultValue="50" valueStep="1">
+			<Size x="200"  y="20"/>
+			<Anchors>				
+				<Anchor point="LEFT" relativeTo="$parentSliderDown" relativePoint="RIGHT" x="3"/>
+			</Anchors>
+			<Layers>
+				<Layer>
+					<FontString name="$parentString" inherits="GameFontNormal" text="Maximum Item Level">
+						<Anchors>
+							<Anchor point="TOP" relativeTo="$parent" relativePoint="BOTTOM" />
+						</Anchors>
+						<Color r=".9" g=".9" b="0" />
+					</FontString>
+					<FontString name="$parentStringValue" inherits="GameFontNormal" text="">
+						<Anchors>
+							<Anchor point="CENTER" relativeTo="$parentSlider" relativePoint="CENTER"/>
+						</Anchors>
+						<Color r=".7" g=".7" b="0" />
+					</FontString>
+				</Layer>
+			</Layers>
+			<Scripts>
+				<OnLoad function="BagCleanUp_SliderOnLoad" />
+				<OnValueChanged function="BagCleanUp_ValueChanged" />
+			</Scripts>
+		</Slider>
+		<Button name="$parentSliderUp">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="LEFT" relativeTo="$parentSlider" relativePoint="RIGHT" x="5"/>
+			</Anchors>
+			<Layers>
+				<Layer level="LAYOUT" setAllPoints="true">
+					<Texture name="$parentBackground" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Up" />
+				</Layer>
+			</Layers>
+			<PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Down" />
+				<Scripts>
+				<OnClick function="BagCleanUp_SliderUp"/>
+			</Scripts>
+		</Button>
+	</Frames>
+</Frame>
+<Frame name="$parentTab" parent="BagCleanUp">
+		<Size x="325" y="40" />
+		<Anchors>
+			<Anchor point="TOP" relativeTo="BagCleanUp" relativePoint="BOTTOM" />
+		</Anchors>
+	<Frames >	
+		<Button name="$parentGray" inherits="CharacterFrameTabButtonTemplate" id="1" text="Gray">
+			<Anchors>
+				<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
+			</Anchors>
+			<Scripts>
+				<OnClick function="BagCleanUpTab_Click" />
+			</Scripts>
+		</Button>
+		<Button name="$parentWhite" inherits="CharacterFrameTabButtonTemplate" id="2" text="White">
+			<Anchors>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentGray" x="-11"/>
+			</Anchors>
+			<Scripts>
+				<OnClick function="BagCleanUpTab_Click" />
+			</Scripts>
+		</Button>
+		<Button name="$parentGreen" inherits="CharacterFrameTabButtonTemplate" id="3" text="Green">
+			<Anchors>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentWhite" x="-11"/>
+			</Anchors>
+			<Scripts>
+				<OnClick function="BagCleanUpTab_Click" />
+			</Scripts>
+		</Button>
+		<Button name="$parentBlue" inherits="CharacterFrameTabButtonTemplate" id="4" text="Blue">
+			<Anchors>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentGreen" x="-11"/>
+			</Anchors>
+			<Scripts>
+				<OnClick function="BagCleanUpTab_Click" />
+			</Scripts>
+		</Button>
+		<Button name="$parentPurple" inherits="CharacterFrameTabButtonTemplate" id="5" text="Purple">
+			<Anchors>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentBlue" x="-6"/>
+			</Anchors>
+			<Scripts>
+				<OnClick function="BagCleanUpTab_Click" />
+			</Scripts>
+		</Button>
+	</Frames>		
+</Frame>
+
+<Button name="$parentUpdate" parent="BagCleanUp" inherits="ButtonFrameTemplate" id="5" text="Update">
+	<Anchors>
+		<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parent" />
+	</Anchors>
+	<Scripts>
+		<OnClick function="BagUpdate" />
+	</Scripts>
+</Button>
+		
+</Ui>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
