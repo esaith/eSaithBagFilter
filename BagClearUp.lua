@@ -83,33 +83,35 @@ function BagClearUpButton_Click(self, event, ...)
 			local texture, count, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
 			if texture then
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
-				local itemName, itemLink, itemRarity, ilvl = GetItemInfo(link);
-								
-				if (BagCleanUpVar.Gray == true and quality == 0  
-					and PassMin(ilvl, BagCleanUpVar.grayMin, BagCleanUpVar.minCheckedgray) 
-					and PassMax(ilvl, BagCleanUpVar.grayMax, BagCleanUpVar.maxCheckedgray)) then
-						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
-						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.White == true and quality == 1 
-					and PassMin(ilvl, BagCleanUpVar.whiteMin, BagCleanUpVar.minCheckedwhite) 
-					and PassMax(ilvl, BagCleanUpVar.whiteMax, BagCleanUpVar.maxCheckedwhite)) then
-						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
-						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.Green == true and quality == 2 
-					and PassMin(ilvl, BagCleanUpVar.greenMin, BagCleanUpVar.minCheckedgreen) 
-					and PassMax(ilvl, BagCleanUpVar.greenMax, BagCleanUpVar.maxCheckedgreen)) then
-						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
-						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.Blue   == true and quality == 3 
-					and PassMin(ilvl, BagCleanUpVar.blueMin, BagCleanUpVar.minCheckedblue) 
-					and PassMax(ilvl, BagCleanUpVar.blueMax, BagCleanUpVar.maxCheckedblue)) then
-						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
-						UseContainerItem(bag, slot)
-				elseif (BagCleanUpVar.Purple == true and quality == 4 
-					and PassMin(ilvl, BagCleanUpVar.purpleMin, BagCleanUpVar.minCheckedpurple) 
-					and PassMax(ilvl, BagCleanUpVar.purpleMax, BagCleanUpVar.maxCheckedpurple)) then
-						print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
-						UseContainerItem(bag, slot)
+				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+
+				if vendorPrice > 0 then -- Skip all items that cannot be sold to vendors								
+					if (BagCleanUpVar.Gray == true and quality == 0  
+						and PassMin(ilvl, BagCleanUpVar.grayMin, BagCleanUpVar.minCheckedgray) 
+						and PassMax(ilvl, BagCleanUpVar.grayMax, BagCleanUpVar.maxCheckedgray)) then
+							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
+							UseContainerItem(bag, slot)
+					elseif (BagCleanUpVar.White == true and quality == 1 
+						and PassMin(ilvl, BagCleanUpVar.whiteMin, BagCleanUpVar.minCheckedwhite) 
+						and PassMax(ilvl, BagCleanUpVar.whiteMax, BagCleanUpVar.maxCheckedwhite)) then
+							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
+							UseContainerItem(bag, slot)
+					elseif (BagCleanUpVar.Green == true and quality == 2 
+						and PassMin(ilvl, BagCleanUpVar.greenMin, BagCleanUpVar.minCheckedgreen) 
+						and PassMax(ilvl, BagCleanUpVar.greenMax, BagCleanUpVar.maxCheckedgreen)) then
+							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
+							UseContainerItem(bag, slot)
+					elseif (BagCleanUpVar.Blue   == true and quality == 3 
+						and PassMin(ilvl, BagCleanUpVar.blueMin, BagCleanUpVar.minCheckedblue) 
+						and PassMax(ilvl, BagCleanUpVar.blueMax, BagCleanUpVar.maxCheckedblue)) then
+							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
+							UseContainerItem(bag, slot)
+					elseif (BagCleanUpVar.Purple == true and quality == 4 
+						and PassMin(ilvl, BagCleanUpVar.purpleMin, BagCleanUpVar.minCheckedpurple) 
+						and PassMax(ilvl, BagCleanUpVar.purpleMax, BagCleanUpVar.maxCheckedpurple)) then
+							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
+							UseContainerItem(bag, slot)
+					end
 				end
 			end
 		end
@@ -119,7 +121,7 @@ end
 function BagCleanUp_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton");
 	self:RegisterEvent("ADDON_LOADED")
-	--self:RegisterEvent("CHAT_MSG_LOOT")
+	self:RegisterEvent("CHAT_MSG_LOOT")
 end
 
 function BagCleanUp_OnEvent(self, event, ...)
@@ -139,13 +141,13 @@ function BagCleanUp_OnEvent(self, event, ...)
 			BagCleanUpSliderMinCheckButton:SetChecked(BagCleanUpVar.minCheckedgray)
 			BagCleanUpSliderMaxCheckButton:SetChecked(BagCleanUpVar.maxCheckedgray)
 		_G["BagCleanUpCheckButtonGray"]:Show();
-
-	--elseif event == "CHAT_MSG_LOOT" and ... ~= nill then	
-	--	if string.find( ... , "You receive") ~= nil then
-	--		local bulk = string.match( ... , "You receive loot: (.+)%.");
-	--		local _, _, dItemID = string.find(bulk, ".*|Hitem:(%d+):.*");
-	--		local _, dItemLink = GetItemInfo(dItemID);
-	--		print("Parsed: " .. dItemLink);
+		end
+	elseif event == "CHAT_MSG_LOOT" and ... ~= nill then	
+		if string.find( ... , "You receive item") ~= nil then
+			local bulk = string.match( ... , "You receive item: (.+)%.");
+			local _, _, dItemID = string.find(bulk, ".*|Hitem:(%d+):.*");
+			local _, dItemLink = GetItemInfo(dItemID);
+			print("Parsed: " .. dItemLink);
 		end
 	end	
 end
@@ -248,8 +250,6 @@ end
 
 function BagCleanUpTab_Click(self, event, ...)		
 	local parent = self:GetParent():GetName(); 	
-		print(BagCleanUpVar.tab)
-		print(BagCleanUpColor[BagCleanUpVar.tab])
 	_G["BagCleanUpCheckButton" .. BagCleanUpColor[BagCleanUpVar.tab]]:Hide();
 	
 	if (parent .. "Gray" == self:GetName()) then	

@@ -47,7 +47,7 @@
 					</FontString>
 					<FontString name="$parentValue" inherits="GameFontNormal" text="">
 						<Anchors>
-							<Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER"/>
+							<Anchor point="BOTTOM" relativeTo="$parent" relativePoint="TOP"/>
 						</Anchors>
 						<Color r=".7" g=".7" b="0" />
 					</FontString>
@@ -65,10 +65,10 @@
 			</Anchors>
 			<Layers>
 				<Layer level="LAYOUT" setAllPoints="true">
-					<Texture name="$parent_ButtonRest" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Up" />
+					<Texture name="$parent_ButtonRest" file="Interface\BUTTONS\UI-PlusButton-Up" />
 				</Layer>
 			</Layers>
-			<PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-AttributeButton-Encourage-Down" />
+			<PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-PlusButton-Down" />
 			<Scripts>
 				<OnClick function="BagCleanUpSlider_UpButton"/>
 			</Scripts>
