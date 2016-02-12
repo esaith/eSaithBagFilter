@@ -27,6 +27,7 @@ function CreateRarityObjects()
 			BagCleanUpVar[color].max = 0
 			BagCleanUpVar[color].minChecked = false
 			BagCleanUpVar[color].maxChecked = false
+			print("Created ")
 		end
 	end
 end
@@ -82,9 +83,10 @@ function BagClearUpButton_Click(self, event, ...)
 						end
 					end	
 				elseif BagCleanUpVar.LeftTab == 2 then	
+					print(vendorPrice)
 					if vendorPrice > 0 then -- Skip all items that cannot be sold to vendors								
 						for index, color in pairs(BagCleanUpColor) do
-							if (BagCleanUpVar[color].checked and quality == index - 1
+							if (BagCleanUpVar[color].checked and quality == index 
 							and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked) 
 							and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked)) then
 								print (link .. " sold")
@@ -192,26 +194,15 @@ end
 
 function BagCleanUpSlider_CheckBoxClick(self, button, down)
 	local btn = self:GetParent():GetName() .. "CheckButton";		
-	local found = false;
+	local color = BagCleanUpColor[BagCleanUpVar.BottomTab]
 	
-	for index, color in ipairs(BagCleanUpColor) do
-		if (btn .. color == self:GetName()) then
-			BagCleanUpVar[color].checked = self:GetChecked();
-			found = true;
-		end
+	if string.find(self:GetName(), "Min") ~= nil then
+		BagCleanUpVar[color].minChecked = self:GetChecked();
+	elseif string.find(self:GetName(), "Max") ~= nil then
+		BagCleanUpVar[color].maxChecked = self:GetChecked();
+	else 
+		BagCleanUpVar[color].checked = self:GetChecked();
 	end
-	
-	if not found then	
-		if string.find(self:GetName(), "Min") ~= nil then
-			for index, color in ipairs(BagCleanUpColor) do
-				BagCleanUpVar[color].minChecked = self:GetChecked();
-			end
-		elseif string.find(self:GetName(), "Max") ~= nil then
-			for index, color in ipairs(BagCleanUpColor) do
-				BagCleanUpVar[color].maxChecked = self:GetChecked();
-			end
-		end
-	end	
 end
 
 function BagCleanUpBottomTab_Click(self, event, ...)		
@@ -256,12 +247,11 @@ function CreateSliders()
 end
 
 function ShowRarityFilter(self, event)
-	if BagCleanUpVar.LeftTab == 2 then
-		return
-	end
-
+	if BagCleanUpVar.LeftTab == 2 then return end	
+	if BagCleanUpVar.BottomTab == nil then BagCleanUpVar.BottomTab = 1 end
 	BagCleanUpVar.LeftTab = 2
 	local color = BagCleanUpColor[BagCleanUpVar.BottomTab]
+	
 	_G["BagCleanUpTabs"]:Show();
 	_G["BagCleanUpCheckButton" .. color]:SetChecked(BagCleanUpVar[color].checked);
 	_G["BagCleanUpCheckButton" .. color]:Show();
