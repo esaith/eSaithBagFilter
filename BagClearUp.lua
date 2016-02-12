@@ -76,17 +76,16 @@ function BagClearUpButton_Click(self, event, ...)
 					local zoneTable = BagCleanUpInstances[BagCleanUpInstances.zone];	
 					local size = table.getn(zoneTable)			
 					for n = 1, size do
-						if zoneTable[n] == link then							
+						if zoneTable[n] == link and vendorPrice > 0 and not locked and not lootable then							
 							print (link .. ", rarity: " .. GetRarity(quality) .. ", ilvl: " .. ilvl .. " sold")
 							UseContainerItem(bag, slot)
 							zoneTable[n] = nil;
 						end
 					end	
 				elseif BagCleanUpVar.LeftTab == 2 then	
-					print(vendorPrice)
-					if vendorPrice > 0 then -- Skip all items that cannot be sold to vendors								
-						for index, color in pairs(BagCleanUpColor) do
-							if (BagCleanUpVar[color].checked and quality == index 
+					if vendorPrice > 0 and not locked and not lootable then -- Skip all items that cannot be sold to vendors								
+						for index, color in pairs(BagCleanUpColor) do							
+							if (BagCleanUpVar[color].checked and quality == index - 1
 							and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked) 
 							and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked)) then
 								print (link .. " sold")
