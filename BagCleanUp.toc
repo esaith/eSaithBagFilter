@@ -1,0 +1,10 @@
+﻿## Interface: 60200
+## Title: BagCleanUp
+## Version: 1.0 
+## Notes: Clean up bags per rarity and iLvl
+## Author: eSaith
+## SavedVariablesPerCharacter: BagCleanUpVar
+
+BagCleanUp.lua
+BagCleanUp.xml
+
