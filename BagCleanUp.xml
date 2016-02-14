@@ -103,7 +103,7 @@
 	frameStrata="HIGH" topLevel="true">
 	<Size x="50" y="50"/>
 	<Anchors>
-		<Anchor point="TOP" relativePoint="TOPLEFT" relativeTo="$parent" x="30" y="-25"/>
+		<Anchor point="TOP" relativePoint="TOPRIGHT" relativeTo="$parent" x="-35" y="-25"/>
 	</Anchors>
 	<Layers>
 		<Layer level="HIGH">
