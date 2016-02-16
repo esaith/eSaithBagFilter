@@ -3,14 +3,14 @@ function SlashCmdList.BAGCLEANUP(msg, editbox)
 	if BagCleanUp:IsShown() then
 		BagCleanUp:Hide();
 	else
-		BagCleanUp:Show();
+		BagCleanUp:Show();            
 	end
 end
-
-BagCleanUpVar = nil
-BagCleanUpInstances = nil
+ BagCleanUpVar = nil
+ BagCleanUpInstances = nil
 
 function CreateRarityObjects()
+   
     if BagCleanUpVar == nil  then
 		  BagCleanUpVar = { 
 		    methods = {
@@ -37,18 +37,21 @@ function CreateRarityObjects()
 		  end
     end
     
-    if BagCleanUpInstances == nil then
+    if BagCleanUpInstances == nil or type(BagCleanUpInstances.methods.AddLoot) ~= "function" or type(BagCleanUpInstances.methods.AddCurrency) == "function" then
         BagCleanUpInstances = { 
             methods = { 
-                AddLoot = function(zone, obj, amount) 
+                AddLoot = function(zone, obj, count) 
                     if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
                     if BagCleanUpInstances[zone][obj] == nil then 
-                        BagCleanUpInstances[zone][obj] = amount 
+                        BagCleanUpInstances[zone][obj] = { }
+                        BagCleanUpInstances[zone][obj].count = count
+                        BagCleanUpInstances[zone][obj].found = false
                     else
-                        BagCleanUpInstances[zone][obj] = BagCleanUpInstances[zone][obj] + amount                        
+                        BagCleanUpInstances[zone][obj].count = BagCleanUpInstances[zone][obj].count + count
                     end
                 end, 
                 AddCurrency = function(zone, amount, currency)
+                  if zone == nil then zone = GetRealZoneText() end
                   if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
                   if BagCleanUpInstances[zone]["Gold"] == nil then BagCleanUpInstances[zone]["Gold"] = 0 end
                   if BagCleanUpInstances[zone]["Silver"] == nil then BagCleanUpInstances[zone]["Silver"] = 0 end
@@ -64,7 +67,6 @@ function CreateRarityObjects()
                   end
                 end
             },
-
             properties = { }
         }
     end
@@ -95,14 +97,17 @@ function BagClearUpButton_Click(self, event, ...)
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
 				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
 					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
-                        if zoneTable[link] ~= nil and zoneTable[link] > 0 then
+                        if zoneTable[link] ~= nil and zoneTable[link].count > 0 then                            
                             if class == "Trade Goods" and BagCleanUpCheckButtonTradeGoods:GetChecked() then
                                 print("Not selling " .. link .. " because trade goods is checked")
-                            else                    
+                            else          
 						        UseContainerItem(bag, slot)
-						        zoneTable[itemLink] = zoneTable[itemLink] - NumOfItems; 
-                                if zoneTable[itemLink] < 0 then zoneTable[itemLink] = 0 end
-                                print (NumOfItems .. " " .. link .. "'s sold. " .. zoneTable[itemLink] .. " remaining" )                             
+                                zoneTable[link].found = true
+                                zoneTable[link].bag = bag
+                                zoneTable[link].slot = slot
+						        --zoneTable[itemLink].count = zoneTable[itemLink].count - NumOfItems; 
+                                if zoneTable[itemLink].count < 0 then zoneTable[itemLink].count = 0 end
+                                --print (NumOfItems .. " " .. link .. "'s sold. " .. zoneTable[itemLink].count .. " remaining" )                             
                             end
                         end	 
 				elseif BagCleanUpVar.properties.LeftTab == 2 then	 
@@ -122,27 +127,6 @@ function BagClearUpButton_Click(self, event, ...)
 	end
 end
 
-function VerifyItemSold(item, bag, slot)
-    local texture, count, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-    if item == link then
-        print("Item " .. link .. " should have sold")
-        --print("Count: " .. tostring(count))
-        --print("locked: " .. tostring(locked))
-        --print("quality: " .. tostring(quality))
-        --print("readable: " .. tostring(readable))
-        --print("lootable: " .. tostring(lootable))
-        --print("link: " .. tostring(link))
-        --print("Attemping to sell again")
-        UseContainerItem(bag, slot)
-        texture, count, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-        if texture then
-            print("Did not sell on second attempt")
-            return false
-        end
-    end
-    return true
-end
-
 function BagCleanUp_OnLoad(self, event, ...)
     self:RegisterForDrag("LeftButton");
 	self:RegisterEvent("ADDON_LOADED")
@@ -150,7 +134,8 @@ function BagCleanUp_OnLoad(self, event, ...)
     self:RegisterEvent("CHAT_MSG_MONEY")
 	self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 	self:RegisterEvent("MERCHANT_SHOW")
-	self:RegisterEvent("MERCHANT_CLOSED")	
+	self:RegisterEvent("MERCHANT_CLOSED")
+    self:RegisterEvent("BAG_UPDATE")	
 end
 
 function BagCleanUpTabs_OnLoad(self, event, ...)
@@ -165,39 +150,42 @@ end
 function BagCleanUp_OnEvent(self, event, ...)                  
 	if event == "ADDON_LOADED" and ... == "BagCleanUp" then
 	    self:UnregisterEvent("ADDON_LOADED")	
+        BagCleanUpVar = BagCleanUpVar or nil
+        BagCleanUpInstances = BagCleanUpInstances  or nil
 		CreateRarityObjects()
 		CreateCheckButtons();	
 		CreateSliders();	
 		ShowZoneFilter(nil, nil)	
 		tinsert(UISpecialFrames, BagCleanUp:GetName())	
-	elseif event == "CHAT_MSG_LOOT" and ... ~= nill then	    
+	elseif event == "CHAT_MSG_LOOT" and ... ~= nil then	    
         local zone = GetRealZoneText();
         if string.find( ... , "You receive item: ") ~= nil or 
             string.find( ... , "You receive loot: ") ~= nil or
             string.find( ... , "Received item: ") ~= nil then
-                --Need to check if item is  Pattern:
-            
-		    local bulk = string.match( ... , ".*: (.+)%.");
-			local _, _, dItemID = string.find(bulk, ".*|Hitem:(%d+):.*"); 
+            local bulk = string.match( ... , ".*: (.+)%.");
             local amount = 1
-            if string.find(bulk, "x(%d)") ~= nil then
-                amount =  string.match(bulk, ".*x(%d+)")
+            local dItemID = bulk
+
+            --If item is a pattern
+            if string.find(bulk, "Pattern:") ~= nil then print("Item is a pattern") end   -- TODO, need to implement
+            if string.find(bulk, "x(%d+)") ~= nil then 
+                dItemID, amount = string.match(bulk, "(.*)x(%d+)") 
             end
+
 			local _, dItemLink = GetItemInfo(dItemID);			
 			local name, dItemLink, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(dItemID);	
-            if vendorPrice > 0 then         
+            if vendorPrice~= nil and vendorPrice > 0 then         
                 BagCleanUpInstances.methods.AddLoot(zone, dItemLink, tonumber(amount)) 
             else
                 print("Not adding " .. dItemLink .. " to the list because it cannot be sold to a vendor")
             end
-
 		end
     elseif event == "CHAT_MSG_MONEY" and ... ~= nill then
         local zone = GetRealZoneText();
         if string.find(..., "You loot") ~= nil then
-            local amount1, currency1, amount2, currency2, amount3, currency3 = string.match( ... , "You loot (%d+) (%a+),?%s*(%d*)%s*(%a*),?%s*(%d*)%s*(%a*)")     
+            local amount1, currency1, amount2, currency2, amount3, currency3 = string.match( ... , "You loot (%d+) (%a+)")
             BagCleanUpInstances.methods.AddCurrency(zone, tonumber(amount1), currency1)
-           
+                       
             if amount2 ~= nil and amount2 ~= "" and amount ~= "0" then BagCleanUpInstances.methods.AddCurrency(zone, tonumber(amount2), currency2) end
             if amount3 ~= nil and amount3 ~= "" and amount3 ~= "0" then BagCleanUpInstances.methods.AddCurrency(zone, tonumber(amount3), currency3) end
             local gold = 0
@@ -327,7 +315,7 @@ function ShowRarityFilter(self, event)
 	BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar[color].max)
 	BagCleanUpSliderMax:Show()
 	BagCleanUpZone:Hide();	
-    BagCleanUpCheckButtonTradeGoods:Hide();
+    BagCleanUpCheckButtonTradeGoods:Hide();    
 end
 
 function ShowZoneFilter(self, event)
@@ -346,9 +334,9 @@ function CreateDropDownList()
   if BagCleanUpInstances == nil then
     return
   end	
-	local i = 1;
+	local i = 1;          
 	for v, k in pairs (BagCleanUpInstances) do
-		if v ~= "methods" and v ~= "properties" then
+		if type(k) ~= "number" and v ~= "methods" and v ~= "properties" then
 			info = UIDropDownMenu_CreateInfo();
 			info.text = tostring(v)
 			info.arg1 = tostring(v)
@@ -360,38 +348,110 @@ function CreateDropDownList()
 	end
 end
 
-function DropDownMenuItemFunction(self, arg1, arg2, checked)
-  local size = table.getn(BagCleanUpInstances[self.arg1]) 
-	BagCleanUpVar.properties.zone = self.arg1
-	print(size .. " item(s) dropped in " .. self.arg1)
-	for v, k in pairs(BagCleanUpInstances[self.arg1]) do
-        if v ~= "Gold" and
-           v ~= "Silver" and
-           v ~= "Copper" and
-           k > 0 and
-           k ~= nil 
-           then
-            print(v, k)
+function DropDownMenuItemFunction(self, arg1, arg2, checked) 
+    local zoneTable = BagCleanUpInstances[self.arg1];
+
+	for bag = 0, NUM_BAG_SLOTS do
+		for slot = 0, GetContainerNumSlots(bag) do      
+			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+			if texture then      
+				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then
+                    if zoneTable[link] ~= nil and zoneTable[itemLink].count > 0 then 
+                        zoneTable[link].found = true
+                        zoneTable[link].bag = bag
+                        zoneTable[link].slot = slot
+                        if zoneTable[itemLink].count < 0 then zoneTable[itemLink].count = 0 end 
+                    end
+				end
+			end
+		end	
+	end
+
+    --First, remove any old items that no longer exist in the bags
+    for item, itemTable in pairs(zoneTable) do
+        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" then
+            if itemTable.found == false then
+                itemTable = { }
+            else
+                print(item)
+                itemTable.found = false;               
+            end
+        end
+    end
+
+    print(" -- Gained in "..self.arg1.."--")
+    local size = 0	
+	for item, itemTable in pairs(zoneTable) do
+        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" and itemTable.count > 0 then
+            print(item .."x" .. itemTable.count)
+            size = size + 1
         end    
 	end	
-	 
+
+    if size <= 0 then 
+        zoneTable = { }
+        print("Instance loot has already been cleared")
+        return
+    else
+	    print(size .. " item(s) dropped in " .. self.arg1)
+    end    
+    HighlightBagSlot()
 	if (not checked) then
-		UIDropDownMenu_SetSelectedValue(UIDROPDOWNMENU_OPEN_MENU, self.value);
+	    --UIDropDownMenu_SetSelectedValue(UIDROPDOWNMENU_OPEN_MENU, self.value);
 	end
 end
 
+function HighlightBagSlot()
+    for bag = 0, NUM_BAG_SLOTS do
+		for slot = 0, GetContainerNumSlots(bag) do      
+			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+			if texture then         
+				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
+				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
+					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
+                    if zoneTable[link] == nil or zoneTable[link].count <= 0 then
+                       _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(.3)
+                    else
+                        _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)
+                    end
+				end
+			end
+		end	
+	end
+end
+
+function ClearBagItemsAlpha()
+    for bag = 0, NUM_BAG_SLOTS do
+		for slot = 0, GetContainerNumSlots(bag) do  
+            _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)                
+		end	
+	end
+end
+
+--Notes:
 -- reset/cancel button for rarity
--- remove if item has been traded or trashed (not traded but "thrown away")
--- If items can be stacked, don't duplicate it - find out what max stacks are
 -- Add gold looted, add gold from selling
 -- Long term stats of each raid
 -- Add additional filter list - Allow Right Click/Shift Click - Have icon that is added to icon when editable mode
 
-
-
--- In edit mode, black/darken all items that cannot be sold
 -- Encircle/gold items that have chosen to be on the goldlist - keep list
 -- List potential mounts that drop in instance/zone/raid
 -- Have a huge table of reagents to sort to filter through
+-- Consider checking table vs bag contents during certain times/events
+-- Need to implement filtering on "Pattern:"
 
 
+-- Changes
+-- When selecting a zone/instance all items not in the chose zone will be darkened.
+    --On closing the addon all items will return to normal opacity.
+-- When opening addon, zone will be reset
+-- When selecting Zone, a check is made. If the item in the table is no longer in the bags the item is removed from the table
+-- Improved filtering: Filtered by count 1 and multiple. Need to implement filtering on "Pattern:"
+-- Changed filtering of selling items from a count basis to if the item is in the loot table. This helps if the same item drops more than once, or items that can be stacked but overflow into another slot 
+
+-- Problems
+-- Not all items sell in the list, even though they are listed.
+-- Issue found: Item: Spectral Helmet of the Bandit but when looping through the table, it may be listed as Spectral Helmet. This causes some green items, ie, of the Bandit, of the Cheetah, not to be filtered.
+-- Failing after 23 selling items. May be after 20+, there is too much too fast to sell although the function still runs to the end
