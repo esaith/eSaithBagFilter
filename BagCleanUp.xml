@@ -27,7 +27,7 @@
 			</Layers>
 			<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-MinusButton-Down" />
 			<Scripts>		
-				<OnClick function="BagCleanUpSlider_DownButton"/>
+				<OnClick function="BagCleanUpSlider_DownButton"/>                
 			</Scripts>
 		</Button>
 		<Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="800" valueStep="1">
@@ -123,7 +123,8 @@
 		</Anchors>
 	</PushedTexture>
 	<Scripts>
-		<OnClick function="BagClearUpButton_Click" />		
+		<OnClick function="BagClearUpButton_Click" />
+        <OnUpdate function="BagClearUpButton_OnUpdate" />		
 	</Scripts>
 </Button>
 
