@@ -75,7 +75,7 @@
 </Frame>
 
 <Frame name="BagCleanUp" parent="UIParent" hidden="true" frameStrata="MEDIUM" inherits="BasicFrameTemplateWithInset" movable="true">
-	<Size x="325" y="300" />
+	<Size x="325" y="350" />
 	<Anchors>
 		<Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
 	</Anchors>			
@@ -125,7 +125,8 @@
 	<Scripts>
         <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
 		<OnClick function="BagClearUpButton_Click" />
-        <OnUpdate function="BagClearUpButton_OnUpdate" />		
+        <OnUpdate function="BagClearUpButton_OnUpdate" />
+        <OnHide>BagCleanUpVar.properties.update = false</OnHide>	
 	</Scripts>
 </Button>
 
@@ -149,7 +150,6 @@
 					</Texture>
 				</Layer>
 			</Layers>
-			<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-MicroButton-World-Disabled" />
 			<Scripts>
 				<OnClick function="ShowZoneFilter" />
 			</Scripts>
@@ -168,11 +168,28 @@
 					</Texture>
 				</Layer>
 			</Layers>
-			<PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-MicroButton-Spellbook-Disabled" />
 			<Scripts>
-				<OnClick function="ShowRarityFilter"/>
+				<OnClick function="ShowILVLFilter"/>
 			</Scripts>
 		</Button>
+        <Button name="$parentRarity" inherits="ItemButtonTemplate" id="3" text="Rarity">
+            <Anchors>
+                <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentiLvl" />
+            </Anchors>
+            <Layers>
+                <Layer level="OVERLAY" setAllPoints="true">
+                    <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MicroButton-Raid-Up" >
+                        <Size x="40" y="60"/>
+                        <Anchors>
+                            <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
+                        </Anchors>
+                    </Texture>
+                </Layer>
+            </Layers>
+            <Scripts>
+                <OnClick function="ShowRarityFilter"/>
+            </Scripts>
+        </Button>
 	</Frames>
 </Frame>
 <Frame name="$parentTabs" parent="BagCleanUp">
@@ -180,21 +197,21 @@
 		<Anchors>
 			<Anchor point="TOP" relativeTo="BagCleanUp" relativePoint="BOTTOM" />
 		</Anchors>
-	<Frames >	
-		<Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Gray">
-			<Anchors>
-				<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
-			</Anchors>
-			<Scripts>
-				<OnClick>
-					BagCleanUpBottomTab_Click(self, "OnClick" )
-					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
-				</OnClick>
-			</Scripts>
-		</Button>
+	<Frames >
+        <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Gray">
+            <Anchors>
+                <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
+            </Anchors>
+            <Scripts>
+                <OnClick>
+                    BagCleanUpBottomTab_Click(self, "OnClick" )
+                    PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+                </OnClick>
+            </Scripts>
+        </Button>
 		<Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="White">
 			<Anchors>
-				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-11"/>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-10"/>
 			</Anchors>
 			<Scripts>
 				<OnClick>
@@ -227,7 +244,7 @@
 		</Button>
 		<Button name="$parentTab5" inherits="CharacterFrameTabButtonTemplate" id="5" text="Purple">
 			<Anchors>
-				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab4" x="-6"/>
+				<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab4" x="-11"/>
 			</Anchors>
 			<Scripts>
 				<OnClick>
@@ -235,7 +252,7 @@
 					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
 				</OnClick>
 			</Scripts>
-		</Button>
+		</Button>		
 	</Frames>		
 	<Scripts>
 		<OnLoad function="BagCleanUpTabs_OnLoad" />
@@ -243,7 +260,7 @@
 	</Scripts>
 </Frame>		
  
- <Button name="$parentZone" parent="BagCleanUp" inherits="UIDropDownMenuTemplate" hidden="true">
+ <Button name="$parentZone" parent="BagCleanUp" inherits="UIDropDownMenuTemplate" hidden="false">
 	<Size x="150" y="50" />
 	<Anchors>
 		<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="-20" y="-30"/>
