@@ -24,7 +24,8 @@ function CreateRarityObjects()
 		      types = { "Junk", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Artifact/Heirloom", "Not a valid rarity"},
 		      texture = {0,0, .6,.6,.6, 1,1,1, 0,1,0, .2,.2,1, 1,0,1 },
               update = false,
-              updateCount = 0
+              updateCount = 0,
+              updateInterval = 1.0
         }
       }
 		  for index, color in pairs(BagCleanUpVar.properties.colors) do
@@ -97,8 +98,9 @@ function BagClearUpButton_Click(self, event, ...)
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
 				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
+                     BagCleanUpVar.properties.update = true
 					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
-                        if zoneTable[link] ~= nil and zoneTable[link].count > 0 then                            
+                        if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not locked then                            
                             if class == "Trade Goods" and BagCleanUpCheckButtonTradeGoods:GetChecked() then
                                 print("Not selling " .. link .. " because trade goods is checked")
                             else          
@@ -129,15 +131,17 @@ function BagClearUpButton_Click(self, event, ...)
 end
 
 function BagClearUpButton_OnUpdate(self, elapsed)
-    if BagCleanUpVar.properties.update then
-        BagCleanUpVar.properties.updateCount = BagCleanUpVar.properties.updateCount + elapsed;
-        if BagCleanUpVar.properties.updateCount >= 6 then
-            BagClearUpButton_Click()
-        elseif BagCleanUpVar.properties.updateCount > 10 then
+    self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
+    if BagCleanUpVar.properties.zone == nil then return end
+
+    if BagCleanUpVar.properties.update  and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval then     
+        BagClearUpButton_Click()
+        UpdateZoneTable()
+        self.TimeSinceLastUpdate = 0  
+        
+        if BagCleanUpInstances[BagCleanUpVar.properties.zone] == nil then
             BagCleanUpVar.properties.update = false
-            BagCleanUpVar.properties.updateCount = 0
-            UpdateZoneTable()
-        end
+        end             
     end
 end
 
@@ -293,13 +297,13 @@ function CreateCheckButtons()
 	end
 
     local btn = CreateFrame("CheckButton", "BagCleanUpCheckButtonTradeGoods", BagCleanUp, "UICheckButtonTemplate")
-		btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -60);
-		btn:SetScript("OnClick", BagCleanUpSlider_CheckBoxClick)
-		local fontstring = btn:CreateFontString("BagCleanUpCheckBtnReagentsFontString", "ARTWORK", "GameFontNormal")
-		fontstring:SetText("Do not sell trade goods")
-		fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
-		btn:SetFontString(fontstring)
-		btn:Show();
+	btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -60);
+	btn:SetScript("OnClick", BagCleanUpSlider_CheckBoxClick)
+	local fontstring = btn:CreateFontString("BagCleanUpCheckBtnReagentsFontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("Do not sell trade goods")
+	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
+	btn:SetFontString(fontstring)
+	btn:Show();
 end
 
 function CreateSliders()
@@ -465,11 +469,6 @@ end
 
 
 -- Changes
--- Prior problem: Filtering for "Of the Bandit" or "Of the Cheetah" etc, had been fixed.
--- When selecting a zone the table is updated to remove any junk. Junk can occur when prior items have been sold, thrown away, traded, etc.
--- Added another filter for gold looting. "Received"
--- Improved how currency is summed together. 
--- After pressing the Zone sell button the function is updated 4x over 4 seconds. This allows more items to sell and then updates the zone table.
 
 
 -- Problems

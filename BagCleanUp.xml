@@ -123,6 +123,7 @@
 		</Anchors>
 	</PushedTexture>
 	<Scripts>
+        <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
 		<OnClick function="BagClearUpButton_Click" />
         <OnUpdate function="BagClearUpButton_OnUpdate" />		
 	</Scripts>
