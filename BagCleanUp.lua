@@ -304,7 +304,7 @@ end
 function CreateSliders()
 	local min = CreateFrame("Frame", "$parentSliderMin", BagCleanUp, "BagCleanUpSliderTemplate")
 	min:SetPoint("TOP", "$parent", "TOP", 0, -75)
-	_G[min:GetName() .. 'SlidqerTitle']:SetText("Minimum Item Level");
+	_G[min:GetName() .. 'SliderTitle']:SetText("Minimum Item Level");
 	min:Hide();
 	local max = CreateFrame("Frame", "$parentSliderMax", BagCleanUp, "BagCleanUpSliderTemplate")
 	max:SetPoint("TOP", "$parentSliderMin", "TOP", 0, -50)
