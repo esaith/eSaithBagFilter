@@ -193,7 +193,7 @@
         </Button>
 	</Frames>
 </Frame>
-<Frame name="$parentTabs" parent="BagCleanUp">
+<Frame name="$parentBottomTabs" parent="BagCleanUp">
 		<Size x="325" y="40" />
 		<Anchors>
 			<Anchor point="TOP" relativeTo="BagCleanUp" relativePoint="BOTTOM" />
@@ -206,7 +206,7 @@
             <Scripts>
                 <OnClick>
                     BagCleanUpBottomTab_Click(self, "OnClick" )
-                    PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+                    PanelTemplates_SetTab(BagCleanUpBottomTabs, self:GetID());
                 </OnClick>
             </Scripts>
         </Button>
@@ -217,7 +217,7 @@
 			<Scripts>
 				<OnClick>
 					BagCleanUpBottomTab_Click(self, "OnClick" )
-					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+					PanelTemplates_SetTab(BagCleanUpBottomTabs, self:GetID());
 				</OnClick>
 			</Scripts>
 		</Button>
@@ -228,7 +228,7 @@
 			<Scripts>
 				<OnClick>
 					BagCleanUpBottomTab_Click(self, "OnClick" )
-					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+					PanelTemplates_SetTab(BagCleanUpBottomTabs, self:GetID());
 				</OnClick>
 			</Scripts>
 		</Button>
@@ -239,7 +239,7 @@
 			<Scripts>
 				<OnClick>
 					BagCleanUpBottomTab_Click(self, "OnClick" )
-					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+					PanelTemplates_SetTab(BagCleanUpBottomTabs, self:GetID());
 				</OnClick>
 			</Scripts>
 		</Button>
@@ -250,14 +250,14 @@
 			<Scripts>
 				<OnClick>
 					BagCleanUpBottomTab_Click(self, "OnClick" )
-					PanelTemplates_SetTab(BagCleanUpTabs, self:GetID());
+					PanelTemplates_SetTab(BagCleanUpBottomTabs, self:GetID());
 				</OnClick>
 			</Scripts>
 		</Button>		
 	</Frames>		
 	<Scripts>
-		<OnLoad function="BagCleanUpTabs_OnLoad" />
-		<OnShow function="BagCleanUpTabs_OnShow" />
+		<OnLoad function="BagCleanUpBottomTabs_OnLoad" />
+		<OnShow function="BagCleanUpBottomTabs_OnShow" />
 	</Scripts>
 </Frame>		
  

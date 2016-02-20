@@ -133,11 +133,12 @@ function BagClearUpButton_Click(self, event,...)
 			if texture then         
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+                local personalItem = BagCleanUpVar.properties.personalItems[link]
 				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
                     BagCleanUpVar.properties.update = true
 					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
                     if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not locked and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then                            
-                        if class == "Trade Goods" and BagCleanUpCheckButtonTradeGoods:GetChecked() then
+                        if class == "Trade Goods" and BagCleanUpCheckButton_TradeGoods:GetChecked() then
                             print("Not selling "..link.." because trade goods is checked")
                         else          
 					        UseContainerItem(bag, slot)
@@ -148,23 +149,20 @@ function BagClearUpButton_Click(self, event,...)
                         end
                     end	 
 				elseif BagCleanUpVar.properties.LeftTab == 2 then	 
-					if vendorPrice > 0 and not locked and not lootable and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then -- Skip all items that cannot be sold to vendors								
-						for index, color in pairs(BagCleanUpVar.properties.colors) do	
-                            local color = BagCleanUpVar.properties.colors[quality + 1]		
-                            if BagCleanUpVar[color].checked 
-	                	    and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
-	                	    and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
-	                	    	UseContainerItem(bag, slot)
-	                	    end                        	
-						end
+					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then							
+						local color = BagCleanUpVar.properties.colors[quality + 1]		
+                        if BagCleanUpVar[color].checked 
+	                    and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
+	                    and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
+	                    	UseContainerItem(bag, slot)
+	                    end
 					end
                 elseif BagCleanUpVar.properties.LeftTab == 3 then                    
-					if vendorPrice > 0 and not locked and not lootable and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then -- Skip all items that cannot be sold to vendors					
-						for index, color in pairs(BagCleanUpVar.properties.colors) do	
-							if BagCleanUpVar[color].checked and quality == index - 1 then							
-								UseContainerItem(bag, slot)
-							end
-						end
+					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then		
+						local color = BagCleanUpVar.properties.colors[quality + 1]	
+						if BagCleanUpVar[color].checked and quality == index - 1 then							
+							UseContainerItem(bag, slot)
+						end						
 					end
 				end				
 			end
@@ -203,13 +201,13 @@ function BagCleanUp_OnLoad(self, event,...)
     self:RegisterEvent("MODIFIER_STATE_CHANGED")
 end
 
-function BagCleanUpTabs_OnLoad(self, event,...)
+function BagCleanUpBottomTabs_OnLoad(self, event,...)
 	PanelTemplates_SetNumTabs(self, 5);
-	PanelTemplates_SetTab(BagCleanUpTabs, 1);
+	PanelTemplates_SetTab(BagCleanUpBottomTabs, 1);
 end
 
-function BagCleanUpTabs_OnShow(self, event,...)	
-	PanelTemplates_SetTab(BagCleanUpTabs, BagCleanUpVar.properties.BottomTab);    
+function BagCleanUpBottomTabs_OnShow(self, event,...)	
+	PanelTemplates_SetTab(BagCleanUpBottomTabs, BagCleanUpVar.properties.BottomTab);    
 end
 
 function BagCleanUp_OnEvent(self, event,...) 
@@ -222,19 +220,13 @@ function BagCleanUp_OnEvent(self, event,...)
 		CreateSliders();	
 		ShowZoneFilter(nil, nil)	
 		tinsert(UISpecialFrames, BagCleanUp:GetName())	
-
-        for slot = 1, 16 do      
-            _G["ContainerFrame1".."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
-            _G["ContainerFrame1".."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
-            _G["ContainerFrame1".."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)
-        end
-
-        for bag = 1, NUM_BAG_SLOTS do
-	    	for slot = 1, GetContainerNumSlots(bag) do      
-               _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
-               _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
-           end
-        end
+        for bag = 0, NUM_BAG_SLOTS do
+		    for slot = 1, GetContainerNumSlots(bag) do 
+                _G["ContainerFrame1".."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
+                _G["ContainerFrame1".."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
+                _G["ContainerFrame1".."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)            
+		    end	
+	    end
 	elseif event == "CHAT_MSG_LOOT" and...~= nil then	    
         local zone = GetRealZoneText();
         if string.find(..., "You receive item: ") ~= nil or 
@@ -252,19 +244,13 @@ function BagCleanUp_OnEvent(self, event,...)
 
 			local _, dItemLink = GetItemInfo(dItemID);			
 			local name, dItemLink, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(dItemID);	
-            if vendorPrice~= nil and vendorPrice > 0 then         
+            if vendorPrice ~= nil and vendorPrice > 0 then         
                 BagCleanUpInstances.methods.AddLoot(dItemLink, tonumber(amount)) 
             end
 		end
     elseif event == "CHAT_MSG_MONEY" and...~= nill then
-        if string.find(..., "You loot") ~= nil then
-            local amount1, currency1, amount2, currency2, amount3, currency3 = string.match(..., "You loot (%d+) (%a+),?%s*(%d*)%s*(%a*),?%s*(%d*)%s*(%a*).?")
-            BagCleanUpInstances.methods.AddCurrency(tonumber(amount1), currency1)
-                       
-            if amount2 ~= nil and amount2 ~= "" then BagCleanUpInstances.methods.AddCurrency(tonumber(amount2), currency2) end
-            if amount3 ~= nil and amount3 ~= "" then BagCleanUpInstances.methods.AddCurrency(tonumber(amount3), currency3) end
-        elseif string.find(..., "Received") ~= nil then
-            local amount1, currency1, amount2, currency2, amount3, currency3 = string.match(..., "Received (%d+) (%a+),?%s*(%d*)%s*(%a*),?%s*(%d*)%s*(%a*).?")
+        if string.find(..., "You loot") or string.find(..., "Received") ~= nil then
+            local amount1, currency1, amount2, currency2, amount3, currency3 = string.match(..., ".*(%d+) (%a+),?%s*(%d*)%s*(%a*),?%s*(%d*)%s*(%a*).?")
             BagCleanUpInstances.methods.AddCurrency(tonumber(amount1), currency1)
                        
             if amount2 ~= nil and amount2 ~= "" then BagCleanUpInstances.methods.AddCurrency(tonumber(amount2), currency2) end
@@ -360,7 +346,7 @@ function CreateCheckButtons()
 		btn:Hide();
 	end
 
-    local btn = CreateFrame("CheckButton", "BagCleanUpCheckButtonTradeGoods", BagCleanUp, "UICheckButtonTemplate")
+    local btn = CreateFrame("CheckButton", "BagCleanUpCheckButton_TradeGoods", BagCleanUp, "UICheckButtonTemplate")
 	btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -60);
 	local fontstring = btn:CreateFontString("BagCleanUpCheckBtnReagentsFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("Do not sell trade goods")
@@ -382,22 +368,22 @@ end
 
 function ShowZoneFilter(self, event)
     if BagCleanUpVar.properties.LeftTab == 1 then return end
-    PrepShowSideTab()
+    PrepareToShowSideTabs()
 
 	BagCleanUpVar.properties.LeftTab = 1	
 	BagCleanUpZone:Show();	
-    BagCleanUpCheckButtonTradeGoods:Show()
+    BagCleanUpCheckButton_TradeGoods:Show()
 end
 
 function ShowILVLFilter(self, event)    
 	if BagCleanUpVar.properties.LeftTab == 2 then return end	
-    PrepShowSideTab()
+    PrepareToShowSideTabs()
 
     BagCleanUpVar.properties.LeftTab = 2
 	if BagCleanUpVar.properties.BottomTab == nil then BagCleanUpVar.properties.BottomTab = 1 end
 	
 	local color = BagCleanUpVar.properties.colors[BagCleanUpVar.properties.BottomTab]
-	_G["BagCleanUpTabs"]:Show();
+	_G["BagCleanUpBottomTabs"]:Show();
 	_G["BagCleanUpCheckButton"..color]:SetChecked(BagCleanUpVar[color].checked);
 	_G["BagCleanUpCheckButton"..color]:Show();
 	BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar[color].min)
@@ -408,7 +394,7 @@ end
 
 function ShowRarityFilter(self, event)
     if BagCleanUpVar.properties.LeftTab == 3 then return end
-    PrepShowSideTab()
+    PrepareToShowSideTabs()
     BagCleanUpVar.properties.LeftTab = 3
 
     local point, relativeTo, relativePoint, xOffset, yOffset = BagCleanUpCheckButtonGray:GetPoint("TOPLEFT")
@@ -424,17 +410,17 @@ function ShowRarityFilter(self, event)
     end
 end
 
-function PrepShowSideTab()
+function PrepareToShowSideTabs()
     -- Hide Tab 1
     for index, color in pairs(BagCleanUpVar.properties.colors) do
 		_G["BagCleanUpCheckButton"..color]:Hide();
 	end
-    BagCleanUpTabs:Hide();
+    BagCleanUpBottomTabs:Hide();
 	BagCleanUpSliderMin:Hide()
 	BagCleanUpSliderMax:Hide()
     -- Hide Tab 2 and 3
 	BagCleanUpZone:Hide();	
-    BagCleanUpCheckButtonTradeGoods:Hide()
+    BagCleanUpCheckButton_TradeGoods:Hide()
 
     -- If coming from tab 3 and going to tab 2, make sure checkboxes realign
     local point, relativeTo, relativePoint, xOffset, yOffset = BagCleanUpCheckButtonGray:GetPoint("TOPLEFT")    
