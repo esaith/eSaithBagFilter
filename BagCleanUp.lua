@@ -1,6 +1,5 @@
-﻿SLASH_BAGCLEANUP1 = "/clean";
-BagCleanUpVar = nil
-BagCleanUpInstances = nil
+﻿SLASH_BAGCLEANUP1 = '/clean';
+
 function SlashCmdList.BAGCLEANUP(msg, editbox)
 	if BagCleanUp:IsShown() then
 		BagCleanUp:Hide();
@@ -8,9 +7,59 @@ function SlashCmdList.BAGCLEANUP(msg, editbox)
 		BagCleanUp:Show();            
 	end
 end
- 
+
+function BagCleanUpContainerHook_OnClick(self, button) 
+    if self.count <= 0 or 
+    not IsAltKeyDown() 
+    or button ~= "LeftButton" or
+    not BagCleanUp:IsShown() or string.find(self:GetName(), "Keep") ~= nil then 
+        return 
+    end
+
+    local bag = self:GetParent():GetID()
+    local slot = self:GetID()
+    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
+
+    if BagCleanUpVar.properties.personalItems[link] == nil then 
+        BagCleanUpVar.properties.personalItems[link] = true
+        self.BattlepayItemTexture:Show()
+    else
+        if BagCleanUpVar.properties.personalItems[link] then
+            BagCleanUpVar.properties.personalItems[link] = false
+            self.BattlepayItemTexture:Hide()
+        else
+            BagCleanUpVar.properties.personalItems[link] = true 
+            self.BattlepayItemTexture:Show()
+        end
+    end
+end
+
+function BagCleanUpContainerHook_OnLeave(self, motion)
+    local bag = self:GetParent():GetID()
+    local slot = self:GetID()
+    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
+    local newItemAnim = self.newitemglowAnim;
+
+    if BagCleanUpVar.properties.personalItems[link] == nil then return end;
+    if BagCleanUpVar.properties.personalItems[link] and BagCleanUp:IsShown() then    
+        self.BattlepayItemTexture:Show()
+    else
+        self.BattlepayItemTexture:Hide() 
+    end
+end
+
+function BagCleanUpContainerHook_OnUpdate(self, elapsed)
+    BagCleanUpVar.properties.itemUpdateCount = BagCleanUpVar.properties.itemUpdateCount + elapsed;
+
+    if BagCleanUpVar.properties.itemUpdateCount > BagCleanUpVar.properties.updateInterval then  
+        BagCleanUpContainerHook_OnLeave(self, nil)
+        BagCleanUpVar.properties.updateCount = 0
+    end
+end
+
 function CreateRarityObjects()   
     if BagCleanUpVar == nil  then
+        print("Creating a new BagCleanUpVar")
 		  BagCleanUpVar = { 
 		    methods = {
 	        GetRarity = function (ilvl) return BagCleanUpVar.properties.types[ilvl] end
@@ -25,7 +74,10 @@ function CreateRarityObjects()
 		      texture = {0,0, .6,.6,.6, 1,1,1, 0,1,0, .2,.2,1, 1,0,1, .8,.8,0 },
               update = false,
               updateCount = 0,
-              updateInterval = 1.0
+              itemUpdateCount = 0,
+              updateInterval = 1.0,
+
+              personalItems = { }
         }
       }
 		  for index, color in pairs(BagCleanUpVar.properties.colors) do
@@ -70,7 +122,7 @@ function CreateRarityObjects()
                 end
             },
             properties = { }
-        }
+        }   
     end
 end
 
@@ -82,33 +134,32 @@ function BagClearUpButton_Click(self, event, ...)
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
 				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
-                     BagCleanUpVar.properties.update = true
+                    BagCleanUpVar.properties.update = true
 					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
-                        if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not locked then                            
-                            if class == "Trade Goods" and BagCleanUpCheckButtonTradeGoods:GetChecked() then
-                                print("Not selling " .. link .. " because trade goods is checked")
-                            else          
-						        UseContainerItem(bag, slot)
-                                zoneTable[link].found = true
-                                zoneTable[link].bag = bag
-                                zoneTable[link].slot = slot
-                                if zoneTable[itemLink].count < 0 then zoneTable[itemLink].count = 0 end                            
-                            end
-                        end	 
+                    if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not locked and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then                            
+                        if class == "Trade Goods" and BagCleanUpCheckButtonTradeGoods:GetChecked() then
+                            print("Not selling " .. link .. " because trade goods is checked")
+                        else          
+					        UseContainerItem(bag, slot)
+                            zoneTable[link].found = true
+                            zoneTable[link].bag = bag
+                            zoneTable[link].slot = slot
+                            if zoneTable[itemLink].count < 0 then zoneTable[itemLink].count = 0 end                            
+                        end
+                    end	 
 				elseif BagCleanUpVar.properties.LeftTab == 2 then	 
-					if vendorPrice > 0 and not locked and not lootable then -- Skip all items that cannot be sold to vendors								
-						for index, color in pairs(BagCleanUpVar.properties.colors) do							
-							if (BagCleanUpVar[color].checked and quality == index - 1
-							and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked) 
-							and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked)) then
-								print (link .. " sold")
-								UseContainerItem(bag, slot)
-							end
+					if vendorPrice > 0 and not locked and not lootable and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then -- Skip all items that cannot be sold to vendors								
+						for index, color in pairs(BagCleanUpVar.properties.colors) do	
+                            local color = BagCleanUpVar.properties.colors[quality + 1]		
+                            if BagCleanUpVar[color].checked 
+	                	    and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
+	                	    and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
+	                	    	UseContainerItem(bag, slot)
+	                	    end                        	
 						end
 					end
                 elseif BagCleanUpVar.properties.LeftTab == 3 then                    
-					if vendorPrice > 0 and not locked and not lootable then -- Skip all items that cannot be sold to vendors	
-                        print("Checking color on " .. link)						
+					if vendorPrice > 0 and not locked and not lootable and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then -- Skip all items that cannot be sold to vendors					
 						for index, color in pairs(BagCleanUpVar.properties.colors) do	
 							if BagCleanUpVar[color].checked and quality == index - 1 then							
 								UseContainerItem(bag, slot)
@@ -127,7 +178,7 @@ function BagClearUpButton_OnUpdate(self, elapsed)
 
     if BagCleanUpVar.properties.update  and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval then     
         BagClearUpButton_Click()
-        UpdateZoneTable()
+        BagCleanUp_UpdateZoneTable()
         self.TimeSinceLastUpdate = 0  
         
         if BagCleanUpInstances[BagCleanUpVar.properties.zone] == nil then
@@ -137,7 +188,7 @@ function BagClearUpButton_OnUpdate(self, elapsed)
 end
 
 function BagClearUpButton_OnHide(self, event, ...)
-    BagCleanUpVar.properties.update = false
+    BagCleanUpVar.properties.update = false   
 end
 
 function BagCleanUp_OnLoad(self, event, ...)
@@ -149,6 +200,7 @@ function BagCleanUp_OnLoad(self, event, ...)
 	self:RegisterEvent("MERCHANT_SHOW")
 	self:RegisterEvent("MERCHANT_CLOSED")
     self:RegisterEvent("BAG_UPDATE")	
+    self:RegisterEvent("MODIFIER_STATE_CHANGED")
 end
 
 function BagCleanUpTabs_OnLoad(self, event, ...)
@@ -157,19 +209,32 @@ function BagCleanUpTabs_OnLoad(self, event, ...)
 end
 
 function BagCleanUpTabs_OnShow(self, event, ...)	
-	PanelTemplates_SetTab(BagCleanUpTabs, BagCleanUpVar.properties.BottomTab);
+	PanelTemplates_SetTab(BagCleanUpTabs, BagCleanUpVar.properties.BottomTab);    
 end
 
-function BagCleanUp_OnEvent(self, event, ...)                  
+function BagCleanUp_OnEvent(self, event, ...) 
 	if event == "ADDON_LOADED" and ... == "BagCleanUp" then
 	    self:UnregisterEvent("ADDON_LOADED")	
-        BagCleanUpVar = nil
-        BagCleanUpInstances = nil
+        BagCleanUpVar = BagCleanUpVar or nil
+        BagCleanUpInstances = BagCleanUpInstances or nil
 		CreateRarityObjects()
 		CreateCheckButtons();	
 		CreateSliders();	
 		ShowZoneFilter(nil, nil)	
 		tinsert(UISpecialFrames, BagCleanUp:GetName())	
+
+        for slot = 1, 16 do      
+            _G["ContainerFrame1".."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
+            _G["ContainerFrame1".."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
+            _G["ContainerFrame1".."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)
+        end
+
+        for bag = 1, NUM_BAG_SLOTS do
+	    	for slot = 1, GetContainerNumSlots(bag) do      
+               _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
+               _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
+           end
+        end
 	elseif event == "CHAT_MSG_LOOT" and ... ~= nil then	    
         local zone = GetRealZoneText();
         if string.find( ... , "You receive item: ") ~= nil or 
@@ -245,6 +310,7 @@ function UpdateMinAndMax(self, value)
 	if (parent:GetName() == "BagCleanUpSliderMin") then peak = "min" else peak = "max" end	
 	local color = BagCleanUpVar.properties.colors[BagCleanUpVar.properties.BottomTab]	
 	BagCleanUpVar[color][peak] = value;
+    BagCleanUp_DimBagSlotiLVL()
 end
 
 function BagCleanUpSlider_CheckBoxClick(self, button, down)
@@ -256,11 +322,13 @@ function BagCleanUpSlider_CheckBoxClick(self, button, down)
 	elseif string.find(self:GetName(), "Max") ~= nil then
 		BagCleanUpVar[color].maxChecked = self:GetChecked();
     end	
+    BagCleanUp_DimBagSlotiLVL()
 end
 
 function BagCleanUpCheckBox_Click(self, button, down)
     local color = string.match(self:GetName(), "BagCleanUpCheckButton(.*)")
     BagCleanUpVar[color].checked = self:GetChecked();
+    BagCleanUp_DimBagSlotColor()
 end
 
 function BagCleanUpBottomTab_Click(self, event, ...)		
@@ -396,12 +464,13 @@ end
 function DropDownMenuItemFunction(self, arg1, arg2, checked) 
     local zoneTable = BagCleanUpInstances[self.arg1];
     BagCleanUpVar.properties.zone = self.arg1
-    UpdateZoneTable()
+    BagCleanUp_UpdateZoneTable()
 
     print(" -- Gained in "..self.arg1.."--")
     local size = 0	
 	for item, itemTable in pairs(zoneTable) do
-        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" and itemTable.count > 0 then
+        print("item:"..item)
+        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" then
             print(item .."x" .. itemTable.count)
             size = size + 1
         end    
@@ -414,13 +483,13 @@ function DropDownMenuItemFunction(self, arg1, arg2, checked)
     else
 	    print(size .. " item(s) dropped in " .. self.arg1)
     end    
-    HighlightBagSlot()
+    BagCleanUp_DimBagSlotZone()
 	if (not checked) then
 	    UIDropDownMenu_SetSelectedValue(UIDROPDOWNMENU_OPEN_MENU, self.value);
 	end
 end
 
-function UpdateZoneTable()
+function BagCleanUp_UpdateZoneTable()
     if BagCleanUpVar.properties.zone == nil then return end
     local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];
     if zoneTable == nil then return end
@@ -456,14 +525,14 @@ function UpdateZoneTable()
     if count <= 0 then BagCleanUpInstances[BagCleanUpVar.properties.zone] = nil end
 end
 
-function HighlightBagSlot()
+function BagCleanUp_DimBagSlotZone()
+    if BagCleanUpVar.properties.zone == nil then return end
     for bag = 0, NUM_BAG_SLOTS do
 		for slot = 0, GetContainerNumSlots(bag) do      
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
 			if texture then         
-				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
-				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
+				if BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	         
 					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
                     if zoneTable[link] == nil or zoneTable[link].count <= 0 then
                        _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(.3)
@@ -476,12 +545,99 @@ function HighlightBagSlot()
 	end
 end
 
-function ClearBagItemsAlpha()
+function BagCleanUp_DimBagSlotColor()    
+    local count = 0
+    for k, color in pairs(BagCleanUpVar.properties.colors) do
+        if BagCleanUpVar[color].checked then 
+            count = count + 1
+        end
+    end
+
+    if count <= 0 then 
+        for bag = 0, NUM_BAG_SLOTS do
+	    	for slot = 0, GetContainerNumSlots(bag) do      
+	    		local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+	    		if texture then                        
+                    _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)                 
+	    		end
+	    	end	
+	    end
+    else
+        local alpha
+        for bag = 0, NUM_BAG_SLOTS do
+	    	for slot = 0, GetContainerNumSlots(bag) do      
+	    		local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+	    		if texture then   
+                    local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+                    local color = BagCleanUpVar.properties.colors[quality + 1]
+                    alpha = .3
+                    if BagCleanUpVar[color].checked and vendorPrice > 0 then alpha = 1 end  
+                    _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
+	    		end
+	    	end	
+	    end
+    end
+end
+
+function BagCleanUp_DimBagSlotiLVL()
+     local count = 0
+    for k, color in pairs(BagCleanUpVar.properties.colors) do
+        if BagCleanUpVar[color].checked then 
+            count = count + 1
+        end
+    end
+
+    if count <= 0 then 
+        for bag = 0, NUM_BAG_SLOTS do
+	    	for slot = 0, GetContainerNumSlots(bag) do      
+	    		local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+	    		if texture then                        
+                    _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)                 
+	    		end
+	    	end	
+	    end
+    else
+        local alpha
+        for bag = 0, NUM_BAG_SLOTS do
+	        for slot = 0, GetContainerNumSlots(bag) do      
+	        	local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
+	        	if texture then   
+                    local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
+                    if vendorPrice > 0 and not locked and not lootable then -- Skip all items that cannot be sold to vendors
+                        alpha = .3						
+	                	local color = BagCleanUpVar.properties.colors[quality + 1]		
+                        if BagCleanUpVar[color].checked 
+	                	and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
+	                	and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
+	                		alpha = 1
+	                	end
+	                end
+                end
+                _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
+            end        
+        end
+    end
+end
+
+function BagCleanUp_OnHide()
     for bag = 0, NUM_BAG_SLOTS do
-		for slot = 0, GetContainerNumSlots(bag) do  
-            _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)                
+		for slot = 0, GetContainerNumSlots(bag) do 
+            _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)     
+            _G["ContainerFrame".. (bag + 1).."Item".. (GetContainerNumSlots(bag) - slot + 1)].BattlepayItemTexture:Hide()            
 		end	
 	end
+end
+
+function BagCleanUp_OnShow()
+    for slot = 1, 16 do      
+        BagCleanUpContainerHook_OnLeave(_G["ContainerFrame1".."Item"..slot])
+    end
+
+    for bag = 1, NUM_BAG_SLOTS do
+		for slot = 1, GetContainerNumSlots(bag) do      
+           BagCleanUpContainerHook_OnLeave(_G["ContainerFrame"..(bag + 1).."Item"..slot])
+       end
+    end
 end
 
 function PassMin(ilvl, minlvl, required)
@@ -510,16 +666,14 @@ end
 -- List potential mounts that drop in instance/zone/raid
 -- Have a huge table of reagents to sort to filter through
 -- Need to implement filtering on "Pattern:" and Design
-
+-- Consider disenchanting if selected
 
 -- Changes
--- Made sure that the bag does not sell if equipped even if it fits the criteria
--- Added another side tab. Rarity. Instead of paging through ilvl and rarity, user may just choose rarity when all known rarity is needed to be sold.
-
+-- When any Colored checkbox is clicked/unclicked (on side tab 2 or 3) all bag slots are updated in alpha opacity. Only items that can potentially be sold will be highlighted. 
+-- When Ilvl checkbox is clicked, all bag slots for that color change opacity if within range
 
 -- Problems
--- If a bag is emtpy and equipped and fits the criteria for the ilvl sell, the bag sells to the vendor!
 
 
 -- Worth Mentioning:
--- On rare occassion when looting Blizzard does not state that item has been looted. In such case, addon will not add item to zone table
+-- On rare occassion when looting Blizzard does not state that item has been looted the addon will not add item to zone table

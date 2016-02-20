@@ -96,7 +96,8 @@
 		<OnEvent function="BagCleanUp_OnEvent" />
 		<OnDragStart>self:StartMoving();</OnDragStart>
 		<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
-        <OnHide function="ClearBagItemsAlpha" />	
+        <OnHide function="BagCleanUp_OnHide" />
+        <OnShow function="BagCleanUp_OnShow" />
 	</Scripts>
 </Frame>
 

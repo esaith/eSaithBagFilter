@@ -3,7 +3,7 @@
 ## Version: 1.0 
 ## Notes: Clean up bags per rarity and iLvl
 ## Author: eSaith
-## SavedVariablesPerCharacter: BagCleanUpVar, BagCleanUpInstances
+## SavedVariablesPerCharacter: BagCleanUpVar
 
 BagCleanUp.lua
 BagCleanUp.xml
