@@ -12,7 +12,7 @@ function BagCleanUpContainerHook_OnClick(self, button)
     if self.count <= 0 or 
     not IsAltKeyDown() 
     or button ~= "LeftButton" or
-    not BagCleanUp:IsShown() or string.find(self:GetName(), "Keep") ~= nil then 
+    not BagCleanUp:IsShown() then 
         return 
     end
 
@@ -58,12 +58,39 @@ function BagCleanUpContainerHook_OnUpdate(self, elapsed)
 end
 
 function CreateRarityObjects()   
+    BagCleanUpMethods = {
+        AddLoot = function(obj, count) 
+            local zone = GetRealZoneText()
+            if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
+            if BagCleanUpInstances[zone][obj] == nil then  BagCleanUpInstances[zone][obj] = { count = 0, found = false } end
+            
+            BagCleanUpInstances[zone][obj].count = BagCleanUpInstances[zone][obj].count + count          
+        end, 
+        AddCurrency = function(amount, currency)
+            local zone = GetRealZoneText()
+            if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
+            if BagCleanUpInstances[zone]["Gold"] == nil then 
+                BagCleanUpInstances[zone].Gold = 0
+                BagCleanUpInstances[zone].Copper = 0
+                BagCleanUpInstances[zone].Silver = 0                
+            end
+
+            BagCleanUpInstances[zone][currency] = BagCleanUpInstances[zone][currency] + amount;
+            if BagCleanUpInstances[zone]["Copper"] >= 100 then
+                BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] + 1
+                BagCleanUpInstances[zone]["Copper"] = BagCleanUpInstances[zone]["Copper"] - 100
+            end
+                
+            if BagCleanUpInstances[zone]["Silver"] >= 100 then
+                BagCleanUpInstances[zone]["Gold"] = BagCleanUpInstances[zone]["Gold"] + 1
+                BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] - 100
+            end
+        end,
+        GetRarity = function (ilvl) return BagCleanUpVar.properties.types[ilvl] end
+    }
+
     if BagCleanUpVar == nil  then
-        print("Creating a new BagCleanUpVar")
-		  BagCleanUpVar = { 
-		    methods = {
-	        GetRarity = function (ilvl) return BagCleanUpVar.properties.types[ilvl] end
-	      },
+		  BagCleanUpVar = { 		    
 		    properties = {
 		      LeftTab = 1,
 		      BottomTab = 1,
@@ -87,46 +114,18 @@ function CreateRarityObjects()
 		  	BagCleanUpVar[color].max = 0
 		  	BagCleanUpVar[color].minChecked = false
 		  	BagCleanUpVar[color].maxChecked = false
-		  	BagCleanUpVar[color].rarity = BagCleanUpVar.methods.GetRarity(index)
+		  	BagCleanUpVar[color].rarity = BagCleanUpMethods.GetRarity(index)
 		  end
     end
     
     if BagCleanUpInstances == nil then
-        BagCleanUpInstances = { 
-            methods = { 
-                AddLoot = function(obj, count) 
-                    local zone = GetRealZoneText()
-                    if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
-                    if BagCleanUpInstances[zone][obj] == nil then  BagCleanUpInstances[zone][obj] = { count = 0, found = false } end
-                    
-                    BagCleanUpInstances[zone][obj].count = BagCleanUpInstances[zone][obj].count + count
-                end, 
-                AddCurrency = function(amount, currency)
-                    local zone = GetRealZoneText()
-                    if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
-                    if BagCleanUpInstances[zone]["Gold"] == nil then 
-                        BagCleanUpInstances[zone] = { Gold = 0, Silver = 0, Copper = 0 } 
-                    end
-
-                    BagCleanUpInstances[zone][currency] = BagCleanUpInstances[zone][currency] + amount;
-
-                    if BagCleanUpInstances[zone]["Copper"] >= 100 then
-                        BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] + 1
-                        BagCleanUpInstances[zone]["Copper"] = BagCleanUpInstances[zone]["Copper"] - 100
-                    end
-                        
-                    if BagCleanUpInstances[zone]["Silver"] >= 100 then
-                        BagCleanUpInstances[zone]["Gold"] = BagCleanUpInstances[zone]["Gold"] + 1
-                        BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] - 100
-                    end
-                end
-            },
-            properties = { }
-        }   
+        BagCleanUpInstances = { }
     end
+     
+    
 end
 
-function BagClearUpButton_Click(self, event,...)    
+function BagCleanUpButton_Click(self, event,...)    
     for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do      
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
@@ -160,7 +159,7 @@ function BagClearUpButton_Click(self, event,...)
                 elseif BagCleanUpVar.properties.LeftTab == 3 then                    
 					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then		
 						local color = BagCleanUpVar.properties.colors[quality + 1]	
-						if BagCleanUpVar[color].checked and quality == index - 1 then							
+						if BagCleanUpVar[color].checked then							
 							UseContainerItem(bag, slot)
 						end						
 					end
@@ -170,12 +169,24 @@ function BagClearUpButton_Click(self, event,...)
 	end	
 end
 
-function BagClearUpButton_OnUpdate(self, elapsed)
+function printTable(tb, spacing)
+    if spacing == nil then spacing = "" end
+    print(spacing.."Entering table")
+    for k, v in pairs(tb) do
+        print(spacing.."K: "..k..", v: "..tostring(v))
+        if type(v) == "table" then
+            printTable(v, "   "..spacing)
+        end
+    end
+    print(spacing.."Leaving Table")
+end
+
+function BagCleanUpButton_OnUpdate(self, elapsed)
     self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
     if BagCleanUpVar.properties.zone == nil then return end
 
     if BagCleanUpVar.properties.update  and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval then     
-        BagClearUpButton_Click()
+        BagCleanUpButton_Click()
         BagCleanUp_UpdateZoneTable()
         self.TimeSinceLastUpdate = 0  
         
@@ -185,7 +196,7 @@ function BagClearUpButton_OnUpdate(self, elapsed)
     end
 end
 
-function BagClearUpButton_OnHide(self, event,...)
+function BagCleanUpButton_OnHide(self, event,...)
     BagCleanUpVar.properties.update = false   
 end
 
@@ -216,15 +227,16 @@ function BagCleanUp_OnEvent(self, event,...)
         BagCleanUpVar = BagCleanUpVar or nil
         BagCleanUpInstances = BagCleanUpInstances or nil
 		CreateRarityObjects()
+        --printTable(BagCleanUpInstances)
 		CreateCheckButtons();	
 		CreateSliders();	
 		ShowZoneFilter(nil, nil)	
 		tinsert(UISpecialFrames, BagCleanUp:GetName())	
         for bag = 0, NUM_BAG_SLOTS do
 		    for slot = 1, GetContainerNumSlots(bag) do 
-                _G["ContainerFrame1".."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
-                _G["ContainerFrame1".."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
-                _G["ContainerFrame1".."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)            
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)            
 		    end	
 	    end
 	elseif event == "CHAT_MSG_LOOT" and...~= nil then	    
@@ -236,25 +248,25 @@ function BagCleanUp_OnEvent(self, event,...)
             local amount = 1     
             local dItemID = bulk
 
-            if string.find(..., "Pattern:") ~= nil then print("Item is a pattern") end   -- TODO, need to implement
-            if string.find(..., "Design:") ~= nil then print("Item is a design") end   -- TODO, need to implement
-            if string.find(bulk, "x(%d+)") ~= nil then 
+            if string.find(..., "Pattern:") ~= nil or string.find(..., "Design:") ~= nil or string.find(..., "Plan:") ~= nil then 
+                dItemID = tonumber(link:match("|Hitem:(%d+):"))
+            elseif string.find(bulk, "x(%d+)") ~= nil then 
                 dItemID, amount = string.match(bulk, "(.*)x(%d+)") 
             end
 
 			local _, dItemLink = GetItemInfo(dItemID);			
 			local name, dItemLink, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(dItemID);	
             if vendorPrice ~= nil and vendorPrice > 0 then         
-                BagCleanUpInstances.methods.AddLoot(dItemLink, tonumber(amount)) 
+                BagCleanUpMethods.AddLoot(dItemLink, tonumber(amount)) 
             end
 		end
     elseif event == "CHAT_MSG_MONEY" and...~= nill then
         if string.find(..., "You loot") or string.find(..., "Received") ~= nil then
             local amount1, currency1, amount2, currency2, amount3, currency3 = string.match(..., ".*(%d+) (%a+),?%s*(%d*)%s*(%a*),?%s*(%d*)%s*(%a*).?")
-            BagCleanUpInstances.methods.AddCurrency(tonumber(amount1), currency1)
+            BagCleanUpMethods.AddCurrency(tonumber(amount1), currency1)
                        
-            if amount2 ~= nil and amount2 ~= "" then BagCleanUpInstances.methods.AddCurrency(tonumber(amount2), currency2) end
-            if amount3 ~= nil and amount3 ~= "" then BagCleanUpInstances.methods.AddCurrency(tonumber(amount3), currency3) end
+            if amount2 ~= nil and amount2 ~= "" then BagCleanUpMethods.AddCurrency(tonumber(amount2), currency2) end
+            if amount3 ~= nil and amount3 ~= "" then BagCleanUpMethods.AddCurrency(tonumber(amount3), currency3) end
         end
 	elseif event == "MERCHANT_SHOW" then
 		BagCleanUp:Show()
@@ -432,7 +444,7 @@ end
 function CreateDropDownList()	
   if BagCleanUpInstances == nil then
     return
-  end	
+  end
 	local i = 1;          
 	for v, k in pairs (BagCleanUpInstances) do
 		if k ~= nil and type(k) ~= "number" and v ~= "methods" and v ~= "properties" then
@@ -448,6 +460,7 @@ function CreateDropDownList()
 end
 
 function DropDownMenuItemFunction(self, arg1, arg2, checked) 
+    if self.arg1 == nil then return end
     local zoneTable = BagCleanUpInstances[self.arg1];
     BagCleanUpVar.properties.zone = self.arg1
     BagCleanUp_UpdateZoneTable()
@@ -455,7 +468,6 @@ function DropDownMenuItemFunction(self, arg1, arg2, checked)
     print(" -- Gained in "..self.arg1.."--")
     local size = 0	
 	for item, itemTable in pairs(zoneTable) do
-        print("item:"..item)
         if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" then
             print(item.."x"..itemTable.count)
             size = size + 1
@@ -649,13 +661,15 @@ end
 -- Have a huge table of reagents to sort to filter through
 -- Need to implement filtering on "Pattern:" and Design
 -- Consider disenchanting if selected
+-- If all desired items are cleared out, need to remove table
+
 
 -- Changes
--- When any Colored checkbox is clicked/unclicked (on side tab 2 or 3) all bag slots are updated in alpha opacity. Only items that can potentially be sold will be highlighted. 
--- When Ilvl checkbox is clicked, all bag slots for that color change opacity if within range
+-- When items are looted prior to any currency has ever been included in that zone, the currency function would delete all loot gained and then methods (AddLoot and AddCurrency) would work correctly. A fix was made for this. 
+
 
 -- Problems
-
+-- When items are looted prior to any currency has ever been included in that zone, the currency function would delete all loot gained and then methods (AddLoot and AddCurrency) would work correctly. A fix was made for this. 
 
 -- Worth Mentioning:
 -- On rare occassion when looting Blizzard does not state that item has been looted the addon will not add item to zone table

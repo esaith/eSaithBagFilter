@@ -125,8 +125,8 @@
 	</PushedTexture>
 	<Scripts>
         <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
-		<OnClick function="BagClearUpButton_Click" />
-        <OnUpdate function="BagClearUpButton_OnUpdate" />
+		<OnClick function="BagCleanUpButton_Click" />
+        <OnUpdate function="BagCleanUpButton_OnUpdate" />
         <OnHide>BagCleanUpVar.properties.update = false</OnHide>	
 	</Scripts>
 </Button>
