@@ -126,7 +126,9 @@
         <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
 		<OnClick function="BagCleanUpSellButton_Click" />
         <OnUpdate function="BagCleanUpSellButton_OnUpdate" />
-        <OnHide>BagCleanUpVar.properties.update = false</OnHide>	
+        <OnHide>
+            BagCleanUpVar.properties.update = false
+        </OnHide>	
 	</Scripts>
 </Button>
 

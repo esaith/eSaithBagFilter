@@ -243,6 +243,7 @@ local function PrepareToShowSideTabs()
 	BagCleanUpZone:Hide();	
     BagCleanUpCheckButton_TradeGoods:Hide()
     _G["BagCleanUpDoNotSellFontString"]:Hide()
+    _G["BagCleanUpCancelButton"]:Hide()
 
     -- If coming from tab 3 and going to tab 2, make sure checkboxes realign
     local point, relativeTo, relativePoint, xOffset, yOffset = BagCleanUpCheckButtonGray:GetPoint("TOPLEFT")    
@@ -299,11 +300,11 @@ local function CreateCheckButtons()
 
     --Cancel button
     local cxBtn = CreateFrame("Button", "$parentCancelButton", BagCleanUp, "UIPanelButtonTemplate")
-    cxBtn:SetSize(50, 30);
+    cxBtn:SetSize(100, 30);
 	cxBtn:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -15, 15);
 	cxBtn:SetScript("OnClick", BagCleanUpCancelButton_Click)
     local cxFont = cxBtn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-    cxFont:SetText("|cffffffffReset")
+    cxFont:SetText("|cffffffffReset Addon")
 	cxFont:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
     cxFont:Show()
 	cxBtn:Show();
@@ -493,7 +494,7 @@ function BagCleanUpSellButton_Click(self, event,...)
                         if class == "Trade Goods" and BagCleanUpCheckButton_TradeGoods:GetChecked() then
                             print("Not selling "..link.." because trade goods is checked")
                         else          
-					        UseContainerItem(bag, slot)
+					        UseContainerItem(bag, slot)                          
                             zoneTable[link].found = true
                             if zoneTable[itemLink].count < 0 then zoneTable[itemLink].count = 0 end                            
                         end
@@ -504,15 +505,15 @@ function BagCleanUpSellButton_Click(self, event,...)
                         if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked 
 	                    and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
 	                    and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
-	                    	UseContainerItem(bag, slot)
+	                    	UseContainerItem(bag, slot)                          
 	                    end
 					end
                 elseif BagCleanUpVar.properties.LeftTab == 3 then                    
 					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then		
 						local color = BagCleanUpVar.properties.colors[quality + 1]	
 						if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked then							
-							UseContainerItem(bag, slot)
-						end						
+							UseContainerItem(bag, slot)                        
+						end
 					end
 				end				
 			end
@@ -522,14 +523,11 @@ end
 
 function BagCleanUpSellButton_OnUpdate(self, elapsed)
     self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
-    if BagCleanUpVar.properties.zone == nil then return end
-    if BagCleanUpVar.properties.update  and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval then  
+    if BagCleanUpVar.properties.update and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval + 1 then  
+        print("Selling")
         BagCleanUpSellButton_Click()
         UpdateZoneTable()
-        self.TimeSinceLastUpdate = 0          
-        if BagCleanUpInstances[BagCleanUpVar.properties.zone] == nil then
-            BagCleanUpVar.properties.update = false
-        end             
+        self.TimeSinceLastUpdate = 0       
     end
 end
 
@@ -633,6 +631,7 @@ function BagCleanUp_ShowILVLFilter(self, event)
 	_G["BagCleanUpBottomTabs"]:Show();
 	_G["BagCleanUpCheckButton"..color]:SetChecked(BagCleanUpVar[color].checked);
 	_G["BagCleanUpCheckButton"..color]:Show();
+    _G["BagCleanUpCancelButton"]:Show()
 	BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar[color].min)
 	BagCleanUpSliderMin:Show()
 	BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar[color].max)
