@@ -107,9 +107,9 @@ local function DimBagSlotZone()
 		for slot = 0, GetContainerNumSlots(bag) do      
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
 			if texture then         
-                alpha = .3
+                alpha = .2
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);					 
-                if zoneTable[link] ~= nil and zoneTable[link].count > 0 then
+                if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not lootable then
                    alpha = 1                     
                 end
                 
@@ -142,11 +142,11 @@ local function DimBagSlotiLVL()
 	        for slot = 0, GetContainerNumSlots(bag) do      
 	        	local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
 	        	if texture then   
-                    alpha = .3	
+                    alpha = .2	
                     local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
                     if vendorPrice > 0 and not locked and not lootable then -- Skip all items that cannot be sold to vendors        
 	                	local color = BagCleanUpVar.properties.colors[quality + 1]		
-                        if BagCleanUpVar[color].checked 
+                        if BagCleanUpVar[color].checked and not lootable 
 	                	and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
 	                	and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
 	                		alpha = 1
@@ -162,7 +162,7 @@ end
 local function DimBagSlotColor() 
     local count = 0
     for k, color in pairs(BagCleanUpVar.properties.colors) do
-        if BagCleanUpVar[color].checked then 
+        if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked then 
             count = count + 1
         end
     end
@@ -182,10 +182,12 @@ local function DimBagSlotColor()
 	    	for slot = 0, GetContainerNumSlots(bag) do      
 	    		local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
 	    		if texture then 
-                    alpha = .3  
+                    alpha = .2  
                     local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
-                    local color = BagCleanUpVar.properties.colors[quality + 1]                    
-                    if BagCleanUpVar[color].checked and vendorPrice > 0 then alpha = 1 end  
+                    local color = BagCleanUpVar.properties.colors[quality + 1] 
+                    if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked and vendorPrice > 0 and not lootable then 
+                        alpha = 1 
+                    end  
                     _G["ContainerFrame"..(bag + 1).."Item"..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
 	    		end
 	    	end	
@@ -198,7 +200,7 @@ local function UpdateMinAndMax(self, value)
 	local peak
 	if (parent:GetName() == "BagCleanUpSliderMin") then peak = "min" else peak = "max" end	
 	local color = BagCleanUpVar.properties.colors[BagCleanUpVar.properties.BottomTab]	
-	BagCleanUpVar[color][peak] = value;
+	if BagCleanUpVar[color] ~= nil then BagCleanUpVar[color][peak] = value end
     DimBagSlotiLVL()
 end
 
@@ -229,7 +231,7 @@ local function DropDownMenuItemFunction(self, arg1, arg2, checked)
 	end
 end
 
-function PrepareToShowSideTabs()
+local function PrepareToShowSideTabs()
     -- Hide Tab 1
     for index, color in pairs(BagCleanUpVar.properties.colors) do
 		_G["BagCleanUpCheckButton"..color]:Hide();
@@ -249,7 +251,7 @@ function PrepareToShowSideTabs()
     end
 end
 
-function CreateRarityObjects() 
+local function CreateRarityObjects() 
     BagCleanUpInstances = { }
       
     if BagCleanUpVar == nil  then
@@ -258,9 +260,10 @@ function CreateRarityObjects()
 		      LeftTab = 1,
 		      BottomTab = 1,
 		      zone = nil,
-		      colors = { "Gray", "White", "Green", "Blue", "Purple", "Gold" },
-		      selectedColor = "Gray",
-		      types = { "Junk", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Artifact/Heirloom", "Not a valid rarity"},
+              types = { "Poor", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Artifact", "Heirloom", "WoW Token"},
+		      colors = { "Gray", "White", "Green", "Blue", "Purple" --, "Orange", "Gold", "Gold", "Cyan"
+              },
+		      selectedColor = "Gray",		      
 		      texture = {0,0, .6,.6,.6, 1,1,1, 0,1,0, .2,.2,1, 1,0,1, .8,.8,0 },
               update = false,
               updateCount = 0,
@@ -281,9 +284,9 @@ function CreateRarityObjects()
     end
 end
 
-function CreateCheckButtons()
+local function CreateCheckButtons()
 	for index, color in ipairs(BagCleanUpVar.properties.colors) do
-		local btn = CreateFrame("CheckButton", "BagCleanUpCheckButton"..color, BagCleanUp, "UICheckButtonTemplate")
+		local btn = CreateFrame("CheckButton", "$parentCheckButton"..color, BagCleanUp, "UICheckButtonTemplate")
 		btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -30);
 		btn:SetScript("OnClick", BagCleanUpCheckBox_Click)
 		local fontstring = btn:CreateFontString("BagCleanUpCheckBtn"..color.."FontString", "ARTWORK", "GameFontNormal")
@@ -293,6 +296,17 @@ function CreateCheckButtons()
 		btn:SetFontString(fontstring)
 		btn:Hide();
 	end
+
+    --Cancel button
+    local cxBtn = CreateFrame("Button", "$parentCancelButton", BagCleanUp, "UIPanelButtonTemplate")
+    cxBtn:SetSize(50, 30);
+	cxBtn:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -15, 15);
+	cxBtn:SetScript("OnClick", BagCleanUpCancelButton_Click)
+    local cxFont = cxBtn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+    cxFont:SetText("|cffffffffReset")
+	cxFont:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+    cxFont:Show()
+	cxBtn:Show();
 
 	local fontstring = BagCleanUp:CreateFontString("$parentDoNotSellFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cffff0000Do Not Sell:")
@@ -342,6 +356,14 @@ function BagCleanUp_OnHide()
 end
 
 function BagCleanUp_OnShow()
+    if BagCleanUpVar.properties.LeftTab == 1 then
+        DimBagSlotZone()
+    elseif BagCleanUpVar.properties.LeftTab == 2 then
+        DimBagSlotiLVL()
+    elseif BagCleanUpVar.properties.LeftTab == 3 then
+        DimBagSlotColor()
+    end
+
     for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do 
             BagCleanUpContainerHook_OnLeave(_G["ContainerFrame"..(bag + 1).."Item"..slot])            
@@ -456,7 +478,7 @@ function BagCleanUpContainerHook_OnUpdate(self, elapsed)
 end
 
 
-function BagCleanUpButton_Click(self, event,...)  
+function BagCleanUpSellButton_Click(self, event,...)  
     BagCleanUpVar.properties.update = true  
     for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do      
@@ -479,7 +501,7 @@ function BagCleanUpButton_Click(self, event,...)
 				elseif BagCleanUpVar.properties.LeftTab == 2 then	 
 					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then							
 						local color = BagCleanUpVar.properties.colors[quality + 1]		
-                        if BagCleanUpVar[color].checked 
+                        if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked 
 	                    and PassMin(ilvl, BagCleanUpVar[color].min, BagCleanUpVar[color].minChecked)
 	                    and PassMax(ilvl, BagCleanUpVar[color].max, BagCleanUpVar[color].maxChecked) then
 	                    	UseContainerItem(bag, slot)
@@ -488,7 +510,7 @@ function BagCleanUpButton_Click(self, event,...)
                 elseif BagCleanUpVar.properties.LeftTab == 3 then                    
 					if vendorPrice > 0 and not locked and not lootable and (personalItem == nil or personalItem == false) then		
 						local color = BagCleanUpVar.properties.colors[quality + 1]	
-						if BagCleanUpVar[color].checked then							
+						if BagCleanUpVar[color] ~= nil and BagCleanUpVar[color].checked then							
 							UseContainerItem(bag, slot)
 						end						
 					end
@@ -498,11 +520,11 @@ function BagCleanUpButton_Click(self, event,...)
 	end	
 end
 
-function BagCleanUpButton_OnUpdate(self, elapsed)
+function BagCleanUpSellButton_OnUpdate(self, elapsed)
     self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
     if BagCleanUpVar.properties.zone == nil then return end
     if BagCleanUpVar.properties.update  and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval then  
-        BagCleanUpButton_Click()
+        BagCleanUpSellButton_Click()
         UpdateZoneTable()
         self.TimeSinceLastUpdate = 0          
         if BagCleanUpInstances[BagCleanUpVar.properties.zone] == nil then
@@ -511,10 +533,11 @@ function BagCleanUpButton_OnUpdate(self, elapsed)
     end
 end
 
-function BagCleanUpButton_OnHide(self, event,...)
-    BagCleanUpVar.properties.update = false   
+function BagCleanUpCancelButton_Click(self, event)
+    BagCleanUpVar = nil
+    BagCleanUpInstances = nil
+    ReloadUI()
 end
-
 
 function BagCleanUpBottomTabs_OnLoad(self, event,...)
 	PanelTemplates_SetNumTabs(self, 5);
@@ -566,9 +589,10 @@ end
 
 
 function BagCleanUpCheckBox_Click(self, button, down)
-
     local color = string.match(self:GetName(), "BagCleanUpCheckButton(.*)")
-    BagCleanUpVar[color].checked = self:GetChecked();
+    if BagCleanUpVar[color] ~= nil then
+        BagCleanUpVar[color].checked = self:GetChecked();
+    end
     DimBagSlotColor()
 end
 
@@ -624,7 +648,7 @@ function BagCleanUp_ShowRarityFilter(self, event)
     local offset = yOffset
     
     for index, color in pairs(BagCleanUpVar.properties.colors) do      
-        if color ~= "Gold" then  
+        if BagCleanUpVar[color] ~= nil then              
             _G["BagCleanUpCheckButton"..color]:SetPoint(point, relativeTo, relativePoint, xOffset, offset);
             _G["BagCleanUpCheckButton"..color]:SetChecked(BagCleanUpVar[color].checked)
             _G["BagCleanUpCheckButton"..color]:Show()
@@ -654,17 +678,9 @@ function BagCleanUp_CreateDropDownList()
 end
 
 function SlashCmdList.BAGCLEANUP(msg, editbox)
-
 	if BagCleanUp:IsShown() then
 		BagCleanUp:Hide();
-	else
-        if BagCleanUpVar.properties.LeftTab == 1 then
-            DimBagSlotZone()
-        elseif BagCleanUpVar.properties.LeftTab == 2 then
-            DimBagSlotiLVL()
-        elseif BagCleanUpVar.properties.LeftTab == 3 then
-            DimBagSlotColor()
-        end
+	else    
 		BagCleanUp:Show();            
 	end
 end
@@ -673,22 +689,15 @@ end
 -- reset/cancel button for ilvl
 -- Add gold looted, add gold from selling
 -- Long term stats of each raid
--- Add additional filter list - Allow Right Click/Shift Click - Have icon that is added to icon when editable mode
 
--- Encircle/gold items that have chosen to be on the goldlist - keep list
 -- List potential mounts that drop in instance/zone/raid
 -- Have a huge table of reagents to sort to filter through
--- Need to implement filtering on "Pattern:" and Design
 -- Consider disenchanting if selected
--- If all desired items are cleared out, need to remove table
-
+-- Change labeling from "Colors" to 'Types'
 
 -- Changes
--- When items are looted prior to any currency has ever been included in that zone, the currency function would delete all loot gained and then methods (AddLoot and AddCurrency) would work correctly. A fix was made for this. 
-
 
 -- Problems
--- When items are looted prior to any currency has ever been included in that zone, the currency function would delete all loot gained and then methods (AddLoot and AddCurrency) would work correctly. A fix was made for this. 
 
 -- Worth Mentioning:
 -- On rare occassion when looting Blizzard does not state that item has been looted the addon will not add item to zone table
