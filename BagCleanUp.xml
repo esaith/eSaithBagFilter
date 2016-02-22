@@ -1,7 +1,7 @@
 ﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" 
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
                    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ 
-                   ..\..\FrameXML\UI.xsd">				   
+                   ..\..\FrameXML\UI.xsd">   
 <Script File="BagCleanUp.lua"/>
 <Frame name="BagCleanUpSliderTemplate" virtual="true">	
 	<Size x="300" y="50" />		
@@ -52,7 +52,7 @@
 					</Layer>
 			</Layers>
 			<Scripts>
-				<OnLoad function="BagCleanUp_SliderOnLoad" />
+				<OnLoad function="BagCleanUpSlider_OnLoad" />
 				<OnValueChanged function="BagCleanUpSlider_SliderValueChanged" />
 			</Scripts>
 		</Slider>
@@ -132,9 +132,9 @@
 </Button>
 
 <Frame name="$parentSideTabs" parent="BagCleanUp">
-	<Size x="60" y="200" />
+	<Size x="60" y="180" />
 	<Anchors>
-		<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPLEFT" x="10" y="1"/>
+		<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPLEFT" x="10" y="-1"/>
 	</Anchors>
 	<Frames>
 		<Button name="$parentZone" inherits="ItemButtonTemplate" id="1" text="Zone">
@@ -152,7 +152,7 @@
 				</Layer>
 			</Layers>
 			<Scripts>
-				<OnClick function="ShowZoneFilter" />
+				<OnClick function="BagCleanUp_ShowZoneFilter" />
 			</Scripts>
 		</Button>
 		<Button name="$parentiLvl" inherits="ItemButtonTemplate" id="2" text="iLvl">
@@ -170,7 +170,7 @@
 				</Layer>
 			</Layers>
 			<Scripts>
-				<OnClick function="ShowILVLFilter"/>
+				<OnClick function="BagCleanUp_ShowILVLFilter"/>
 			</Scripts>
 		</Button>
         <Button name="$parentRarity" inherits="ItemButtonTemplate" id="3" text="Rarity">
@@ -188,7 +188,7 @@
                 </Layer>
             </Layers>
             <Scripts>
-                <OnClick function="ShowRarityFilter"/>
+                <OnClick function="BagCleanUp_ShowRarityFilter"/>
             </Scripts>
         </Button>
 	</Frames>
@@ -264,12 +264,13 @@
  <Button name="$parentZone" parent="BagCleanUp" inherits="UIDropDownMenuTemplate" hidden="false">
 	<Size x="150" y="50" />
 	<Anchors>
-		<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="-20" y="-30"/>
+		<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="-10" y="-35"/>
 	</Anchors>		
 	<Scripts>
 		<OnLoad>
-		UIDropDownMenu_Initialize(self, CreateDropDownList);
-		</OnLoad>
+            UIDropDownMenu_Initialize(self, BagCleanUp_CreateDropDownList);
+            UIDropDownMenu_SetWidth(self, 175);
+        </OnLoad>
 	</Scripts>
  <Anchors>
 	<Anchor point="CENTER"/>
