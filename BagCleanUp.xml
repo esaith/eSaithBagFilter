@@ -194,7 +194,7 @@
         </Button>
         <Button name="$parentCharacterInfo" inherits="ItemButtonTemplate" id="3" text="Character Info">
             <Anchors>
-                <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentRarity" />
+                <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentRarity" y="0"/>
             </Anchors>
             <Layers>
                 <Layer level="OVERLAY" setAllPoints="true">

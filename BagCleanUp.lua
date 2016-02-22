@@ -284,6 +284,7 @@ local function CreateRarityObjects()
               updateCount = 0,
               itemUpdateCount = 0,
               updateInterval = 1.0,
+              maxTime = 0,
               personalItems = { }
             }
         }
@@ -391,7 +392,6 @@ function BagCleanUp_OnEvent(self, event,...)
 	if event == "ADDON_LOADED" and...== "BagCleanUp" then
 	    self:UnregisterEvent("ADDON_LOADED")	
         BagCleanUpVar = BagCleanUpVar or nil
-        if BagCleanUpInstances == nil then print("Creatin a new BagCleanUpInstances") else printTable(BagCleanUpInstances) end
         BagCleanUpInstances = BagCleanUpInstances or { }
 		CreateRarityObjects()
         --printTable(BagCleanUpInstanceLoot)
@@ -547,8 +547,16 @@ function BagCleanUpSellButton_OnUpdate(self, elapsed)
     if BagCleanUpVar.properties.update and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval + 1 then  
         BagCleanUpSellButton_Click()
         UpdateZoneTable()
-        self.TimeSinceLastUpdate = 0       
+        self.TimeSinceLastUpdate = 0 
+        
+        if BagCleanUpVar.properties.maxTime == nil then BagCleanUpVar.properties.maxTime = 0 end
+        BagCleanUpVar.properties.maxTime = BagCleanUpVar.properties.maxTime + self.TimeSinceLastUpdate
+        if BagCleanUpVar.properties.maxTime > 20 then
+            BagCleanUpVar.properties.maxTime = 0
+            BagCleanUpVar.properties.update = false
+        end
     end
+    
 end
 
 function BagCleanUpResetButton_Click(self, event)
@@ -695,7 +703,7 @@ local function GetPlayerInfo()
     local realmName = GetRealmName() 
 
     for zone, player in pairs(BagCleanUpInstances) do
-        
+        if count > 24 then break end
         local text = "|cffffff00"..zone
         
         for k, v in pairs(player) do
@@ -736,8 +744,6 @@ end
 function BagCleanUp_ParseRaidInfo()
     local playerLevel  = UnitLevel("player")
     if BagCleanUpVar.properties.LeftTab ~= 4 or not BagCleanUp:IsShown() or playerLevel < 70 then return end
-    print("BagCleanUp_ParseRaidInfo called")
-
 
     local difficulty = {
         "5 Player Normal ",
@@ -765,15 +771,10 @@ function BagCleanUp_ParseRaidInfo()
         end
 
         local zone = difficulty[instanceDifficulty]..instanceName
-        print("Zone: "..zone)
-        print("key: "..key)
-
         local instance = BagCleanUpInstances[zone][key]
-        if instance == nil then instance = { } end
+        if instance == nil then instance = { time = 0 } end
         if instanceReset > 0 then
-           instance.time = time() + instanceReset
-        else
-            instance.time = 0
+           instance.time = time() + instanceReset      
         end  
 
         BagCleanUpInstances[zone][key] = instance
