@@ -1,6 +1,6 @@
 ﻿## Interface: 60200
 ## Title: BagCleanUp
-## Version: 1.0 
+## Version: 1.10
 ## Notes: Clean up bags per rarity and iLvl
 ## Author: eSaith
 ## SavedVariables: BagCleanUpInstances
@@ -8,3 +8,10 @@
 
 BagCleanUp.lua
 BagCleanUp.xml
+
+
+--1.1 Added tab #4, Player/Character Info. Reset Addon Button. View instance resets for all characters
+
+--1.0 
+-- Initial Version 3 tabs (Zone, iLVL, Rarity). Allows mass auto-sell. 
+-- "Keep item" when addon is visible. ALT + Click item, blue haze adds item to auto-sellable list. Alt + Click again to unlink it

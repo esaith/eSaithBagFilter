@@ -3,6 +3,7 @@
 local function printTable(tb, spacing)
     if spacing == nil then spacing = "" end
     print(spacing.."Entering table")
+    if tb == nil then print("Table is nil") return end
     for k, v in pairs(tb) do
         print(spacing.."K: "..k..", v: "..tostring(v))
         if type(v) == "table" then
@@ -85,7 +86,7 @@ end
     -- Whatever wasn't found in the bags is now garbage in the table. Take out the trash!
     local count = 0
     for item, itemTable in pairs(zoneTable) do
-        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" then
+        if itemTable ~= nil and type(itemTable) ~= "number" then
             if itemTable.found == false then 
                 zoneTable[item] = nil 
             else
@@ -211,7 +212,7 @@ local function ZoneItemFunction(self, arg1, arg2, checked)
     print(" -- Gained in "..self.arg1.."--")
     local size = 0	
 	for item, itemTable in pairs(zoneTable) do
-        if itemTable ~= nil and type(itemTable) ~= "number" and item ~= "methods" and item ~= "properties" then
+        if itemTable ~= nil and type(itemTable) ~= "number" then
             print(item.."x"..itemTable.count)
             size = size + 1
         end    
@@ -285,7 +286,8 @@ local function CreateRarityObjects()
               itemUpdateCount = 0,
               updateInterval = 1.0,
               maxTime = 0,
-              personalItems = { }
+              personalItems = { },
+              addonVersion = 0
             }
         }
         for index, color in pairs(BagCleanUpVar.properties.colors) do
@@ -390,11 +392,12 @@ end
 
 function BagCleanUp_OnEvent(self, event,...) 
 	if event == "ADDON_LOADED" and...== "BagCleanUp" then
-	    self:UnregisterEvent("ADDON_LOADED")	
-        BagCleanUpVar = BagCleanUpVar or nil
+	    self:UnregisterEvent("ADDON_LOADED")
+        local version = GetAddOnMetadata("BagCleanUp", "Version")
+        BagCleanUpVar = BagCleanUpVar or nil 
+        --printTable(BagCleanUpInstances)
         BagCleanUpInstances = BagCleanUpInstances or { }
-		CreateRarityObjects()
-        --printTable(BagCleanUpInstanceLoot)
+		CreateRarityObjects()        
 		CreateCheckButtons();	
 		CreateSliders();	
 		BagCleanUp_ShowFilterZone()	
@@ -702,48 +705,48 @@ local function GetPlayerInfo()
     local count = 1
     local realmName = GetRealmName() 
 
-    for zone, player in pairs(BagCleanUpInstances) do
-        if count > 24 then break end
-        local text = "|cffffff00"..zone
-        
-        for k, v in pairs(player) do
-            if k:find(realmName) then
-                k = k:match("(.*) %- ")
+    for zone, players in pairs(BagCleanUpInstances) do
+        if zone ~= "players" then
+            if count > 24 then break end
+            local text = "|cffffff00"..zone
+            for k, player in ipairs(BagCleanUpInstances.players) do
+                local name = player
+                if player:find(realmName) then name = player:match("(.*) %- ") end
+
+                if players[player] ~= nil and players[player].time > t then 
+                    text = text.."\n|cffff2222"..name.." - In Progress/Complete"
+                else
+                    text = text.."\n|cffffffff"..name.." - Fresh"
+                end            
+            end
+            local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
+            if fontstring == nil then
+                fontstring = BagCleanUp:CreateFontString("$parentInstanceInfoFontString"..count, "ARTWORK", "GameFontNormal")
+                if count == 1 then
+                    fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 60, -60)
+                elseif count > NumPerRow then
+                    fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -60)
+                else
+                    fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 60, 0)                
+                end 
             end
 
-            if v.time < t then  
-                 text = text.."\n|cffffffff"..k.." - Fresh"
-            else
-                text = text.."\n|cffff2222"..k.." - In Progress/Complete"
-            end            
+            fontstring:SetText(text)
+            fontstring:Show()
+            count = count + 1
         end
-        local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
-        if fontstring == nil then
-            fontstring = BagCleanUp:CreateFontString("$parentInstanceInfoFontString"..count, "ARTWORK", "GameFontNormal")
-            if count == 1 then
-                fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 80, -60)
-            elseif count > NumPerRow then
-                fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -60)
-            else
-                fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 80, 0)                
-            end 
-        end
-
-        fontstring:SetText(text)
-        fontstring:Show()
-        count = count + 1
     end
     
     if count < NumPerRow then
-        BagCleanUp:SetSize(325 * count , 350)
+        BagCleanUp:SetSize(280 * count , 350)
     else
-        BagCleanUp:SetSize(350 * NumPerRow , 125 * (count / NumPerRow) )   
+        BagCleanUp:SetSize(325 * NumPerRow , 175 * (count / NumPerRow) )   
     end
 end
 
 function BagCleanUp_ParseRaidInfo()
-    local playerLevel  = UnitLevel("player")
-    if BagCleanUpVar.properties.LeftTab ~= 4 or not BagCleanUp:IsShown() or playerLevel < 70 then return end
+    local playerLevel  = UnitLevel("player")    
+    if playerLevel < 70 then return end
 
     local difficulty = {
         "5 Player Normal ",
@@ -762,22 +765,31 @@ function BagCleanUp_ParseRaidInfo()
     local realmName = GetRealmName()  
     local key = playerName.." - "..realmName
 
+    if BagCleanUpInstances.players == nil then BagCleanUpInstances.players = {} end
+    local found = false
+    for j, k in pairs(BagCleanUpInstances.players) do
+        if k == key then
+            found = true
+        end
+    end
+    
+    if not found then table.insert(BagCleanUpInstances.players, key) end
+
     for i = 1, num do
         local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, maxBosses, defeatedBosses = GetSavedInstanceInfo(i)
 
         if BagCleanUpInstances == nil then BagCleanUpInstances = {} end
-        if BagCleanUpInstances[difficulty[instanceDifficulty]..instanceName] == nil and instanceDifficulty > 1 then            
-            BagCleanUpInstances[difficulty[instanceDifficulty]..instanceName] = { }        
+        if BagCleanUpInstances[instanceName] == nil and instanceDifficulty > 1 then            
+            BagCleanUpInstances[instanceName] = { }        
         end
 
-        local zone = difficulty[instanceDifficulty]..instanceName
-        local instance = BagCleanUpInstances[zone][key]
+        local instance = BagCleanUpInstances[instanceName][key]
         if instance == nil then instance = { time = 0 } end
         if instanceReset > 0 then
            instance.time = time() + instanceReset      
         end  
 
-        BagCleanUpInstances[zone][key] = instance
+        BagCleanUpInstances[instanceName][key] = instance
     end
     GetPlayerInfo()
 end
@@ -818,7 +830,7 @@ local function CreateZoneDropDownList()
 
     local i = 1;          
     for v, k in pairs (BagCleanUpInstanceLoot) do
-    	if k ~= nil and type(k) ~= "number" and v ~= "methods" and v ~= "properties" then
+    	if k ~= nil and type(k) ~= "number" then
     		info = UIDropDownMenu_CreateInfo();
     		info.text = tostring(v)
     		info.arg1 = tostring(v)
@@ -859,5 +871,8 @@ end
 -- Change labeling from "Colors" to 'Types'
 
 -- Changes
+-- Now allows all lvls to view the raid instance reset, not just those at lvl 70 and above
+-- Removed the different difficulty levels. Easier to read which characters did which Instance
 
 -- Problems
+-- Currently the user needs to reload the UI to see updates in the Player Info tab
