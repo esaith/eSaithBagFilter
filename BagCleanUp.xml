@@ -153,7 +153,7 @@
 				</Layer>
 			</Layers>
 			<Scripts>
-				<OnClick function="BagCleanUp_ShowZoneFilter" />
+				<OnClick function="BagCleanUp_ShowFilterZone" />
 			</Scripts>
 		</Button>
 		<Button name="$parentiLvl" inherits="ItemButtonTemplate" id="2" text="iLvl">
@@ -171,7 +171,7 @@
 				</Layer>
 			</Layers>
 			<Scripts>
-				<OnClick function="BagCleanUp_ShowILVLFilter"/>
+				<OnClick function="BagCleanUp_ShowFilteriLVL"/>
 			</Scripts>
 		</Button>
         <Button name="$parentRarity" inherits="ItemButtonTemplate" id="3" text="Rarity">
@@ -189,7 +189,25 @@
                 </Layer>
             </Layers>
             <Scripts>
-                <OnClick function="BagCleanUp_ShowRarityFilter"/>
+                <OnClick function="BagCleanUp_ShowFilterRarity"/>
+            </Scripts>
+        </Button>
+        <Button name="$parentCharacterInfo" inherits="ItemButtonTemplate" id="3" text="Character Info">
+            <Anchors>
+                <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentRarity" />
+            </Anchors>
+            <Layers>
+                <Layer level="OVERLAY" setAllPoints="true">
+                    <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MICROBUTTON-MAINMENU-UP" >
+                        <Size x="40" y="60"/>
+                        <Anchors>
+                            <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
+                        </Anchors>
+                    </Texture>
+                </Layer>
+            </Layers>
+            <Scripts>
+                <OnClick function="BagCleanUp_ShowCharacterInfo"/>
             </Scripts>
         </Button>
 	</Frames>
@@ -262,7 +280,7 @@
 	</Scripts>
 </Frame>		
  
- <Button name="$parentZone" parent="BagCleanUp" inherits="UIDropDownMenuTemplate" hidden="false">
+ <Button name="$parentDropDown" parent="BagCleanUp" inherits="UIDropDownMenuTemplate" hidden="false">
 	<Size x="150" y="50" />
 	<Anchors>
 		<Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="-10" y="-35"/>

@@ -14,10 +14,10 @@ end
 
 local function AddLoot(obj, count) 
      local zone = GetRealZoneText()         
-     if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
-     if BagCleanUpInstances[zone][obj] == nil then  BagCleanUpInstances[zone][obj] = { count = 0, found = false } end
+     if BagCleanUpInstanceLoot[zone] == nil then BagCleanUpInstanceLoot[zone] = { } end
+     if BagCleanUpInstanceLoot[zone][obj] == nil then  BagCleanUpInstanceLoot[zone][obj] = { count = 0, found = false } end
      
-     BagCleanUpInstances[zone][obj].count = BagCleanUpInstances[zone][obj].count + count  
+     BagCleanUpInstanceLoot[zone][obj].count = BagCleanUpInstanceLoot[zone][obj].count + count  
  end
 
  local function GetRarity(ilvl) 
@@ -26,22 +26,22 @@ end
 
 --local function AddCurrency(amount, currency)
 --    local zone = GetRealZoneText()
---    if BagCleanUpInstances[zone] == nil then BagCleanUpInstances[zone] = { } end
---    if BagCleanUpInstances[zone].Gold == nil then 
---        BagCleanUpInstances[zone].Gold = 0
---        BagCleanUpInstances[zone].Copper = 0
---        BagCleanUpInstances[zone].Silver = 0                
+--    if BagCleanUpInstanceLoot[zone] == nil then BagCleanUpInstanceLoot[zone] = { } end
+--    if BagCleanUpInstanceLoot[zone].Gold == nil then 
+--        BagCleanUpInstanceLoot[zone].Gold = 0
+--        BagCleanUpInstanceLoot[zone].Copper = 0
+--        BagCleanUpInstanceLoot[zone].Silver = 0                
 --    end
 --
---    BagCleanUpInstances[zone][currency] = BagCleanUpInstances[zone][currency] + amount;
---    if BagCleanUpInstances[zone]["Copper"] >= 100 then
---        BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] + 1
---        BagCleanUpInstances[zone]["Copper"] = BagCleanUpInstances[zone]["Copper"] - 100
+--    BagCleanUpInstanceLoot[zone][currency] = BagCleanUpInstanceLoot[zone][currency] + amount;
+--    if BagCleanUpInstanceLoot[zone]["Copper"] >= 100 then
+--        BagCleanUpInstanceLoot[zone]["Silver"] = BagCleanUpInstanceLoot[zone]["Silver"] + 1
+--        BagCleanUpInstanceLoot[zone]["Copper"] = BagCleanUpInstanceLoot[zone]["Copper"] - 100
 --    end
 --        
---    if BagCleanUpInstances[zone]["Silver"] >= 100 then
---        BagCleanUpInstances[zone]["Gold"] = BagCleanUpInstances[zone]["Gold"] + 1
---        BagCleanUpInstances[zone]["Silver"] = BagCleanUpInstances[zone]["Silver"] - 100
+--    if BagCleanUpInstanceLoot[zone]["Silver"] >= 100 then
+--        BagCleanUpInstanceLoot[zone]["Gold"] = BagCleanUpInstanceLoot[zone]["Gold"] + 1
+--        BagCleanUpInstanceLoot[zone]["Silver"] = BagCleanUpInstanceLoot[zone]["Silver"] - 100
 --    end
 --end
 
@@ -63,7 +63,7 @@ end
 
  local function UpdateZoneTable()
     if BagCleanUpVar.properties.zone == nil then return end
-    local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];
+    local zoneTable = BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone];
     if zoneTable == nil then return end
 
     for item, itemTable in pairs(zoneTable) do
@@ -94,14 +94,14 @@ end
         end
     end
 
-    if count <= 0 then BagCleanUpInstances[BagCleanUpVar.properties.zone] = nil end
+    if count <= 0 then BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone] = nil end
 end
 
 local function DimBagSlotZone()
-    if BagCleanUpVar.properties.zone == nil or BagCleanUpInstances[BagCleanUpVar.properties.zone] == nil then return end
+    if BagCleanUpVar.properties.zone == nil or BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone] == nil then return end
 
     local alpha
-    local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];
+    local zoneTable = BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone];
 
     for bag = 0, NUM_BAG_SLOTS do
 		for slot = 0, GetContainerNumSlots(bag) do      
@@ -203,9 +203,9 @@ local function UpdateMinAndMax(self, value)
     DimBagSlotiLVL()
 end
 
-local function DropDownMenuItemFunction(self, arg1, arg2, checked) 
+local function ZoneItemFunction(self, arg1, arg2, checked) 
     BagCleanUpVar.properties.zone = self.arg1
-    local zoneTable = BagCleanUpInstances[self.arg1];
+    local zoneTable = BagCleanUpInstanceLoot[self.arg1];
     UpdateZoneTable()
 
     print(" -- Gained in "..self.arg1.."--")
@@ -232,29 +232,43 @@ end
 
 local function PrepareToShowSideTabs()
     BagCleanUpVar.properties.update = false
-    -- Hide Tab 1
+    -- Hide Zone tab
     for index, color in pairs(BagCleanUpVar.properties.colors) do
 		_G["BagCleanUpCheckButton"..color]:Hide();
 	end
     BagCleanUpBottomTabs:Hide();
 	BagCleanUpSliderMin:Hide()
 	BagCleanUpSliderMax:Hide()
-    -- Hide Tab 2 and 3
-	BagCleanUpZone:Hide();	
+
+    -- Hide Tab iLvl and Rarity tabs
+	BagCleanUpDropDown:Hide();	
     BagCleanUpCheckButton_TradeGoods:Hide()
     _G["BagCleanUpDoNotSellFontString"]:Hide()
-    _G["BagCleanUpCancelButton"]:Hide()
+    _G["BagCleanUpResetButton"]:Hide()
 
     -- If coming from tab 3 and going to tab 2, make sure checkboxes realign
     local point, relativeTo, relativePoint, xOffset, yOffset = BagCleanUpCheckButtonGray:GetPoint("TOPLEFT")    
     for index, color in pairs(BagCleanUpVar.properties.colors) do        
         _G["BagCleanUpCheckButton"..color]:SetPoint(point, relativeTo, relativePoint, xOffset, yOffset);
     end
+
+    -- Hide Info tab
+    BagCleanUp:SetSize(325, 350)
+    local count = 1
+    if BagCleanUpInstances ~= nil then 
+        for k, v in pairs(BagCleanUpInstances) do
+            if _G["BagCleanUpInstanceInfoFontString"..count] ~= nil then
+                _G["BagCleanUpInstanceInfoFontString"..count]:Hide()
+                count = count + 1
+            end
+        end
+    end
+
 end
 
 local function CreateRarityObjects() 
-    BagCleanUpInstances = { }
-      
+    BagCleanUpInstanceLoot = BagCleanUpInstanceLoot or { }
+
     if BagCleanUpVar == nil  then
 		  BagCleanUpVar = { 		    
 		    properties = {
@@ -298,11 +312,11 @@ local function CreateCheckButtons()
 		btn:Hide();
 	end
 
-    --Cancel button
-    local cxBtn = CreateFrame("Button", "$parentCancelButton", BagCleanUp, "UIPanelButtonTemplate")
+    --Reset button
+    local cxBtn = CreateFrame("Button", "$parentResetButton", BagCleanUp, "UIPanelButtonTemplate")
     cxBtn:SetSize(100, 30);
 	cxBtn:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -15, 15);
-	cxBtn:SetScript("OnClick", BagCleanUpCancelButton_Click)
+	cxBtn:SetScript("OnClick", BagCleanUpResetButton_Click)
     local cxFont = cxBtn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
     cxFont:SetText("|cffffffffReset Addon")
 	cxFont:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
@@ -345,6 +359,7 @@ function BagCleanUp_OnLoad(self, event,...)
 	self:RegisterEvent("MERCHANT_CLOSED")
     self:RegisterEvent("BAG_UPDATE")	
     self:RegisterEvent("MODIFIER_STATE_CHANGED")
+    self:RegisterEvent("UPDATE_INSTANCE_INFO")
 end
 
 function BagCleanUp_OnHide()
@@ -376,11 +391,13 @@ function BagCleanUp_OnEvent(self, event,...)
 	if event == "ADDON_LOADED" and...== "BagCleanUp" then
 	    self:UnregisterEvent("ADDON_LOADED")	
         BagCleanUpVar = BagCleanUpVar or nil
+        if BagCleanUpInstances == nil then print("Creatin a new BagCleanUpInstances") else printTable(BagCleanUpInstances) end
+        BagCleanUpInstances = BagCleanUpInstances or { }
 		CreateRarityObjects()
-        --printTable(BagCleanUpInstances)
+        --printTable(BagCleanUpInstanceLoot)
 		CreateCheckButtons();	
 		CreateSliders();	
-		BagCleanUp_ShowZoneFilter()	
+		BagCleanUp_ShowFilterZone()	
 		tinsert(UISpecialFrames, BagCleanUp:GetName())	
         for bag = 0, NUM_BAG_SLOTS do
 		    for slot = 1, GetContainerNumSlots(bag) do 
@@ -426,7 +443,11 @@ function BagCleanUp_OnEvent(self, event,...)
 		BagCleanUpButton:Show();
 	elseif event == "MERCHANT_CLOSED" then
 		BagCleanUpButton:Hide();
-	end	
+    elseif event == "UPDATE_INSTANCE_INFO" then
+        if BagCleanUp:IsShown() then 
+            BagCleanUp_ParseRaidInfo()
+        end
+    end	
 end
 
 
@@ -488,8 +509,8 @@ function BagCleanUpSellButton_Click(self, event,...)
 				local itemNumber = tonumber(link:match("|Hitem:(%d+):"))
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);
                 local personalItem = BagCleanUpVar.properties.personalItems[link]
-				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstances[BagCleanUpVar.properties.zone] ~= nil then	  
-					local zoneTable = BagCleanUpInstances[BagCleanUpVar.properties.zone];	 
+				if BagCleanUpVar.properties.LeftTab == 1 and BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone] ~= nil then	  
+					local zoneTable = BagCleanUpInstanceLoot[BagCleanUpVar.properties.zone];	 
                     if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not locked and (BagCleanUpVar.properties.personalItems[link] == nil or BagCleanUpVar.properties.personalItems[link] == false) then                            
                         if class == "Trade Goods" and BagCleanUpCheckButton_TradeGoods:GetChecked() then
                             print("Not selling "..link.." because trade goods is checked")
@@ -530,8 +551,9 @@ function BagCleanUpSellButton_OnUpdate(self, elapsed)
     end
 end
 
-function BagCleanUpCancelButton_Click(self, event)
+function BagCleanUpResetButton_Click(self, event)
     BagCleanUpVar = nil
+    BagCleanUpInstanceLoot = nil
     BagCleanUpInstances = nil
     ReloadUI()
 end
@@ -544,7 +566,7 @@ end
 function BagCleanUpBottomTabs_OnShow(self, event,...)	
 	PanelTemplates_SetTab(BagCleanUpBottomTabs, BagCleanUpVar.properties.BottomTab);    
 end
-
+ 
 
 function BagCleanUpSlider_OnLoad(self, event,...)
 	local minSize, maxSize = self:GetMinMaxValues();
@@ -609,18 +631,18 @@ function BagCleanUpBottomTab_Click(self, event,...)
 	end	
 end
 
-function BagCleanUp_ShowZoneFilter(self, event)
+function BagCleanUp_ShowFilterZone(self, event)
     PrepareToShowSideTabs()
 
 	BagCleanUpVar.properties.LeftTab = 1
     DimBagSlotZone()	
-	BagCleanUpZone:Show();	
+	BagCleanUpDropDown:Show();	
     BagCleanUpCheckButton_TradeGoods:Show()
     _G["BagCleanUpDoNotSellFontString"]:Show()
 
 end
 
-function BagCleanUp_ShowILVLFilter(self, event)    
+function BagCleanUp_ShowFilteriLVL(self, event)    
     PrepareToShowSideTabs()
 
     BagCleanUpVar.properties.LeftTab = 2
@@ -629,8 +651,7 @@ function BagCleanUp_ShowILVLFilter(self, event)
 	local color = BagCleanUpVar.properties.colors[BagCleanUpVar.properties.BottomTab]
 	_G["BagCleanUpBottomTabs"]:Show();
 	_G["BagCleanUpCheckButton"..color]:SetChecked(BagCleanUpVar[color].checked);
-	_G["BagCleanUpCheckButton"..color]:Show();
-    _G["BagCleanUpCancelButton"]:Show()
+	_G["BagCleanUpCheckButton"..color]:Show();    
 	BagCleanUpSliderMinSlider:SetValue(BagCleanUpVar[color].min)
 	BagCleanUpSliderMin:Show()
 	BagCleanUpSliderMaxSlider:SetValue(BagCleanUpVar[color].max)
@@ -638,7 +659,7 @@ function BagCleanUp_ShowILVLFilter(self, event)
     DimBagSlotiLVL()
 end
 
-function BagCleanUp_ShowRarityFilter(self, event)
+function BagCleanUp_ShowFilterRarity(self, event)
     PrepareToShowSideTabs()
     BagCleanUpVar.properties.LeftTab = 3
 
@@ -656,22 +677,165 @@ function BagCleanUp_ShowRarityFilter(self, event)
     DimBagSlotColor()
 end
 
-function BagCleanUp_CreateDropDownList()	
-    if BagCleanUpInstances == nil then
+function BagCleanUp_ShowCharacterInfo(self, event)
+    if BagCleanUpVar.properties.LeftTab ~= 4 then
+        RequestRaidInfo()
+        PrepareToShowSideTabs() 
+    end
+
+    BagCleanUpVar.properties.LeftTab = 4
+    _G["BagCleanUpResetButton"]:Show()
+    
+end
+
+local function GetPlayerInfo()      
+    local t = time()
+    local NumPerRow = 4
+    local count = 1
+    local realmName = GetRealmName() 
+
+    for zone, player in pairs(BagCleanUpInstances) do
+        
+        local text = "|cffffff00"..zone
+        
+        for k, v in pairs(player) do
+            if k:find(realmName) then
+                k = k:match("(.*) %- ")
+            end
+
+            if v.time < t then  
+                 text = text.."\n|cffffffff"..k.." - Fresh"
+            else
+                text = text.."\n|cffff2222"..k.." - In Progress/Complete"
+            end            
+        end
+        local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
+        if fontstring == nil then
+            fontstring = BagCleanUp:CreateFontString("$parentInstanceInfoFontString"..count, "ARTWORK", "GameFontNormal")
+            if count == 1 then
+                fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 80, -60)
+            elseif count > NumPerRow then
+                fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -60)
+            else
+                fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 80, 0)                
+            end 
+        end
+
+        fontstring:SetText(text)
+        fontstring:Show()
+        count = count + 1
+    end
+    
+    if count < NumPerRow then
+        BagCleanUp:SetSize(325 * count , 350)
+    else
+        BagCleanUp:SetSize(350 * NumPerRow , 125 * (count / NumPerRow) )   
+    end
+end
+
+function BagCleanUp_ParseRaidInfo()
+    local playerLevel  = UnitLevel("player")
+    if BagCleanUpVar.properties.LeftTab ~= 4 or not BagCleanUp:IsShown() or playerLevel < 70 then return end
+    print("BagCleanUp_ParseRaidInfo called")
+
+
+    local difficulty = {
+        "5 Player Normal ",
+        "5 Player Heroic ",
+        "10 Player Normal ",
+        "25 Player Normal ",
+        "10 Player Heroic ",
+        "25 Player Heroic ",
+        "25 Player LFR ",
+        "5 Player Challenge Mode ",
+        "40 Player Classic "
+        }
+
+    local num = GetNumSavedInstances();
+    local playerName = UnitName("player") 
+    local realmName = GetRealmName()  
+    local key = playerName.." - "..realmName
+
+    for i = 1, num do
+        local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, maxBosses, defeatedBosses = GetSavedInstanceInfo(i)
+
+        if BagCleanUpInstances == nil then BagCleanUpInstances = {} end
+        if BagCleanUpInstances[difficulty[instanceDifficulty]..instanceName] == nil and instanceDifficulty > 1 then            
+            BagCleanUpInstances[difficulty[instanceDifficulty]..instanceName] = { }        
+        end
+
+        local zone = difficulty[instanceDifficulty]..instanceName
+        print("Zone: "..zone)
+        print("key: "..key)
+
+        local instance = BagCleanUpInstances[zone][key]
+        if instance == nil then instance = { } end
+        if instanceReset > 0 then
+           instance.time = time() + instanceReset
+        else
+            instance.time = 0
+        end  
+
+        BagCleanUpInstances[zone][key] = instance
+    end
+    GetPlayerInfo()
+end
+
+local function PlayerInfoItemFunction(self, arg1, arg2, checked)    
+    local info = "|cffff4060Instance: "..self.arg1    
+    local t = time()
+    for k, v in pairs(BagCleanUpInstances[self.arg1]) do
+        if v.time < t then  
+             info = info.."\n|cffffffff"..k.." - Fresh"
+        else
+            info = info.."\n|cffff2222"..k.." - In Progress/Complete"
+        end
+        break
+    end
+    print(info)
+end
+
+function CreatePlayerInfoDropDownList()
+    local i = 1;          
+    for v, k in pairs (BagCleanUpInstances) do
+    	if k ~= nil then
+    		info = UIDropDownMenu_CreateInfo();
+    		info.text = tostring(v)
+    		info.arg1 = tostring(v)
+    		info.value = i; 
+    		info.func = PlayerInfoItemFunction; 
+    		UIDropDownMenu_AddButton(info);
+    		i = i + 1;
+    	end
+    end
+end
+
+local function CreateZoneDropDownList()
+    if BagCleanUpInstanceLoot == nil then
       return
     end
 
     local i = 1;          
-    for v, k in pairs (BagCleanUpInstances) do
+    for v, k in pairs (BagCleanUpInstanceLoot) do
     	if k ~= nil and type(k) ~= "number" and v ~= "methods" and v ~= "properties" then
     		info = UIDropDownMenu_CreateInfo();
     		info.text = tostring(v)
     		info.arg1 = tostring(v)
     		info.value = i; 
-    		info.func = DropDownMenuItemFunction; 
+    		info.func = ZoneItemFunction; 
     		UIDropDownMenu_AddButton(info);
     		i = i + 1;
     	end
+    end
+end
+
+function BagCleanUp_CreateDropDownList()	   
+    if BagCleanUpVar == nil then return end
+     
+    if BagCleanUpVar.properties.LeftTab == 1 then
+        CreateZoneDropDownList()
+    --elseif BagCleanUpVar.properties.LeftTab == 4 then
+    --    CreatePlayerInfoDropDownList()
     end
 end
 
@@ -696,6 +860,3 @@ end
 -- Changes
 
 -- Problems
-
--- Worth Mentioning:
--- On rare occassion when looting Blizzard does not state that item has been looted the addon will not add item to zone table
