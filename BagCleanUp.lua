@@ -447,9 +447,7 @@ function BagCleanUp_OnEvent(self, event,...)
 	elseif event == "MERCHANT_CLOSED" then
 		BagCleanUpButton:Hide();
     elseif event == "UPDATE_INSTANCE_INFO" then
-        if BagCleanUp:IsShown() then 
-            BagCleanUp_ParseRaidInfo()
-        end
+            BagCleanUp_ParseRaidInfo()        
     end	
 end
 
@@ -707,7 +705,7 @@ local function GetPlayerInfo()
 
     for zone, players in pairs(BagCleanUpInstances) do
         if zone ~= "players" then
-            if count > 24 then break end
+            if count > 20 then break end
             local text = "|cffffff00"..zone
             for k, player in ipairs(BagCleanUpInstances.players) do
                 local name = player
@@ -725,7 +723,7 @@ local function GetPlayerInfo()
                 if count == 1 then
                     fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 60, -60)
                 elseif count > NumPerRow then
-                    fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -60)
+                    fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -40)
                 else
                     fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 60, 0)                
                 end 
@@ -740,14 +738,11 @@ local function GetPlayerInfo()
     if count < NumPerRow then
         BagCleanUp:SetSize(280 * count , 350)
     else
-        BagCleanUp:SetSize(325 * NumPerRow , 175 * (count / NumPerRow) )   
+        BagCleanUp:SetSize(345 * NumPerRow , 175 * (count / NumPerRow) )   
     end
 end
 
 function BagCleanUp_ParseRaidInfo()
-    local playerLevel  = UnitLevel("player")    
-    if playerLevel < 70 then return end
-
     local difficulty = {
         "5 Player Normal ",
         "5 Player Heroic ",
@@ -791,7 +786,8 @@ function BagCleanUp_ParseRaidInfo()
 
         BagCleanUpInstances[instanceName][key] = instance
     end
-    GetPlayerInfo()
+
+    if BagCleanUp:IsShown() then GetPlayerInfo() end
 end
 
 local function PlayerInfoItemFunction(self, arg1, arg2, checked)    
