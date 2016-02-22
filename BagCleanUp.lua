@@ -265,6 +265,14 @@ local function PrepareToShowSideTabs()
         end
     end
 
+    if BagCleanUpVar.properties.point ~= nil then
+        BagCleanUp:ClearAllPoints()
+        BagCleanUp:SetPoint(BagCleanUpVar.properties.point,
+                            BagCleanUpVar.properties.relativeTo,
+                            BagCleanUpVar.properties.relativePoint, 
+                            BagCleanUpVar.properties.xOffset, 
+                            BagCleanUpVar.properties.yOffset)
+    end
 end
 
 local function CreateRarityObjects() 
@@ -287,7 +295,12 @@ local function CreateRarityObjects()
               updateInterval = 1.0,
               maxTime = 0,
               personalItems = { },
-              addonVersion = 0
+              addonVersion = 0,
+              point = "CENTER",              
+              relativeTo = "UIParent",
+              relativePoint = "CENTER",
+              xOffset = 0,
+              yOffset = 0
             }
         }
         for index, color in pairs(BagCleanUpVar.properties.colors) do
@@ -390,7 +403,7 @@ function BagCleanUp_OnShow()
 	end
 end
 
-function BagCleanUp_OnEvent(self, event,...) 
+function BagCleanUp_OnEvent(self, event, ...) 
 	if event == "ADDON_LOADED" and...== "BagCleanUp" then
 	    self:UnregisterEvent("ADDON_LOADED")
         local version = GetAddOnMetadata("BagCleanUp", "Version")
@@ -451,6 +464,18 @@ function BagCleanUp_OnEvent(self, event,...)
     end	
 end
 
+
+
+function BagCleanUp_OnStopDrag(self, event, ...)
+    self:StopMovingOrSizing();
+    local point, relativeTo, relativePoint, xOffset, yOffset = BagCleanUp:GetPoint(1)
+
+    BagCleanUpVar.properties.point = point
+    BagCleanUpVar.properties.relativeTo = relativeTo
+    BagCleanUpVar.properties.relativePoint = relativePoint
+    BagCleanUpVar.properties.xOffset = xOffset
+    BagCleanUpVar.properties.yOffset = yOffset
+end
 
 function BagCleanUpContainerHook_OnClick(self, button) 
     if self.count <= 0 or 
@@ -690,6 +715,10 @@ function BagCleanUp_ShowCharacterInfo(self, event)
     if BagCleanUpVar.properties.LeftTab ~= 4 then
         RequestRaidInfo()
         PrepareToShowSideTabs() 
+
+         if BagCleanUpVar.properties.point ~= nil then
+            BagCleanUp:SetPoint("CENTER", "UIParent", "CENTER", 0, 0)
+        end
     end
 
     BagCleanUpVar.properties.LeftTab = 4
@@ -702,6 +731,7 @@ local function GetPlayerInfo()
     local NumPerRow = 4
     local count = 1
     local realmName = GetRealmName() 
+    local playerName = UnitName("player") 
 
     for zone, players in pairs(BagCleanUpInstances) do
         if zone ~= "players" then
@@ -711,10 +741,18 @@ local function GetPlayerInfo()
                 local name = player
                 if player:find(realmName) then name = player:match("(.*) %- ") end
 
-                if players[player] ~= nil and players[player].time > t then 
-                    text = text.."\n|cffff2222"..name.." - In Progress/Complete"
+                if players[player] ~= nil and players[player].time > t then
+                    if name == playerName then
+                        text = text.."\n|cffB0C4DE*** |cff20B2AA"..name.."|cffff2222 - In Progress/Complete|cffB0C4DE ***"
+                    else
+                        text = text.."\n|cffff2222"..name.." - In Progress/Complete"
+                    end
                 else
-                    text = text.."\n|cffffffff"..name.." - Fresh"
+                    if name == playerName then
+                        text = text.."\n|cffB0C4DE*** |cff20B2AA"..name.."|cffffffff - Fresh|cffB0C4DE ***"
+                    else
+                        text = text.."\n|cffffffff"..name.." - Fresh"
+                    end
                 end            
             end
             local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
@@ -768,7 +806,8 @@ function BagCleanUp_ParseRaidInfo()
         end
     end
     
-    if not found then table.insert(BagCleanUpInstances.players, key) end
+    local lvl = UnitLevel("player")
+    if not found and lvl > 70 then table.insert(BagCleanUpInstances.players, key) end
 
     for i = 1, num do
         local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, maxBosses, defeatedBosses = GetSavedInstanceInfo(i)
@@ -854,6 +893,13 @@ function SlashCmdList.BAGCLEANUP(msg, editbox)
 	else    
 		BagCleanUp:Show();            
 	end
+
+    local command, rest = msg:match("^(%S*)%s*(.-)$");
+    if command == "center" then
+        BagCleanUp:ClearAllPoints()
+        BagCleanUp:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        BagCleanUp:Show()
+    end
 end
 
 --Notes:
@@ -867,8 +913,7 @@ end
 -- Change labeling from "Colors" to 'Types'
 
 -- Changes
--- Now allows all lvls to view the raid instance reset, not just those at lvl 70 and above
--- Removed the different difficulty levels. Easier to read which characters did which Instance
+
 
 -- Problems
 -- Currently the user needs to reload the UI to see updates in the Player Info tab

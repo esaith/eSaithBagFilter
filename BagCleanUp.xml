@@ -74,7 +74,7 @@
 	</Frames>
 </Frame>
 
-<Frame name="BagCleanUp" parent="UIParent" hidden="true" frameStrata="MEDIUM" inherits="BasicFrameTemplateWithInset" movable="true">
+<Frame name="BagCleanUp" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">
 	<Size x="325" y="350" />
 	<Anchors>
 		<Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
@@ -82,7 +82,7 @@
 	<Layers>
 		<Layer level="BACKGROUND" setAllPoints="true">
 			<Texture name="$parentBackground">
-				<Color r="1.0" g="1.0" b="1.0" a=".8" />
+				<Color r="1.0" g="1.0" b="1.0" a=".8" />o
 			</Texture>
 			<FontString name="$parentTitle" inherits="GameFontNormal" text="Bag Clean Up Options">
 				<Anchors>
@@ -95,7 +95,7 @@
 		<OnLoad function="BagCleanUp_OnLoad"/>		
 		<OnEvent function="BagCleanUp_OnEvent" />
 		<OnDragStart>self:StartMoving();</OnDragStart>
-		<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+		<OnDragStop function="BagCleanUp_OnStopDrag" />
         <OnHide function="BagCleanUp_OnHide" />
         <OnShow function="BagCleanUp_OnShow" />
 	</Scripts>
