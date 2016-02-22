@@ -111,8 +111,7 @@ local function DimBagSlotZone()
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link);					 
                 if zoneTable[link] ~= nil and zoneTable[link].count > 0 and not lootable then
                    alpha = 1                     
-                end
-                
+                end                
                 _G["ContainerFrame"..(bag + 1).."Item"..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)                				
 			end
 		end	
@@ -232,6 +231,7 @@ local function DropDownMenuItemFunction(self, arg1, arg2, checked)
 end
 
 local function PrepareToShowSideTabs()
+    BagCleanUpVar.properties.update = false
     -- Hide Tab 1
     for index, color in pairs(BagCleanUpVar.properties.colors) do
 		_G["BagCleanUpCheckButton"..color]:Hide();
@@ -524,7 +524,6 @@ end
 function BagCleanUpSellButton_OnUpdate(self, elapsed)
     self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
     if BagCleanUpVar.properties.update and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval + 1 then  
-        print("Selling")
         BagCleanUpSellButton_Click()
         UpdateZoneTable()
         self.TimeSinceLastUpdate = 0       
