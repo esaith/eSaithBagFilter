@@ -457,7 +457,6 @@ function BagCleanUp_OnEvent(self, event, ...)
             BagCleanUp_ParseRaidInfo()        
     elseif event == "PLAYER_ENTERING_WORLD" then
         for bag = 0, NUM_BAG_SLOTS do
-            print(tostring(GetContainerNumSlots(bag)))
 		    for slot = 1, GetContainerNumSlots(bag) do 
                 _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
                 _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
@@ -523,20 +522,19 @@ function BagCleanUpSellButton_Click(self, event,...)
 end
 
 function BagCleanUpSellButton_OnUpdate(self, elapsed)
-    self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
+    self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
+    
     if BagCleanUpVar.properties.update and self.TimeSinceLastUpdate > BagCleanUpVar.properties.updateInterval + 1 then  
         BagCleanUpSellButton_Click()
         UpdateZoneTable()
         self.TimeSinceLastUpdate = 0 
-        
-        if BagCleanUpVar.properties.maxTime == nil then BagCleanUpVar.properties.maxTime = 0 end
-        BagCleanUpVar.properties.maxTime = BagCleanUpVar.properties.maxTime + self.TimeSinceLastUpdate
-        if BagCleanUpVar.properties.maxTime > 20 then
+        BagCleanUpVar.properties.maxTime = BagCleanUpVar.properties.maxTime + 1
+
+        if BagCleanUpVar.properties.maxTime > 8 then
             BagCleanUpVar.properties.maxTime = 0
             BagCleanUpVar.properties.update = false
         end
-    end
-    
+    end    
 end
 
 function BagCleanUpResetButton_Click(self, event)
@@ -577,12 +575,14 @@ function BagCleanUpSlider_UpButton(self, event,...)
 end
 
 function BagCleanUpSlider_SliderValueChanged(self, value)
+    BagCleanUpVar.properties.update = false
 	local parent = self:GetParent();
 	_G[parent:GetName().."SliderValue"]:SetText(math.floor(value));
 	UpdateMinAndMax(self, math.floor(value))
 end
 
 function BagCleanUpSlider_CheckBoxClick(self, button, down)
+    BagCleanUpVar.properties.update = false
     local btn = self:GetParent():GetName().."CheckButton";		
     local color = BagCleanUpVar.properties.colors[BagCleanUpVar.properties.BottomTab]
 	
