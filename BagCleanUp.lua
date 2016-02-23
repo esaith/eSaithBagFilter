@@ -376,6 +376,7 @@ function BagCleanUp_OnLoad(self, event,...)
     self:RegisterEvent("BAG_UPDATE")	
     self:RegisterEvent("MODIFIER_STATE_CHANGED")
     self:RegisterEvent("UPDATE_INSTANCE_INFO")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
 function BagCleanUp_OnHide()
@@ -412,16 +413,9 @@ function BagCleanUp_OnEvent(self, event, ...)
         BagCleanUpInstances = BagCleanUpInstances or { }
 		CreateRarityObjects()        
 		CreateCheckButtons();	
-		CreateSliders();	
+		CreateSliders();	        
 		BagCleanUp_ShowFilterZone()	
-		tinsert(UISpecialFrames, BagCleanUp:GetName())	
-        for bag = 0, NUM_BAG_SLOTS do
-		    for slot = 1, GetContainerNumSlots(bag) do 
-                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
-                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
-                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)            
-		    end	
-	    end
+		tinsert(UISpecialFrames, BagCleanUp:GetName())
 	elseif event == "CHAT_MSG_LOOT" and...~= nil then	  
         if string.find(..., "You receive item: ") ~= nil or 
             string.find(..., "You receive loot: ") ~= nil or
@@ -461,6 +455,15 @@ function BagCleanUp_OnEvent(self, event, ...)
 		BagCleanUpButton:Hide();
     elseif event == "UPDATE_INSTANCE_INFO" then
             BagCleanUp_ParseRaidInfo()        
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        for bag = 0, NUM_BAG_SLOTS do
+            print(tostring(GetContainerNumSlots(bag)))
+		    for slot = 1, GetContainerNumSlots(bag) do 
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnClick", BagCleanUpContainerHook_OnClick)
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnLeave", BagCleanUpContainerHook_OnLeave)
+                _G["ContainerFrame"..(bag + 1).."Item"..slot]:HookScript("OnUpdate", BagCleanUpContainerHook_OnUpdate)            
+		    end	
+	    end
     end	
 end
 
@@ -476,55 +479,6 @@ function BagCleanUp_OnStopDrag(self, event, ...)
     BagCleanUpVar.properties.xOffset = xOffset
     BagCleanUpVar.properties.yOffset = yOffset
 end
-
-function BagCleanUpContainerHook_OnClick(self, button) 
-    if self.count <= 0 or 
-    not IsAltKeyDown() or
-    not BagCleanUp:IsShown() then 
-        return 
-    end
-
-    local bag = self:GetParent():GetID()
-    local slot = self:GetID()
-    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
-
-    if BagCleanUpVar.properties.personalItems[link] == nil then 
-        BagCleanUpVar.properties.personalItems[link] = true
-        self.BattlepayItemTexture:Show()
-    else
-        if BagCleanUpVar.properties.personalItems[link] then
-            BagCleanUpVar.properties.personalItems[link] = false
-            self.BattlepayItemTexture:Hide()
-        else
-            BagCleanUpVar.properties.personalItems[link] = true 
-            self.BattlepayItemTexture:Show()
-        end
-    end
-end
-
-function BagCleanUpContainerHook_OnLeave(self, motion)
-    local bag = self:GetParent():GetID()
-    local slot = self:GetID()
-    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
-    local newItemAnim = self.newitemglowAnim;
-
-    if BagCleanUpVar.properties.personalItems[link] == nil then return end;
-    if BagCleanUpVar.properties.personalItems[link] and BagCleanUp:IsShown() then    
-        self.BattlepayItemTexture:Show()
-    else
-        self.BattlepayItemTexture:Hide() 
-    end
-end
-
-function BagCleanUpContainerHook_OnUpdate(self, elapsed)
-    BagCleanUpVar.properties.itemUpdateCount = BagCleanUpVar.properties.itemUpdateCount + elapsed;
-
-    if BagCleanUpVar.properties.itemUpdateCount > BagCleanUpVar.properties.updateInterval then  
-        BagCleanUpContainerHook_OnLeave(self, nil)
-        BagCleanUpVar.properties.updateCount = 0
-    end
-end
-
 
 function BagCleanUpSellButton_Click(self, event,...)  
     BagCleanUpVar.properties.update = true  
@@ -909,6 +863,53 @@ function SlashCmdList.BAGCLEANUP(msg, editbox)
         BagCleanUp:ClearAllPoints()
         BagCleanUp:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         BagCleanUp:Show()
+    end
+end
+
+function BagCleanUpContainerHook_OnClick(self, button) 
+    if self.count <= 0 or 
+    not IsAltKeyDown() or
+    not BagCleanUp:IsShown() then 
+        return 
+    end
+    local bag = self:GetParent():GetID()
+    local slot = self:GetID()
+    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
+
+    if BagCleanUpVar.properties.personalItems[link] == nil then 
+        BagCleanUpVar.properties.personalItems[link] = true
+        self.BattlepayItemTexture:Show()
+    else
+        if BagCleanUpVar.properties.personalItems[link] then
+            BagCleanUpVar.properties.personalItems[link] = false
+            self.BattlepayItemTexture:Hide()
+        else
+            BagCleanUpVar.properties.personalItems[link] = true 
+            self.BattlepayItemTexture:Show()
+        end
+    end
+end
+
+function BagCleanUpContainerHook_OnLeave(self, motion)
+    local bag = self:GetParent():GetID()
+    local slot = self:GetID()
+    local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot);
+    local newItemAnim = self.newitemglowAnim;
+
+    if BagCleanUpVar.properties.personalItems[link] == nil then return end;
+    if BagCleanUpVar.properties.personalItems[link] and BagCleanUp:IsShown() then    
+        self.BattlepayItemTexture:Show()
+    else
+        self.BattlepayItemTexture:Hide() 
+    end
+end
+
+function BagCleanUpContainerHook_OnUpdate(self, elapsed)
+    BagCleanUpVar.properties.itemUpdateCount = BagCleanUpVar.properties.itemUpdateCount + elapsed;
+
+    if BagCleanUpVar.properties.itemUpdateCount > BagCleanUpVar.properties.updateInterval then  
+        BagCleanUpContainerHook_OnLeave(self, nil)
+        BagCleanUpVar.properties.updateCount = 0
     end
 end
 
