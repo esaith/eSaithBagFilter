@@ -749,34 +749,44 @@ local function GetPlayerInfo()
                     end
                 else
                     if name == playerName then
-                        text = text.."\n|cffB0C4DE*** |cff20B2AA"..name.."|cffffffff - Fresh|cffB0C4DE ***"
+                        text = text.."\n|cffB0C4DE*** |cff20B2AA"..name.."|cffB0C4DE ***"
                     else
-                        text = text.."\n|cffffffff"..name.." - Fresh"
+                        text = text.."\n|cffffffff"..name
                     end
                 end            
             end
             local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
             if fontstring == nil then
                 fontstring = BagCleanUp:CreateFontString("$parentInstanceInfoFontString"..count, "ARTWORK", "GameFontNormal")
-                if count == 1 then
-                    fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 60, -60)
-                elseif count > NumPerRow then
-                    fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -40)
-                else
-                    fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 60, 0)                
-                end 
             end
 
+            if count == 1 then
+                fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 60, -60)
+            elseif count > NumPerRow then
+                fontstring:SetPoint("TOP", "$parentInstanceInfoFontString"..(count - NumPerRow), "BOTTOM", 0, -40)
+            else
+                fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString"..(count - 1), "RIGHT", 60, 0)                
+            end 
+            
             fontstring:SetText(text)
             fontstring:Show()
             count = count + 1
         end
     end
     
+    local fontstring = _G["BagCleanUpInstanceInfoFontString"..count]
+    if fontstring == nil then
+        fontstring = BagCleanUp:CreateFontString("$parentInstanceInfoFontString"..count, "ARTWORK", "GameFontNormal")
+    end
+    fontstring:SetPoint("BOTTOM", "$parent", "BOTTOM", 0, 30)    
+    fontstring:SetWidth(400)
+    fontstring:SetText("\n|cffB0C4DE*** |cff20B2AA CHARACTER |cffB0C4DE *** is your current character\n|cffffffff CHARACTER|cffB0C4DE has a refreshed instance \n|cffff2222 CHARACTER - In Progress/Complete |cffB0C4DEis self explanatory" )
+    fontstring:Show()
+
     if count < NumPerRow then
         BagCleanUp:SetSize(280 * count , 350)
     else
-        BagCleanUp:SetSize(345 * NumPerRow , 175 * (count / NumPerRow) )   
+        BagCleanUp:SetSize(350 * NumPerRow , 200 * (count / NumPerRow) )   
     end
 end
 
