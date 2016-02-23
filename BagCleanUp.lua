@@ -786,7 +786,7 @@ local function GetPlayerInfo()
     if count < NumPerRow then
         BagCleanUp:SetSize(280 * count , 350)
     else
-        BagCleanUp:SetSize(350 * NumPerRow , 200 * (count / NumPerRow) )   
+        BagCleanUp:SetSize(350 * NumPerRow , 85 * (count / NumPerRow) + 50 * #BagCleanUpInstances.players)   
     end
 end
 
