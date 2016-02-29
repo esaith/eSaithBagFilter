@@ -1,4 +1,4 @@
-﻿SLASH_ESAITHBAGFILTER1 = '/filter'
+﻿SLASH_ESAITHBAGFILTER1 = '/efilter'
 
 local function printTable(tb, spacing)
 	if spacing == nil then spacing = "" end
@@ -342,9 +342,7 @@ local function GetPlayerInfo()
 			fontstring:Show()
 			count = count + 1
 			if maxWidth < fontstring:GetWidth() then
-				maxWidth = fontstring:GetWidth()
-			else
-				fontstring:SetWidth(maxWidth)			
+				maxWidth = fontstring:GetWidth()	
 			end
 		end
 	end
@@ -359,9 +357,9 @@ local function GetPlayerInfo()
 	fontstring:Show()
 
 	if count < NumPerRow then
-		eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.05, 350)
+		eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 350)
 	else
-		eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.05, 85 *(count / NumPerRow) + 50 * #eSaithBagFilterInstances.players)
+		eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 85 *(count / NumPerRow) + 50 * #eSaithBagFilterInstances.players)
 	end
 end
 local function GetRarity(ilvl)
@@ -417,7 +415,6 @@ local function ParseRaidInfo()
 end
 
 local function PrepareToShowSideTabs()
-	eSaithBagFilterVar.properties.update = false
 	if _G["MerchantFrame"]:IsShown() then
 		_G["eSaithBagFilterSellButton"]:Show()
 	else
@@ -470,8 +467,8 @@ local function SellListedItems()
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture and eSaithBagFilterVar.properties.sell[link] ~= nil and eSaithBagFilterVar.properties.sell[link] == true and not locked then
-				UseContainerItem(bag, slot)
+			if texture and eSaithBagFilterVar.properties.sell[link] ~= nil and eSaithBagFilterVar.properties.sell[link] == true then
+				if not locked then UseContainerItem(bag, slot) end
 				count = count + 1
 			end
 		end
@@ -636,7 +633,6 @@ function eSaithBagFilterSellButton_OnUpdate(self, elapsed)
 		if SellListedItems() == 0 then
 			eSaithBagFilterVar.properties.update = false
 		end
-
 		self.TimeSinceLastUpdate = 0
 		eSaithBagFilterVar.properties.maxTime = eSaithBagFilterVar.properties.maxTime + 1
 
@@ -678,7 +674,6 @@ function eSaithBagFilterResetButton_Click(self, event)
 end
 
 function eSaithBagFilterSlider_CheckBoxClick(self, button, down)
-	eSaithBagFilterVar.properties.update = false
 	local btn = self:GetParent():GetName() .. "CheckButton"
 	local _type = eSaithBagFilterVar.properties.types[eSaithBagFilterVar.properties.BottomTab]
 
@@ -701,7 +696,6 @@ function eSaithBagFilterSlider_OnLoad(self, event, ...)
 	_G[self:GetName() .. 'High']:SetText(maxSize)
 end
 function eSaithBagFilterSlider_SliderValueChanged(self, value)
-	eSaithBagFilterVar.properties.update = false
 	local parent = self:GetParent()
 	_G[parent:GetName() .. "SliderValue"]:SetText(math.floor(value))
 	UpdateMinAndMax(self, math.floor(value))
@@ -798,13 +792,11 @@ function eSaithBagFilter_ShowFilterRarity(self, event)
 end
 function eSaithBagFilter_ShowFilterZone(self, event)
 	PrepareToShowSideTabs()
-
 	eSaithBagFilterVar.properties.LeftTab = 1
 	DimBagSlotZone(eSaithBagFilterVar.properties.zone)
 	eSaithBagFilterDropDown:Show()
 	eSaithBagFilterCheckButton_TradeGoods:Show()
 	_G["eSaithBagFilterDoNotSellFontString"]:Show()
-
 end
 
 function eSaithBagFilter_CreateDropDownList()
@@ -815,7 +807,7 @@ function eSaithBagFilter_CreateDropDownList()
 	end
 end
 
-function SlashCmdList.eSaithBagFilter(msg, editbox)
+function SlashCmdList.ESAITHBAGFILTER(msg, editbox)
 	if eSaithBagFilter:IsShown() then
 		eSaithBagFilter:Hide()
 	else
@@ -885,21 +877,4 @@ end
 -- Have a huge table of reagents to sort to filter through
 -- Consider disenchanting if selected
 -- Consider attempting to loot if lootable when originally looting - only white items.
---]]
-
---[[ Changes
--- Refactored code to make functions more mininal in code in hopes to reduce complexity in logic and improve correctness.
--- Added a "sell" list. Once sell button is clicked items that are to be sold are added to the list. This helps to prevent items
-	 that may potentially sell once added to bags during the "sell period". The problem occurs mostly when selling an item by rarity. If
-	 an item is the same color rarity as being sold then the new item may accidentally sell along with the mass sell. This
-	 new "sell list" should reduce that chance. It is assumed that the player will not attempt to add an item into their
-	 bags with an item in their "sell list" in the first place. This assumption cannot always be guaranteed due to accidental click of the
-	 sell button or not placing the item in the "keep" list prior to mass selling.
--- "Sell Button" now hides in the Player Info tab even if Merchant Frame is viewable. Button becomes viewable once clicking back to
-	other sell tabs
--- When player "Resets" addon when upgrading their original "keep list" is saved by default
--- Added simplified left side tab "highlight", or rather alpha dimmed/muted tab selection. This confirms with the user of the selected tab
--- Fixed Player Info screen to fix better with different size UI scaling
--- Attempted to fix bug where occassionally when showing addon /clean shows both first and fourth tab contents when the first tab is the selected tab.
--- Renamed titles from the "Color" to Types for a more "professional" look
 --]]
