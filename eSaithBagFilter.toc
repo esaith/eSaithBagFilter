@@ -1,0 +1,18 @@
+﻿## Interface: 60200
+## Title: eSaith Bag Filter
+## Version: 1.10
+## Notes: Allows filtering of bag items by rarity, instances, and ilvl. 
+## Author: eSaith
+## SavedVariables: eSaithBagFilterInstances
+## SavedVariablesPerCharacter: eSaithBagFilterVar
+
+eSaithBagFilter.lua
+eSaithBagFilter.xml
+
+
+--1.1 Added tab #4, Player/Character Info. Reset Addon Button. View instance resets for all characters. For the character raids/instances to show they player only needs to log in 
+-- and is not required to open the addon. Only instances that have a heroic mode or higher and if the character is level 70 or higher
+
+--1.0 
+-- Initial Version 3 tabs (Zone, iLVL, Rarity). Allows mass auto-sell. 
+-- "Keep item" when addon is visible. ALT + Click item, blue haze adds item to auto-sellable list. Alt + Click again to unlink it
