@@ -1,6 +1,6 @@
 ﻿## Interface: 60200
 ## Title: eSaith Bag Filter
-## Version: 1.1
+## Version: 1.2
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl. 
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
@@ -9,6 +9,9 @@
 eSaithBagFilter.lua
 eSaithBagFilter.xml
 
+--1.2 Moved the items options from the bag to the actual addon. Should reduce the chance of interfering with other bag addons or addons that do similar functions. Instead of seeing all items and then dimming those that 
+-- are wished to be sold, only the items will appear that contain to the selected tab - then the player may select the item to keep it on the list
+-- This list is updated once all items are sold; yet, if an item is added to the bags after selected checkboxs have marked then those items likely won't show up until the next change in checkboxes occurs.
 
 --1.1 Added tab #4, Player/Character Info. Reset Addon Button. View instance resets for all characters. For the character raids/instances to show they player only needs to log in 
 -- and is not required to open the addon. Only instances that have a heroic mode or higher and if the character is level 70 or higher

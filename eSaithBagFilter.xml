@@ -75,7 +75,7 @@
     </Frame>
 
     <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">
-        <Size x="325" y="350" />
+        <Size x="400" y="350" />
         <Anchors>
             <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
         </Anchors>
@@ -100,6 +100,11 @@
             <OnShow function="eSaithBagFilter_OnShow" />
         </Scripts>
     </Frame>
+
+    <Button name="eSaithBagFilterItemButtonTemplate" parent="eSaithBagFilter" virtual="true" inherits="UICheckButtonTemplate">
+        <Size x="40" y="40"/>
+    </Button>
+
 
     <Button name="$parentSellButton" parent="eSaithBagFilter" movable="true" enableMouse="true" hidden="true" frameStrata="HIGH" topLevel="true">
         <Size x="50" y="50"/>
@@ -126,6 +131,8 @@
             <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
             <OnClick function="eSaithBagFilterSellButton_Click" />
             <OnUpdate function="eSaithBagFilterSellButton_OnUpdate" />
+            <OnEnter function="eSaithBagFilterSellButton_OnEnter" />
+            <OnLeave>GameTooltip:Hide()</OnLeave>
             <OnHide>
                 eSaithBagFilterVar.properties.update = false
             </OnHide>
@@ -242,7 +249,7 @@
     </Frame>
 
     <Frame name="$parentBottomTabs" parent="eSaithBagFilter">
-        <Size x="325" y="40" />
+        <Size x="400" y="40" />
         <Anchors>
             <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
         </Anchors>

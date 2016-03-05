@@ -1,4 +1,5 @@
 ﻿SLASH_ESAITHBAGFILTER1 = '/efilter'
+local MaxItemCount = -1
 
 local function printTable(tb, spacing)
 	if spacing == nil then spacing = "" end
@@ -12,16 +13,55 @@ local function printTable(tb, spacing)
 	end
 	print(spacing .. "Leaving Table")
 end
-
+local function ResetAlphaOnAllButtons()
+	for index = 1, MaxItemCount do
+		local btn = _G["eSaithBagFilterSellItem"..index]
+		if _G["eSaithBagFilterSellItem"..index] and _G["eSaithBagFilterSellItem"..index]:IsShown() then
+			if eSaithBagFilterVar.properties.keep[_G["eSaithBagFilterSellItem"..index].link] then
+				_G["eSaithBagFilterSellItem"..index]:SetAlpha(.3)
+			else
+				_G["eSaithBagFilterSellItem"..index]:SetAlpha(1)
+			end
+		end
+	end
+end
 local function AddLoot(obj)
 	local zone = GetRealZoneText()
 	if eSaithBagFilterInstanceLoot[zone] == nil then eSaithBagFilterInstanceLoot[zone] = { } end
 	eSaithBagFilterInstanceLoot[zone][obj] = true
 end
+
+local function ItemButton_Press(self, event, button)
+	local alpha = self:GetAlpha()
+	if alpha ~= 1 then 
+		self:SetAlpha(1)
+		eSaithBagFilterVar.properties.keep[self.link] = false
+	else
+		self:SetAlpha(.2)
+		eSaithBagFilterVar.properties.keep[self.link] = true
+	end
+	ResetAlphaOnAllButtons()
+end
+local function ItemButton_OnEnter(self, event, ...)
+	local x = self:GetRight();
+	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+	if ( x >= ( GetScreenWidth() / 2 ) ) then
+		GameTooltip:SetOwner(self, "ANCHOR_LEFT");
+	end
+
+	GameTooltip:SetHyperlink(self.link)
+	GameTooltip:Show()	
+end
+
+local function ItemButton_OnLeave(self, event, ...)
+	GameTooltip:Hide()	
+end
+
 local function CreateCheckButtons()
+	local width = eSaithBagFilter:GetWidth()
 	for index, _type in ipairs(eSaithBagFilterVar.properties.types) do
 		local btn = CreateFrame("CheckButton", "$parentCheckButton" .. _type, eSaithBagFilter, "UICheckButtonTemplate")
-		btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 70, -30)
+		btn:SetPoint("TOP", "$parent", "TOP", -math.floor(width / 5), -30)
 		btn:SetScript("OnClick", eSaithBagFilterCheckBox_Click)
 		local fontstring = btn:CreateFontString("eSaithBagFilterCheckButton" .. _type .. "FontString", "ARTWORK", "GameFontNormal")
 		fontstring:SetTextColor(eSaithBagFilterVar.properties.texture[3 * index], eSaithBagFilterVar.properties.texture[3 * index + 1], eSaithBagFilterVar.properties.texture[3 * index + 2])
@@ -48,12 +88,29 @@ local function CreateCheckButtons()
 	fontstring:Show()
 
 	local btn = CreateFrame("CheckButton", "eSaithBagFilterCheckButton_TradeGoods", eSaithBagFilter, "UICheckButtonTemplate")
-	btn:SetPoint("CENTER", "$parent", "CENTER", -50, 60)
+	btn:SetPoint("TOP", "$parent", "TOP", -50, -90)
 	local fontstring = btn:CreateFontString("eSaithBagFilterCheckButtonTradeGoodsFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("Trade Goods")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
 	btn:Show()
+
+	for i = 1, 200 do
+		local btn = CreateFrame("Button", "eSaithBagFilterSellItem"..i, eSaithBagFilter, "eSaithBagFilterItemButtonTemplate")
+		btn:SetPoint("CENTER", "$parent", "CENTER", i, i)
+		btn.texture = btn:CreateTexture("$parentTexture", "OVERLAY");
+		btn.texture:SetTexture("Interface\ICONS\INV_Misc_QuestionMark");
+		btn.texture:SetSize(40,40)	
+		btn.texture:SetAllPoints();
+		btn.texture = btn:CreateTexture("$parentTextureBorder", "BORDER");
+		btn.texture:SetTexture(1,1,1,1)
+		btn.texture:SetSize(10, 10)
+		btn.texture:SetAllPoints()
+		btn:SetScript("OnClick", ItemButton_Press)
+		btn:SetScript("OnEnter", ItemButton_OnEnter)
+		btn:SetScript("OnLeave", ItemButton_OnLeave)
+		btn:Hide();
+	end
 end
 local function CreateRarityObjects()
 	eSaithBagFilterInstanceLoot = eSaithBagFilterInstanceLoot or { }
@@ -72,7 +129,7 @@ local function CreateRarityObjects()
 				update = false,
 				updateCount = 0,
 				itemUpdateCount = 0,
-				updateInterval = 1.0,
+				updateInterval = 0.5,
 				maxTime = 0,
 				keep = { },
 				addonVersion = 0,
@@ -140,62 +197,89 @@ local function UpdateZoneTable(zone)
 
 	if count == 0 then eSaithBagFilterInstanceLoot[zone] = nil end
 end
-local function ResetAlphaOnAllSlots()
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 0, GetContainerNumSlots(bag) do
-			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(1)
-			end
-		end
-	end
-end
+
 local function PassMin(ilvl, minlvl, required)
 	return not required or ilvl >= minlvl
 end
 local function PassMax(ilvl, maxlvl, required)
 	return not required or ilvl <= maxlvl
 end
+
+
+
+
+local function ShowListedItems(count)
+	for i = 1, MaxItemCount do
+		_G["eSaithBagFilterSellItem"..i]:Hide()
+	end
+
+	if eSaithBagFilterVar.properties.sell == nil then return end	 
+	local MAX_ROW = 8
+	local yoffset = 0
+	local xoffset = 0
+	local height = math.ceil(count / MAX_ROW) * 45
+	local list = eSaithBagFilterVar.properties.sell
+	for index = 1, count do 
+		if index % MAX_ROW == 1 then 
+			yoffset = yoffset + 1
+			xoffset = 0
+		end
+
+		local btn = _G["eSaithBagFilterSellItem"..index]
+		btn:Show()
+		btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 46 * xoffset + 20, -150 - yoffset * 50)	
+		btn.texture = _G[btn:GetName().."Texture"]
+		btn.texture:Show()
+		btn.texture:SetTexture(list[index].text)
+		btn.texture = _G[btn:GetName().."TextureBorder"]
+		btn.texture:Show()
+		btn.texture:SetTexture(eSaithBagFilterVar.properties.texture[3 * list[index].colorIndex], eSaithBagFilterVar.properties.texture[3 * list[index].colorIndex + 1], eSaithBagFilterVar.properties.texture[3 * list[index].colorIndex + 2], 1)
+
+		btn.link = list[index].link
+		xoffset = xoffset + 1		
+	end
+
+	if MaxItemCount > count then
+		for i = count + 1, MaxItemCount do
+			_G["eSaithBagFilterSellItem"..i]:Hide()
+		end
+	end
+	MaxItemCount = count	
+
+	local x = eSaithBagFilter:GetSize()
+	eSaithBagFilter:SetSize(x, 280 + height)	
+end
+
 local function DimBagSlotZone(zone)
 	if zone == nil or eSaithBagFilterInstanceLoot[zone] == nil then return end
-	local alpha
 	local zoneTable = eSaithBagFilterInstanceLoot[zone]
 
-	for bag = 0, NUM_BAG_SLOTS do
+	eSaithBagFilterVar.properties.sell = { }
+	
+	local count = 0
+	for bag = 0, NUM_BAG_SLOTS do		
 		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				alpha = .2		
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)].newitemglowAnim:Stop()		
+			if texture then	
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link)
-				if zoneTable[link] then alpha = 1 end
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
+				if zoneTable[link] then
+					count = count + 1
+					eSaithBagFilterVar.properties.sell[count] = { link = link, text = texture, colorIndex = quality + 1 }					
+				end
 			end
 		end
 	end
+	ShowListedItems(count)
+	ResetAlphaOnAllButtons()
 end
 local function DimBagSlotiLVL()
-	-- Quick escape. If no checkbox is marked, then make sure all slots are full alpha then exit
-	local found = false
-	for k, _type in pairs(eSaithBagFilterVar.properties.types) do
-		if _G["eSaithBagFilterCheckButton" .. _type]:GetChecked() then
-			found = true
-			break
-		end
-	end
-
-	if not found then
-		ResetAlphaOnAllSlots()
-		return
-	end
-
-	local alpha
+	eSaithBagFilterVar.properties.sell = { }
+	
+	local count = 0
 	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 0, GetContainerNumSlots(bag) do
+		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				alpha = .2
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)].newitemglowAnim:Stop()
+			if texture then		
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link)
 				if vendorPrice > 0 and not locked and not lootable then
 					-- Skip all items that cannot be sold to vendors					
@@ -203,45 +287,36 @@ local function DimBagSlotiLVL()
 					if _G["eSaithBagFilterCheckButton" .. _type]:GetChecked()
 						and PassMin(ilvl, eSaithBagFilterVar[_type].min, eSaithBagFilterVar[_type].minChecked)
 						and PassMax(ilvl, eSaithBagFilterVar[_type].max, eSaithBagFilterVar[_type].maxChecked) then
-						alpha = 1
+						count = count + 1
+						eSaithBagFilterVar.properties.sell[count] = { link = link, text = texture, colorIndex = quality + 1 }	
 					end
 				end
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
 			end
 		end
 	end
+	ShowListedItems(count)
+	ResetAlphaOnAllButtons()
 end
+
 local function DimBagSlotType()
-	-- Quick escape. If no checkbox is marked, then make sure all slots are full alpha then exit
-	local found = false
-	for k, _type in pairs(eSaithBagFilterVar.properties.types) do
-		if _G["eSaithBagFilterCheckButton" .. _type]:GetChecked() then
-			found = true
-			break
-		end
-	end
-
-	if not found then
-		ResetAlphaOnAllSlots()
-		return
-	end
-
-	local alpha
+	eSaithBagFilterVar.properties.sell = { }
+	
+	local count = 0
 	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 0, GetContainerNumSlots(bag) do
-			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				alpha = .2
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)].newitemglowAnim:Stop()
+		for slot = 1, GetContainerNumSlots(bag)  do					
+			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)			
+			if texture then											
 				local itemName, itemLink, itemRarity, ilvl, reqlvl, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link)
 				local _type = eSaithBagFilterVar.properties.types[quality + 1]
-				if _G["eSaithBagFilterCheckButton" .. _type]:GetChecked() and vendorPrice > 0 and not lootable then
-					alpha = 1
+				if _G["eSaithBagFilterCheckButton" .. _type]:GetChecked() and vendorPrice > 0 and not lootable then			
+					count = count + 1
+					eSaithBagFilterVar.properties.sell[count] = { link = link, text = texture, colorIndex = quality + 1 }	
 				end
-				_G["ContainerFrame" ..(bag + 1) .. "Item" ..(GetContainerNumSlots(bag) - slot + 1)]:SetAlpha(alpha)
 			end
 		end
-	end
+	end	
+	ShowListedItems(count)
+	ResetAlphaOnAllButtons()
 end
 
 local function ZoneMenuItemFunction(self, arg1, arg2, checked)
@@ -255,11 +330,10 @@ local function ZoneMenuItemFunction(self, arg1, arg2, checked)
 		return
 	end
 
-	print(" -- Gained in " .. self.arg1 .. "--")
+	
 	local NumOfItemsFound = 0
 	for item, value in pairs(zoneTable) do
 		if value ~= nil then
-			 --print("  " .. item .. " found in zone")
 			NumOfItemsFound = NumOfItemsFound + 1
 		end
 	end
@@ -267,8 +341,6 @@ local function ZoneMenuItemFunction(self, arg1, arg2, checked)
 	if NumOfItemsFound == 0 then
 		zoneTable = nil
 		return
-	else
-		print(NumOfItemsFound .. " item(s) dropped in " .. self.arg1)
 	end
 	DimBagSlotZone(eSaithBagFilterVar.properties.zone)
 	if (not checked) then
@@ -436,11 +508,15 @@ local function PrepareToShowSideTabs()
 	eSaithBagFilterSliderMin:Hide()
 	eSaithBagFilterSliderMax:Hide()
 
+	for i = 1, 200 do
+		local btn =_G["eSaithBagFilterSellItem"..i]
+		btn:Hide();
+	end
 
 	-- Hide Info tab
 	_G["eSaithBagFilterResetButton"]:Hide()
 
-	eSaithBagFilter:SetSize(325, 350)
+	eSaithBagFilter:SetSize(400, 200)
 	local count = 1
 	if eSaithBagFilterInstances ~= nil then
 		for k, v in pairs(eSaithBagFilterInstances) do
@@ -467,9 +543,9 @@ local function SellListedItems()
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture and eSaithBagFilterVar.properties.sell[link] ~= nil and eSaithBagFilterVar.properties.sell[link] == true then
+			if texture and eSaithBagFilterVar.properties.sell[link] then
 				if not locked then UseContainerItem(bag, slot) end
-				count = count + 1
+				count = count + 1				
 			end
 		end
 	end
@@ -528,25 +604,14 @@ function eSaithBagFilter_OnEvent(self, event, ...)
 		eSaithBagFilterSellButton:Show()
 	elseif event == "MERCHANT_CLOSED" then
 		eSaithBagFilterSellButton:Hide()
+		eSaithBagFilter:Hide()
 	elseif event == "UPDATE_INSTANCE_INFO" then
-		ParseRaidInfo()
-	elseif event == "PLAYER_ENTERING_WORLD" then
-		for bag = 0, NUM_BAG_SLOTS do
-			for slot = 1, GetContainerNumSlots(bag) do
-				_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot]:HookScript("OnClick", eSaithBagFilterContainerHook_OnClick)
-				_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot]:HookScript("OnLeave", eSaithBagFilterContainerHook_OnLeave)
-				_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot]:HookScript("OnUpdate", eSaithBagFilterContainerHook_OnUpdate)
-			end
-		end
-	end
+		ParseRaidInfo()		
+ 	end
 end
+
 function eSaithBagFilter_OnHide()
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 1, GetContainerNumSlots(bag) do
-			_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot]:SetAlpha(1)
-			_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot].BattlepayItemTexture:Hide()
-		end
-	end
+
 end
 function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton")
@@ -557,6 +622,7 @@ function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterEvent("BAG_UPDATE")
 	self:RegisterEvent("UPDATE_INSTANCE_INFO")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	
 end
 
 function eSaithBagFilter_OnShow()
@@ -571,12 +637,7 @@ function eSaithBagFilter_OnShow()
 	elseif eSaithBagFilterVar.properties.LeftTab == 3 then
 		DimBagSlotType()
 	end
-
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 1, GetContainerNumSlots(bag) do
-			eSaithBagFilterContainerHook_OnLeave(_G["ContainerFrame" ..(bag + 1) .. "Item" .. slot])
-		end
-	end
+	
 	eSaithBagFilterSideTabs_OnClick(_G["eSaithBagFilterSideTabsTab" .. eSaithBagFilterVar.properties.LeftTab])
 end
 function eSaithBagFilter_OnStopDrag(self, event, ...)
@@ -629,20 +690,41 @@ end
 function eSaithBagFilterSellButton_OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
 
-	if eSaithBagFilterVar.properties.update and self.TimeSinceLastUpdate > eSaithBagFilterVar.properties.updateInterval + 1 then
-		if SellListedItems() == 0 then
-			eSaithBagFilterVar.properties.update = false
-		end
+	if eSaithBagFilterVar.properties.update and self.TimeSinceLastUpdate > eSaithBagFilterVar.properties.updateInterval then	
 		self.TimeSinceLastUpdate = 0
 		eSaithBagFilterVar.properties.maxTime = eSaithBagFilterVar.properties.maxTime + 1
+				
+		if  SellListedItems() == 0 then
+			eSaithBagFilterVar.properties.update = false
+		end
 
-		if eSaithBagFilterVar.properties.maxTime > 12 or eSaithBagFilterVar.properties.update == false then
+		if eSaithBagFilterVar.properties.maxTime > 60 or eSaithBagFilterVar.properties.update == false then
 			eSaithBagFilterVar.properties.maxTime = 0
 			eSaithBagFilterVar.properties.update = false
 			eSaithBagFilterVar.properties.sell = { }
 			UpdateZoneTable(eSaithBagFilterVar.properties.zone)
-		end
+
+			if eSaithBagFilterVar.properties.LeftTab == 1 then
+				DimBagSlotZone(eSaithBagFilterVar.properties.zone)
+			elseif eSaithBagFilterVar.properties.LeftTab == 2 then
+				DimBagSlotiLVL()
+			elseif eSaithBagFilterVar.properties.LeftTab == 3 then
+				DimBagSlotType()
+			end
+		end 
 	end
+end
+function eSaithBagFilterSellButton_OnEnter(self, event, ...)
+	local x;
+	x = self:GetRight();
+	if ( x >= ( GetScreenWidth() / 2 ) ) then
+		GameTooltip:SetOwner(self, "ANCHOR_LEFT");
+	else
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+	end
+
+	GameTooltip:AddLine("Sell")
+	GameTooltip:Show()
 end
 
 function eSaithBagFilterBottomTabs_OnLoad(self, event, ...)
@@ -662,7 +744,6 @@ function eSaithBagFilterSideTabs_OnClick(self, button)
 	end
 	_G["eSaithBagFilterSideTabs" .. tab]:SetAlpha(1)
 end
-
 function eSaithBagFilterResetButton_Click(self, event)
 	local keep = eSaithBagFilterVar.properties.keep
 	eSaithBagFilterVar = nil
@@ -819,52 +900,6 @@ function SlashCmdList.ESAITHBAGFILTER(msg, editbox)
 		eSaithBagFilter:ClearAllPoints()
 		eSaithBagFilter:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 		eSaithBagFilter:Show()
-	end
-end
-
-function eSaithBagFilterContainerHook_OnClick(self, button)
-	if self.count <= 0 or
-		not IsAltKeyDown() or
-		not eSaithBagFilter:IsShown() then
-		return
-	end
-	local bag = self:GetParent():GetID()
-	local slot = self:GetID()
-	local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-
-	if eSaithBagFilterVar.properties.keep[link] == nil then
-		eSaithBagFilterVar.properties.keep[link] = true
-		self.BattlepayItemTexture:Show()
-	else
-		if eSaithBagFilterVar.properties.keep[link] then
-			eSaithBagFilterVar.properties.keep[link] = false
-			self.BattlepayItemTexture:Hide()
-		else
-			eSaithBagFilterVar.properties.keep[link] = true
-			self.BattlepayItemTexture:Show()
-		end
-	end
-end
-function eSaithBagFilterContainerHook_OnLeave(self, motion)
-	local bag = self:GetParent():GetID()
-	local slot = self:GetID()
-	local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-	local newItemAnim = self.newitemglowAnim
-
-	if eSaithBagFilterVar.properties.keep == nil then eSaithBagFilterVar.properties.keep = { } end
-	if eSaithBagFilterVar.properties.keep[link] == nil then return end
-	if eSaithBagFilterVar.properties.keep[link] and eSaithBagFilter:IsShown() then
-		self.BattlepayItemTexture:Show()
-	else
-		self.BattlepayItemTexture:Hide()
-	end
-end
-function eSaithBagFilterContainerHook_OnUpdate(self, elapsed)
-	eSaithBagFilterVar.properties.itemUpdateCount = eSaithBagFilterVar.properties.itemUpdateCount + elapsed
-
-	if eSaithBagFilterVar.properties.itemUpdateCount > eSaithBagFilterVar.properties.updateInterval then
-		eSaithBagFilterContainerHook_OnLeave(self, nil)
-		eSaithBagFilterVar.properties.updateCount = 0
 	end
 end
 
