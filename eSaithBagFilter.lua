@@ -111,6 +111,8 @@ local function CreateCheckButtons()
 		btn:SetScript("OnLeave", ItemButton_OnLeave)
 		btn:Hide();
 	end
+	local fontstring = eSaithBagFilter:CreateFontString("$parentInstanceInfoFontString", "ARTWORK", "GameFontNormal")
+	
 end
 local function CreateRarityObjects()
 	eSaithBagFilterInstanceLoot = eSaithBagFilterInstanceLoot or { }
@@ -434,6 +436,7 @@ local function GetPlayerInfo()
 		eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 85 *(count / NumPerRow) + 50 * #eSaithBagFilterInstances.players)
 	end
 end
+
 local function GetRarity(ilvl)
 	return eSaithBagFilterVar.properties.types[ilvl]
 end  
@@ -483,7 +486,7 @@ local function ParseRaidInfo()
 		eSaithBagFilterInstances[instanceName][key] = instance
 	end
 
-	if eSaithBagFilter:IsShown() and eSaithBagFilterVar.properties.LeftTab == 4 then GetPlayerInfo() end
+	--if eSaithBagFilter:IsShown() and eSaithBagFilterVar.properties.LeftTab == 4 then GetPlayerInfo() end
 end
 
 local function PrepareToShowSideTabs()
@@ -535,6 +538,9 @@ local function PrepareToShowSideTabs()
 		eSaithBagFilterVar.properties.xOffset,
 		eSaithBagFilterVar.properties.yOffset)
 	end
+
+	local fontstring = _G["eSaithBagFilterInstanceInfoFontString"]
+	if fontstring:IsShown() then fontstring:Hide() end
 end
 
 local function SellListedItems()
@@ -826,7 +832,7 @@ function eSaithBagFilter_ShowCharacterInfo(self, event)
 
 	eSaithBagFilterVar.properties.LeftTab = 4
 	_G["eSaithBagFilterResetButton"]:Show()
-
+	eSaithBagFilterDropDown:Show()
 end
 function eSaithBagFilter_ShowFilteriLVL(self, event)
 	PrepareToShowSideTabs()
@@ -880,13 +886,72 @@ function eSaithBagFilter_ShowFilterZone(self, event)
 	_G["eSaithBagFilterDoNotSellFontString"]:Show()
 end
 
+local function PlayerInfoItemFunction(self, arg1, arg2, checked)
+	local x, y = eSaithBagFilter:GetSize()
+	eSaithBagFilter:SetSize(x, y * 2)
+    local t = time()
+	local realmName = GetRealmName()
+	local CurrentPlayersName = UnitName("player")
+	local text = ""
+    local playersInSelectedInstance = eSaithBagFilterInstances[self.arg1]
+		
+	for index, player in ipairs(eSaithBagFilterInstances.players) do
+		local charName = player
+		if player:find(realmName) then charName = player:match("(.*)%s%-") end
+
+		if playersInSelectedInstance[player] ~= nil and playersInSelectedInstance[player].time > t then
+			if charName == CurrentPlayersName then
+				text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. charName .. "|cffff2222 - In Progress/Complete|cffB0C4DE ***"
+			else
+				text = text .. "\n|cffff2222" .. charName .. " - In Progress/Complete"
+			end
+		else
+			if charName == CurrentPlayersName then
+				text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. charName .. "|cffB0C4DE ***"
+			else
+				text = text .. "\n|cffffffff" .. charName
+			end
+		end
+	end
+
+	local fontstring = _G["eSaithBagFilterInstanceInfoFontString"]	 
+	fontstring:SetPoint("TOP", "$parent", "TOP", 0, -60)  
+	fontstring:SetText(text)
+	fontstring:SetWidth(250)
+	fontstring:Show()
+	if (not checked) then
+		UIDropDownMenu_SetSelectedValue(UIDROPDOWNMENU_OPEN_MENU, self.value)
+	end
+end
+
+function CreatePlayerInfoDropDownList()
+    local i = 1;          
+    for v, k in pairs (eSaithBagFilterInstances) do
+    	if k ~= nil then
+    		info = UIDropDownMenu_CreateInfo();
+    		info.text = tostring(v)
+    		info.arg1 = tostring(v)
+    		info.value = i; 
+    		info.func = PlayerInfoItemFunction; 
+    		UIDropDownMenu_AddButton(info);
+    		i = i + 1;
+    	end
+    end 
+end
+
 function eSaithBagFilter_CreateDropDownList()
 	if eSaithBagFilterVar == nil then return end
 
 	if eSaithBagFilterVar.properties.LeftTab == 1 then
 		CreateZoneDropDownList()
+	elseif eSaithBagFilterVar.properties.LeftTab == 4 then
+        CreatePlayerInfoDropDownList()		
 	end
 end
+
+
+
+
 
 function SlashCmdList.ESAITHBAGFILTER(msg, editbox)
 	if eSaithBagFilter:IsShown() then
