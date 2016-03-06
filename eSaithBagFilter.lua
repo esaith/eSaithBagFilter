@@ -1,5 +1,6 @@
 ﻿SLASH_ESAITHBAGFILTER1 = '/efilter'
 local MaxItemCount = -1
+local zone -- used for updating world coordinates
 
 local function printTable(tb, spacing)
 	if spacing == nil then spacing = "" end
@@ -55,6 +56,26 @@ end
 
 local function ItemButton_OnLeave(self, event, ...)
 	GameTooltip:Hide()	
+end
+
+local function UpdateCoordinates(self, elapsed)
+	if zone ~= GetRealZoneText() then
+		zone = GetRealZoneText()
+		SetMapToCurrentZone()
+	end
+
+	if self.TimeSinceLastUpdate == nil then self.TimeSinceLastUpdate = 0 end
+	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
+	if self.TimeSinceLastUpdate > .5 then	
+		self.TimeSinceLastUpdate = 0
+		local posX, posY = GetPlayerMapPosition("player");
+		local fontstring = _G["eSaithBagFilterCoordinatesFontString"]
+		local x = math.floor(posX * 10000)/100
+		local y = math.floor(posY*10000)/100
+		fontstring:SetText("|cff98FB98("..x..", "..y..")")
+		fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+		fontstring:Show()
+	end
 end
 
 local function CreateCheckButtons()
@@ -113,6 +134,16 @@ local function CreateCheckButtons()
 	end
 	local fontstring = eSaithBagFilter:CreateFontString("$parentInstanceInfoFontString", "ARTWORK", "GameFontNormal")
 	
+	local coords = CreateFrame("Frame", "eSaithBagFilterCoordinates", UIParent)
+	coords:SetSize(100, 50)
+	coords:SetPoint("TOP", "Minimap", "BOTTOM", 5, 0)
+	coords:SetScript("OnUpdate", UpdateCoordinates)
+	local coordsFont = coords:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+	coordsFont:SetText("|cffffffffLocation:")
+	coordsFont:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+	coordsFont:Show()
+	coords:Show()
+
 end
 local function CreateRarityObjects()
 	eSaithBagFilterInstanceLoot = eSaithBagFilterInstanceLoot or { }
@@ -887,8 +918,7 @@ function eSaithBagFilter_ShowFilterZone(self, event)
 end
 
 local function PlayerInfoItemFunction(self, arg1, arg2, checked)
-	local x, y = eSaithBagFilter:GetSize()
-	eSaithBagFilter:SetSize(x, y * 2)
+	eSaithBagFilter:SetSize(325, 400)
     local t = time()
 	local realmName = GetRealmName()
 	local CurrentPlayersName = UnitName("player")

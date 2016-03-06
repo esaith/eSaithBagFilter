@@ -223,10 +223,10 @@
                 </Anchors>
                 <Layers>
                     <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MICROBUTTON-MAINMENU-UP" >
-                            <Size x="40" y="60"/>
+                        <Texture name="$parentTexture" file="Interface\ICONS\Ability_BossGorefiend_GorefiendsCorruption" >
+                            <Size x="35" y="35"/>
                             <Anchors>
-                                <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
+                                <Anchor point="CENTER" relativePoint="CENTER"/>
                             </Anchors>
                         </Texture>
                     </Layer>
