@@ -241,6 +241,27 @@
                     </OnShow>
                 </Scripts>
             </Button>
+			<Button name="$parentTab5" inherits="ItemButtonTemplate" id="5">
+                <Anchors>
+                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab4" y="0"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY" setAllPoints="true">
+                        <Texture name="$parentTexture" file="Interface\ICONS\Ability_RewindTime" >
+							<Size x="35" y="35"/>
+                            <Anchors>
+                                <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER" />
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>   
+				<Scripts>					
+					<OnClick>
+						eSaithBagFilter_ShowOptions(self, button)
+						eSaithBagFilterSideTabs_OnClick(self, button)
+					</OnClick>
+				</Scripts>
+            </Button>
         </Frames>
         <Scripts>
             <OnLoad function="eSaithBagFilterSideTabs_OnLoad" />

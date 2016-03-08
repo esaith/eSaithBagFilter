@@ -3,6 +3,7 @@ local MaxItemCount = -1
 local zone -- used for updating world coordinates
 
 local function printTable(tb, spacing)
+
 	if spacing == nil then spacing = "" end
 	print(spacing .. "Entering table")
 	if tb == nil then print("Table is nil") return end
@@ -14,6 +15,7 @@ local function printTable(tb, spacing)
 	end
 	print(spacing .. "Leaving Table")
 end
+
 local function ResetAlphaOnAllButtons()
 	for index = 1, MaxItemCount do
 		local btn = _G["eSaithBagFilterSellItem"..index]
@@ -26,6 +28,7 @@ local function ResetAlphaOnAllButtons()
 		end
 	end
 end
+
 local function AddLoot(obj)
 	local zone = GetRealZoneText()
 	if eSaithBagFilterInstanceLoot[zone] == nil then eSaithBagFilterInstanceLoot[zone] = { } end
@@ -43,6 +46,7 @@ local function ItemButton_Press(self, event, button)
 	end
 	ResetAlphaOnAllButtons()
 end
+
 local function ItemButton_OnEnter(self, event, ...)
 	local x = self:GetRight();
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -75,6 +79,16 @@ local function UpdateCoordinates(self, elapsed)
 		fontstring:SetText("|cff98FB98("..x..", "..y..")")
 		fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
 		fontstring:Show()
+	end
+end
+
+local function CoordinatesCheckButton_OnClick(self, event, button)
+	local selected = eSaithBagFilterOptions_Coordinates:GetChecked()
+	eSaithBagFilterVar.properties.coordsOn = selected
+	if selected then 
+		_G["eSaithBagFilterCoordinates"]:Show()
+	elseif _G["eSaithBagFilterCoordinates"]:IsShown() then
+		_G["eSaithBagFilterCoordinates"]:Hide()
 	end
 end
 
@@ -136,15 +150,29 @@ local function CreateCheckButtons()
 	
 	local coords = CreateFrame("Frame", "eSaithBagFilterCoordinates", UIParent)
 	coords:SetSize(100, 50)
-	coords:SetPoint("TOP", "Minimap", "BOTTOM", 5, 0)
+	coords:SetPoint("TOP", "Minimap", "BOTTOM", 5, -5)
 	coords:SetScript("OnUpdate", UpdateCoordinates)
 	local coordsFont = coords:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	coordsFont:SetText("|cffffffffLocation:")
 	coordsFont:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
 	coordsFont:Show()
 	coords:Show()
-
+	
+	-- Option Buttons
+	btn = CreateFrame("CheckButton", "eSaithBagFilterOptions_Coordinates", eSaithBagFilter, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent", "TOP", -125, -25)
+	btn:SetScript("OnClick", CoordinatesCheckButton_OnClick)
+	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("Turn On Coordinates (Located Under Mini-Map)")
+	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
+	btn:SetFontString(fontstring)
+	if eSaithBagFilterVar.properties.coordsOn then 
+		coords:Show() 
+	else 
+		coords:Hide() 
+	end	
 end
+
 local function CreateRarityObjects()
 	eSaithBagFilterInstanceLoot = eSaithBagFilterInstanceLoot or { }
 
@@ -171,7 +199,8 @@ local function CreateRarityObjects()
 				relativePoint = "CENTER",
 				xOffset = 0,
 				yOffset = 0,
-				sell = { }
+				sell = { },
+				coordsOn = false
 			}
 		}
 		for index, _type in pairs(eSaithBagFilterVar.properties.types) do
@@ -184,6 +213,7 @@ local function CreateRarityObjects()
 		end
 	end
 end
+
 local function CreateSliders()
 	local min = CreateFrame("Frame", "$parentSliderMin", eSaithBagFilter, "eSaithBagFilterSliderTemplate")
 	min:SetPoint("TOP", "$parent", "TOP", 0, -75)
@@ -194,6 +224,7 @@ local function CreateSliders()
 	_G[max:GetName() .. 'SliderTitle']:SetText("Maximum Item Level")
 	max:Hide()
 end
+
 local function UpdateZoneTable(zone)
 	if zone == nil or eSaithBagFilterInstanceLoot[zone] == nil then return end
 	local zoneTable = eSaithBagFilterInstanceLoot[zone]
@@ -234,12 +265,10 @@ end
 local function PassMin(ilvl, minlvl, required)
 	return not required or ilvl >= minlvl
 end
+
 local function PassMax(ilvl, maxlvl, required)
 	return not required or ilvl <= maxlvl
 end
-
-
-
 
 local function ShowListedItems(count)
 	for i = 1, MaxItemCount do
@@ -305,6 +334,7 @@ local function DimBagSlotZone(zone)
 	ShowListedItems(count)
 	ResetAlphaOnAllButtons()
 end
+
 local function DimBagSlotiLVL()
 	eSaithBagFilterVar.properties.sell = { }
 	
@@ -471,6 +501,7 @@ end
 local function GetRarity(ilvl)
 	return eSaithBagFilterVar.properties.types[ilvl]
 end  
+
 local function ParseRaidInfo()
 	local difficulty = {
 		"5 Player Normal ",
@@ -516,8 +547,6 @@ local function ParseRaidInfo()
 
 		eSaithBagFilterInstances[instanceName][key] = instance
 	end
-
-	--if eSaithBagFilter:IsShown() and eSaithBagFilterVar.properties.LeftTab == 4 then GetPlayerInfo() end
 end
 
 local function PrepareToShowSideTabs()
@@ -547,7 +576,7 @@ local function PrepareToShowSideTabs()
 		btn:Hide();
 	end
 
-	-- Hide Info tab
+	-- Hide Character Raid tab
 	_G["eSaithBagFilterResetButton"]:Hide()
 
 	eSaithBagFilter:SetSize(400, 200)
@@ -572,6 +601,9 @@ local function PrepareToShowSideTabs()
 
 	local fontstring = _G["eSaithBagFilterInstanceInfoFontString"]
 	if fontstring:IsShown() then fontstring:Hide() end
+	
+	-- Options Tab	
+	if eSaithBagFilterOptions_Coordinates:IsShown() then eSaithBagFilterOptions_Coordinates:Hide() end
 end
 
 local function SellListedItems()
@@ -588,6 +620,7 @@ local function SellListedItems()
 	end
 	return count
 end
+
 local function UpdateMinAndMax(self, value)
 	if self == nil or value == nil or eSaithBagFilterVar == nil then return end
 	local _type = eSaithBagFilterVar.properties.types[eSaithBagFilterVar.properties.BottomTab]
@@ -650,6 +683,7 @@ end
 function eSaithBagFilter_OnHide()
 
 end
+
 function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton")
 	self:RegisterEvent("ADDON_LOADED")
@@ -658,8 +692,7 @@ function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterEvent("MERCHANT_CLOSED")
 	self:RegisterEvent("BAG_UPDATE")
 	self:RegisterEvent("UPDATE_INSTANCE_INFO")
-	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")	
 end
 
 function eSaithBagFilter_OnShow()
@@ -677,6 +710,7 @@ function eSaithBagFilter_OnShow()
 	
 	eSaithBagFilterSideTabs_OnClick(_G["eSaithBagFilterSideTabsTab" .. eSaithBagFilterVar.properties.LeftTab])
 end
+
 function eSaithBagFilter_OnStopDrag(self, event, ...)
 	self:StopMovingOrSizing()
 	local point, relativeTo, relativePoint, xOffset, yOffset = eSaithBagFilter:GetPoint(1)
@@ -724,6 +758,7 @@ function eSaithBagFilterSellButton_Click(self, event, ...)
 	end
 	SellListedItems()
 end
+
 function eSaithBagFilterSellButton_OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
 
@@ -751,6 +786,7 @@ function eSaithBagFilterSellButton_OnUpdate(self, elapsed)
 		end 
 	end
 end
+
 function eSaithBagFilterSellButton_OnEnter(self, event, ...)
 	local x;
 	x = self:GetRight();
@@ -768,6 +804,7 @@ function eSaithBagFilterBottomTabs_OnLoad(self, event, ...)
 	PanelTemplates_SetNumTabs(self, 5)
 	PanelTemplates_SetTab(eSaithBagFilterBottomTabs, 1)
 end
+
 function eSaithBagFilterBottomTabs_OnShow(self, event, ...)
 	PanelTemplates_SetTab(eSaithBagFilterBottomTabs, eSaithBagFilterVar.properties.BottomTab)
 end
@@ -776,11 +813,12 @@ function eSaithBagFilterSideTabs_OnClick(self, button)
 	PlaySound("igAbiliityPageTurn")
 	local tab = self:GetName():match("eSaithBagFilterSideTabs(.*)")
 
-	for i = 1, 4 do
+	for i = 1, 5 do
 		_G["eSaithBagFilterSideTabsTab" .. i]:SetAlpha(.5)
 	end
 	_G["eSaithBagFilterSideTabs" .. tab]:SetAlpha(1)
 end
+
 function eSaithBagFilterResetButton_Click(self, event)
 	local keep = eSaithBagFilterVar.properties.keep
 	eSaithBagFilterVar = nil
@@ -802,22 +840,26 @@ function eSaithBagFilterSlider_CheckBoxClick(self, button, down)
 	end
 	DimBagSlotiLVL()
 end
+
 function eSaithBagFilterSlider_DownButton(self, event, ...)
 	local parent = self:GetParent()
 	local value = _G[parent:GetName() .. "Slider"]:GetValue() - _G[parent:GetName() .. "Slider"]:GetValueStep()
 	_G[parent:GetName() .. "Slider"]:SetValue(math.floor(value))
 	UpdateMinAndMax(self, math.floor(value))
 end
+
 function eSaithBagFilterSlider_OnLoad(self, event, ...)
 	local minSize, maxSize = self:GetMinMaxValues()
 	_G[self:GetName() .. 'Low']:SetText(minSize)
 	_G[self:GetName() .. 'High']:SetText(maxSize)
 end
+
 function eSaithBagFilterSlider_SliderValueChanged(self, value)
 	local parent = self:GetParent()
 	_G[parent:GetName() .. "SliderValue"]:SetText(math.floor(value))
 	UpdateMinAndMax(self, math.floor(value))
 end
+
 function eSaithBagFilterSlider_UpButton(self, event, ...)
 	local parent = self:GetParent()
 	local value = _G[parent:GetName() .. "Slider"]:GetValue() + _G[parent:GetName() .. "Slider"]:GetValueStep()
@@ -832,6 +874,7 @@ function eSaithBagFilterCheckBox_Click(self, button, down)
 	end
 	DimBagSlotType()
 end
+
 function eSaithBagFilterBottomTab_Click(self, event, ...)
 	local parent = self:GetParent():GetName() .. "Tab"
 	local col = eSaithBagFilterVar.properties.types[eSaithBagFilterVar.properties.BottomTab]
@@ -850,20 +893,33 @@ function eSaithBagFilterBottomTab_Click(self, event, ...)
 	end
 end
 
-function eSaithBagFilter_ShowCharacterInfo(self, event)
-	if eSaithBagFilterVar.properties.LeftTab ~= 4 then
-		RequestRaidInfo()
-		PrepareToShowSideTabs()
-		_G["eSaithBagFilterSellButton"]:Hide()
 
-		if eSaithBagFilterVar.properties.point ~= nil then
-			eSaithBagFilter:SetPoint("CENTER", "UIParent", "CENTER", 0, 0)
-		end
-	end
-
-	eSaithBagFilterVar.properties.LeftTab = 4
-	_G["eSaithBagFilterResetButton"]:Show()
+function eSaithBagFilter_ShowFilterZone(self, event)
+	PrepareToShowSideTabs()
+	eSaithBagFilterVar.properties.LeftTab = 1
+	DimBagSlotZone(eSaithBagFilterVar.properties.zone)
 	eSaithBagFilterDropDown:Show()
+	eSaithBagFilterCheckButton_TradeGoods:Show()
+	_G["eSaithBagFilterDoNotSellFontString"]:Show()
+end
+function eSaithBagFilter_ShowFilterRarity(self, event)
+	PrepareToShowSideTabs()
+	eSaithBagFilterVar.properties.LeftTab = 3
+
+	local point, relativeTo, relativePoint, xOffset, yOffset = eSaithBagFilterCheckButtonPoor:GetPoint("TOPLEFT")
+	local offset = yOffset
+	local count = 0
+	for index, _type in pairs(eSaithBagFilterVar.properties.types) do
+		if eSaithBagFilterVar[_type] ~= nil then
+			_G["eSaithBagFilterCheckButton" .. _type]:SetPoint(point, relativeTo, relativePoint, xOffset, offset)
+			_G["eSaithBagFilterCheckButton" .. _type]:SetChecked(eSaithBagFilterVar[_type].checked)
+			_G["eSaithBagFilterCheckButton" .. _type]:Show()
+			offset = offset - 30
+		end
+		count = count + 1
+		if count >= 5 then break end
+	end
+	DimBagSlotType()
 end
 function eSaithBagFilter_ShowFilteriLVL(self, event)
 	PrepareToShowSideTabs()
@@ -889,33 +945,27 @@ function eSaithBagFilter_ShowFilteriLVL(self, event)
 	eSaithBagFilterSliderMax:Show()
 	DimBagSlotiLVL()
 end
-function eSaithBagFilter_ShowFilterRarity(self, event)
-	PrepareToShowSideTabs()
-	eSaithBagFilterVar.properties.LeftTab = 3
+function eSaithBagFilter_ShowCharacterInfo(self, event)
+	if eSaithBagFilterVar.properties.LeftTab ~= 4 then
+		RequestRaidInfo()
+		PrepareToShowSideTabs()
+		_G["eSaithBagFilterSellButton"]:Hide()
 
-	local point, relativeTo, relativePoint, xOffset, yOffset = eSaithBagFilterCheckButtonPoor:GetPoint("TOPLEFT")
-	local offset = yOffset
-	local count = 0
-	for index, _type in pairs(eSaithBagFilterVar.properties.types) do
-		if eSaithBagFilterVar[_type] ~= nil then
-			_G["eSaithBagFilterCheckButton" .. _type]:SetPoint(point, relativeTo, relativePoint, xOffset, offset)
-			_G["eSaithBagFilterCheckButton" .. _type]:SetChecked(eSaithBagFilterVar[_type].checked)
-			_G["eSaithBagFilterCheckButton" .. _type]:Show()
-			offset = offset - 30
+		if eSaithBagFilterVar.properties.point ~= nil then
+			eSaithBagFilter:SetPoint("CENTER", "UIParent", "CENTER", 0, 0)
 		end
-		count = count + 1
-		if count >= 5 then break end
 	end
-	DimBagSlotType()
-end
-function eSaithBagFilter_ShowFilterZone(self, event)
-	PrepareToShowSideTabs()
-	eSaithBagFilterVar.properties.LeftTab = 1
-	DimBagSlotZone(eSaithBagFilterVar.properties.zone)
+
+	eSaithBagFilterVar.properties.LeftTab = 4
+	_G["eSaithBagFilterResetButton"]:Show()
 	eSaithBagFilterDropDown:Show()
-	eSaithBagFilterCheckButton_TradeGoods:Show()
-	_G["eSaithBagFilterDoNotSellFontString"]:Show()
 end
+function eSaithBagFilter_ShowOptions(self, event)
+	PrepareToShowSideTabs()
+	eSaithBagFilterVar.properties.LeftTab = 5	
+	eSaithBagFilterOptions_Coordinates:Show()	
+end
+
 
 local function PlayerInfoItemFunction(self, arg1, arg2, checked)
 	eSaithBagFilter:SetSize(325, 400)
@@ -979,6 +1029,9 @@ function eSaithBagFilter_CreateDropDownList()
 	end
 end
 
+function eSaithBagFilterOptions_OnLoad()
+	PrepareToShowSideTabs()
+end
 
 
 
