@@ -1,10 +1,9 @@
 ﻿## Interface: 60200
 ## Title: eSaith Bag Filter
-## Version: 1.2
+## Version: 1.3
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl. 
 ## Author: eSaith
-## SavedVariables: eSaithBagFilterInstances
-## SavedVariablesPerCharacter: eSaithBagFilterVar
+## SavedVariablesPerCharacter: eSaithBagFilterVar, eSaithBagFilterInstances
 
 eSaithBagFilter.lua
 eSaithBagFilter.xml

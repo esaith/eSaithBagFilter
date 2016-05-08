@@ -16,7 +16,7 @@
                 </Scripts>
             </CheckButton>
             <Button name="$parentDownButton">
-                <Size x="20" y="20" />
+                <Size x="20" y="20" />@
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentCheckButton" relativePoint="RIGHT" x="1" />
                 </Anchors>
@@ -75,7 +75,7 @@
     </Frame>
 
     <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">
-        <Size x="400" y="350" />
+        <Size x="400" y="400" />
         <Anchors>
             <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
         </Anchors>
@@ -167,6 +167,8 @@
                     <OnShow>
                         CharacterFrame_TabBoundsCheck(self);
                     </OnShow>
+                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
+                    <OnLeave function="OnGameToolTipLeave" />
                 </Scripts>
             </Button>
             <Button name="$parentTab2" inherits="ItemButtonTemplate" id="2">
@@ -191,6 +193,8 @@
                     <OnShow>
                         CharacterFrame_TabBoundsCheck(self);
                     </OnShow>
+                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
+                    <OnLeave function="OnGameToolTipLeave" />
                 </Scripts>
             </Button>
             <Button name="$parentTab3" inherits="ItemButtonTemplate" id="3">
@@ -215,6 +219,8 @@
                     <OnShow>
                         CharacterFrame_TabBoundsCheck(self);
                     </OnShow>
+                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
+                    <OnLeave function="OnGameToolTipLeave" />
                 </Scripts>
             </Button>
             <Button name="$parentTab4" inherits="ItemButtonTemplate" id="4">
@@ -239,37 +245,43 @@
                     <OnShow>
                         CharacterFrame_TabBoundsCheck(self);
                     </OnShow>
+                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
+                    <OnLeave function="OnGameToolTipLeave" />
                 </Scripts>
-            </Button>
-			<Button name="$parentTab5" inherits="ItemButtonTemplate" id="5">
+            </Button>            
+            <Button name="$parentTab5" inherits="ItemButtonTemplate" id="5">
                 <Anchors>
                     <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab4" y="0"/>
                 </Anchors>
                 <Layers>
                     <Layer level="OVERLAY" setAllPoints="true">
                         <Texture name="$parentTexture" file="Interface\ICONS\Ability_RewindTime" >
-							<Size x="35" y="35"/>
+                            <Size x="35" y="35"/>
                             <Anchors>
                                 <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER" />
                             </Anchors>
                         </Texture>
                     </Layer>
-                </Layers>   
-				<Scripts>					
-					<OnClick>
-						eSaithBagFilter_ShowOptions(self, button)
-						eSaithBagFilterSideTabs_OnClick(self, button)
-					</OnClick>
-				</Scripts>
+                </Layers>
+                <Scripts>
+                    <OnClick>
+                        eSaithBagFilter_ShowOptions(self, button)
+                        eSaithBagFilterSideTabs_OnClick(self, button)
+                    </OnClick>
+                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
+                    <OnLeave function="OnGameToolTipLeave" />
+                </Scripts>
             </Button>
         </Frames>
         <Scripts>
             <OnLoad function="eSaithBagFilterSideTabs_OnLoad" />
             <OnShow function="eSaithBagFilterSideTabs_OnShow" />
+            <OnEnter function="eSaithBagFilterTab_OnEnter" />
+            <OnLeave function="OnGameToolTipLeave" />
         </Scripts>
     </Frame>
 
-    <Frame name="$parentBottomTabs" parent="eSaithBagFilter">
+    <Frame name="$parentILVLBottomTabs" parent="eSaithBagFilter">
         <Size x="400" y="40" />
         <Anchors>
             <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
@@ -282,11 +294,11 @@
                 <Scripts>
                     <OnShow>
                         PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnShow>
                     <OnClick>
                         eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnClick>
                 </Scripts>
             </Button>
@@ -297,11 +309,11 @@
                 <Scripts>
                     <OnShow>
                         PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnShow>
                     <OnClick>
                         eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnClick>
                 </Scripts>
             </Button>
@@ -312,11 +324,11 @@
                 <Scripts>
                     <OnShow>
                         PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnShow>
                     <OnClick>
                         eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnClick>
                 </Scripts>
             </Button>
@@ -327,11 +339,11 @@
                 <Scripts>
                     <OnShow>
                         PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnShow>
                     <OnClick>
                         eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());                        
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnClick>
                 </Scripts>
             </Button>
@@ -342,18 +354,18 @@
                 <Scripts>
                     <OnShow>
                         PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnShow>
                     <OnClick>
                         eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterBottomTabs, self:GetID());
+                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
                     </OnClick>
                 </Scripts>
             </Button>
         </Frames>
         <Scripts>
-            <OnLoad function="eSaithBagFilterBottomTabs_OnLoad" />
-            <OnShow function="eSaithBagFilterBottomTabs_OnShow" />
+            <OnLoad function="eSaithBagFilterILVLBottomTabs_OnLoad" />
+            <OnShow function="eSaithBagFilterILVLBottomTabs_OnShow" />
         </Scripts>
     </Frame>
 
@@ -371,5 +383,27 @@
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
+    </Button>
+
+    <Button name="$parentEsaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
+        <Anchors>
+            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parent" />
+        </Anchors>
+        <Layers>
+            <Layer level="OVERLAY" setAllPoints="true">
+                <Texture name="$parentTexture" file="Interface\ICONS\Ability_Iyyokuk_Sword_White" >
+                    <Size x="35" y="35"/>
+                    <Anchors>
+                        <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER" />
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick function="eSaithBagFilterOpenFrame_OnClick" />
+            <OnEnter function="eSaithBagFilterOpenFrame_OnEnter" />
+            <OnLeave function="OnGameToolTipLeave" />
+
+        </Scripts>
     </Button>
 </Ui>
