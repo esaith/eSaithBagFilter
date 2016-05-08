@@ -2,14 +2,14 @@
 local MaxItemCount = -1
 local zone -- used for updating world coordinates
 local OriginalToolTip  -- used to save original functionality to the tooltip. Used for hooking a function
-    
+local MAX_BAG_SLOTS = 200    
 
 local function printTable(tb, spacing)
     if spacing == nil then spacing = "" end
     if tb == nil then print("Table is nil") return end
-    if type(tb) ~= table then
-        print(tostring(tb))
-        return
+    if type(tb) ~= "table" then
+        print(type(tb), tb)
+        
     end
 
     print(spacing .. "Entering table")
@@ -17,7 +17,6 @@ local function printTable(tb, spacing)
         print(spacing .. "K: " .. k .. ", v: " .. tostring(v))
         if type(v) == "table" then
             printTable(v, "   " .. spacing)
-        else
         end
     end
     print(spacing .. "Leaving Table")
@@ -265,7 +264,7 @@ local function CreateCheckButtons()
 
 
     -- Create all widgets that could possibly sell
-    for i = 1, 200 do
+    for i = 1, MAX_BAG_SLOTS do
         local btn = CreateFrame("Button", "eSaithBagFilterSellItem" .. i, eSaithBagFilter, "eSaithBagFilterItemButtonTemplate")
         btn:SetPoint("CENTER", "$parent", "CENTER", i, i)
         btn:SetSize(35, 35)
@@ -741,7 +740,7 @@ local function GetPlayerInfo()
     if count < NumPerRow then
         eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 450)
     else
-        eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 85 *(count / NumPerRow) + 50 * #eSaithBagFilterInstances.players)
+        eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 85 * (count / NumPerRow) + 50 * eSaithBagFilterInstances.players)
     end
 end
 local function GetRarity(ilvl)
@@ -764,8 +763,7 @@ local function ParseRaidInfo()
     local playerName = UnitName("player")
     local realmName = GetRealmName()
     local key = playerName .. " - " .. realmName
-
-    if eSaithBagFilterInstances == nil then eSaithBagFilterInstances = { } end
+    if eSaithBagFilterInstances == nil then eSaithBagFilterInstances = { players = { } } end
     if eSaithBagFilterInstances.players == nil then eSaithBagFilterInstances.players = { } end
     local found = false
     for j, k in pairs(eSaithBagFilterInstances.players) do
@@ -814,7 +812,7 @@ local function PrepareToShowSideTabs()
     eSaithBagFilterSliderMin:Hide()
     eSaithBagFilterSliderMax:Hide()
 
-    for i = 1, 200 do
+    for i = 1, MAX_BAG_SLOTS do
         local btn = _G["eSaithBagFilterSellItem" .. i]
         btn:Hide();
     end
@@ -859,7 +857,7 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
     if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
         self:UnregisterEvent("ADDON_LOADED")
         eSaithBagFilterVar = eSaithBagFilterVar or nil
-        eSaithBagFilterInstances = { }
+        eSaithBagFilterInstances = eSaithBagFilterInstances or { }
         local version = GetAddOnMetadata("eSaithBagFilter", "Version")
         if eSaithBagFilterVar ~= nil and tostring(eSaithBagFilterVar.properties.version) ~= tostring(version) then            
             print("|cffffff99eSaith AddOn has been updated")
@@ -1305,24 +1303,7 @@ end
 --]]
 
 --[[
-  Updates:
-    -- Auto loot all containers. If room is not available a message is printed in the chat box.
-      -- ** Currently this does not include salvage boxes, or any container that has a cast time.
-    -- Make loot buttons smaller and increased the number per row
-    -- Better fitting frame to number of items.
-    -- Organzied items by rarity. Lowest quality up top, highest quality on bottom
-    -- Added an options panel
-    -- Added Coordinates to be turned off/on that is located under the mini-map
-    -- Fixed issue where addon would appear to 'jump' when going from tab to the next
-    -- Added Auto-sell junk items when first talking to a vendor
-    -- Addon auto-updates internal variables when it recognizes its an older version that current installed. When updating any saved lists should still be saved
-    -- Prevented addon from immediately opening when talking to a vendor (even the programmer got annoyed)
-        -- Added button to Merchant Frame to toggle addon open/close
-    -- Added auto addon update depending on its version.
-    -- When scrolling over items a comparison to equipped items can be made by pressing any <Shift> button
-    -- Added BOE section that removes all BOE items of rare (blue) quality or higher to the bottom of the list for easier filtering
-        -- Included in options page to include green (if so desired)
-    -- Added reset command line in case unable to do from button
+  Updates:    
 ]]--
 
 

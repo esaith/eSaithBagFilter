@@ -1,12 +1,32 @@
 ﻿## Interface: 60200
 ## Title: eSaith Bag Filter
 ## Version: 1.3
-## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl. 
+## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
 ## Author: eSaith
-## SavedVariablesPerCharacter: eSaithBagFilterVar, eSaithBagFilterInstances
+## SavedVariables: eSaithBagFilterInstances
+## SavedVariablesPerCharacter: eSaithBagFilterVar
 
 eSaithBagFilter.lua
 eSaithBagFilter.xml
+
+-- 1.3 
+    --Auto loot all containers. If room is not available a message is printed in the chat box.
+      -- ** Currently this does not include salvage boxes, or any container that has a cast time.
+    -- Make loot buttons smaller and increased the number per row
+    -- Better fitting frame to number of items.
+    -- Organzied items by rarity. Lowest quality up top, highest quality on bottom
+    -- Added an options panel
+    -- Added Coordinates to be turned off/on that is located under the mini-map
+    -- Fixed issue where addon would appear to 'jump' when going from tab to the next
+    -- Added Auto-sell junk items when first talking to a vendor
+    -- Addon auto-updates internal variables when it recognizes its an older version that current installed. When updating any saved lists should still be saved
+    -- Prevented addon from immediately opening when talking to a vendor (even the programmer got annoyed)
+        -- Added button to Merchant Frame to toggle addon open/close
+    -- Added auto addon update depending on its version.
+    -- When scrolling over items a comparison to equipped items can be made by pressing any <Shift> button
+    -- Added BOE section that removes all BOE items of rare (blue) quality or higher to the bottom of the list for easier filtering
+        -- Included in options page to include green (if so desired)
+    -- Added reset command line in case the user is unable to do from button
 
 --1.2 Moved the items options from the bag to the actual addon. Should reduce the chance of interfering with other bag addons or addons that do similar functions. Instead of seeing all items and then dimming those that 
 -- are wished to be sold, only the items will appear that contain to the selected tab - then the player may select the item to keep it on the list
