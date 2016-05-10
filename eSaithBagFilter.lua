@@ -31,7 +31,7 @@ local function PrepreToolTip(self)
     end
 end
 
-local function ReadToolTip(self, text, ...)
+local function ReadToolTip(self, ...)
     local boundText =  tostring(GameTooltipTextLeft2:GetText()) .. 
                         tostring(GameTooltipTextLeft3:GetText()) .. 
                         tostring(GameTooltipTextLeft4:GetText()) .. 
@@ -39,11 +39,11 @@ local function ReadToolTip(self, text, ...)
     if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*")  
             --or not (boundText:find(".* on picked.*") or boundText:find(".*Soulbound.*")) 
             then
-        local item = GameTooltipTextLeft1:GetText()
-        if eSaithBagFilterVar.properties.boe == nil then eSaithBagFilterInstanceLoot[boe] = { } end
-        eSaithBagFilterVar.properties.boe[item] = true
+        local _, link = GameTooltip:GetItem() 
+        if eSaithBagFilterInstances.boe == nil then eSaithBagFilterInstances.boe = { } end
+        eSaithBagFilterInstances.boe[link] = true
     end
-    return OriginalToolTip(self, text, ...)
+    return OriginalToolTip(self, ...)
 end
 local function ResetAlphaOnAllButtons()
     for index = 1, MaxItemCount do
@@ -61,9 +61,10 @@ local function AddLoot(obj, quality)
     local zone = GetRealZoneText()
     if eSaithBagFilterInstanceLoot[zone] == nil then eSaithBagFilterInstanceLoot[zone] = { } end
     eSaithBagFilterInstanceLoot[zone][obj] = true
-    GameTooltip:SetOwner(UIParent, "ANCHOR_NONE");
     GameTooltip:SetHyperlink(obj)
+    GameTooltip:SetOwner(_G["UIParent"], 10000, -10000)
     GameTooltip:Show()   
+
 end
 local function SetIncludedBOEItems()
     eSaithBagFilterVar.properties.BOEGreen = eSaithBagFilterOptions_BOEGreenItems:GetChecked()
@@ -501,7 +502,7 @@ local function ShowListedItems(count)
                     currentPositionThisRow = 1
                 end
 
-                if eSaithBagFilterVar.properties.boe[list[index].itemName] and 
+                if eSaithBagFilterInstances.boe[list[index].link] and 
                         (list[index].colorIndex > 3  or (eSaithBagFilterVar.properties.BOEGreen and list[index].colorIndex > 2)) then
                     if boe == nil then boe = { } end
                     boe[list[index].link] = list[index]
@@ -777,19 +778,21 @@ local function ParseRaidInfo()
 
     for i = 1, num do
         local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, maxBosses, defeatedBosses = GetSavedInstanceInfo(i)
+        local InstanceKey = instanceName..' - '..difficulty[instanceDifficulty]
 
         if eSaithBagFilterInstances == nil then eSaithBagFilterInstances = { } end
-        if eSaithBagFilterInstances[instanceName] == nil and instanceDifficulty > 1 then
-            eSaithBagFilterInstances[instanceName] = { }
+        if eSaithBagFilterInstances[InstanceKey] == nil and instanceDifficulty > 1 then
+            eSaithBagFilterInstances[InstanceKey] = { }
         end
 
-        local instance = eSaithBagFilterInstances[instanceName][key]
+        local instance = eSaithBagFilterInstances[InstanceKey][key]
         if instance == nil then instance = { time = 0 } end
         if instanceReset > 0 then
             instance.time = time() + instanceReset
         end
 
-        eSaithBagFilterInstances[instanceName][key] = instance
+        eSaithBagFilterInstances[InstanceKey][key] = instance
+        
     end
 end
 local function PrepareToShowSideTabs()
