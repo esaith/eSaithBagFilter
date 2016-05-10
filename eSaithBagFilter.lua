@@ -40,7 +40,6 @@ local function ReadToolTip(self, ...)
             --or not (boundText:find(".* on picked.*") or boundText:find(".*Soulbound.*")) 
             then
         local _, link = GameTooltip:GetItem() 
-        if eSaithBagFilterInstances.boe == nil then eSaithBagFilterInstances.boe = { } end
         eSaithBagFilterInstances.boe[link] = true
     end
     return OriginalToolTip(self, ...)
@@ -224,11 +223,12 @@ end
 
 local function CreateCheckButtons()
     local width = eSaithBagFilter:GetWidth()
+    local fontstring, btn
     for index, _type in ipairs(eSaithBagFilterVar.properties.types) do
-        local btn = CreateFrame("CheckButton", "$parentCheckButton" .. _type, eSaithBagFilter, "UICheckButtonTemplate")
+        btn = CreateFrame("CheckButton", "$parentCheckButton" .. _type, eSaithBagFilter, "UICheckButtonTemplate")
         btn:SetPoint("TOP", "$parent", "TOP", - math.floor(width / 5), -30)
         btn:SetScript("OnClick", eSaithBagFilterCheckBox_Click)
-        local fontstring = btn:CreateFontString("eSaithBagFilterCheckButton" .. _type .. "FontString", "ARTWORK", "GameFontNormal")
+        fontstring = btn:CreateFontString("eSaithBagFilterCheckButton" .. _type .. "FontString", "ARTWORK", "GameFontNormal")
         fontstring:SetTextColor(eSaithBagFilterVar.properties.texture[3 * index], eSaithBagFilterVar.properties.texture[3 * index + 1], eSaithBagFilterVar.properties.texture[3 * index + 2])
         fontstring:SetText("Filter " .. _type .. " Items")
         fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
@@ -282,7 +282,15 @@ local function CreateCheckButtons()
         btn:SetScript("OnLeave", OnGameToolTipLeave)
         btn:Hide();
     end
-    local fontstring = eSaithBagFilter:CreateFontString("$parentInstanceInfoFontString", "ARTWORK", "GameFontNormal")
+    
+
+    local fontstring  
+    -- Just create the fontstring. They will be used later on 
+    eSaithBagFilter:CreateFontString("$parentInstanceInfoFontStringFreshTitle", "ARTWORK", "GameFontNormal")
+    eSaithBagFilter:CreateFontString("$parentInstanceInfoFontStringFreshList", "ARTWORK", "GameFontNormal")
+    eSaithBagFilter:CreateFontString("$parentInstanceInfoFontStringSavedTitle", "ARTWORK", "GameFontNormal")
+    eSaithBagFilter:CreateFontString("$parentInstanceInfoFontStringSavedList", "ARTWORK", "GameFontNormal")
+    
 
     -- Coordinates
     local coords = CreateFrame("Frame", "eSaithBagFilterCoordinates", UIParent)
@@ -351,6 +359,11 @@ local function CreateCheckButtons()
 end
 local function CreateRarityObjects()
     eSaithBagFilterInstanceLoot = eSaithBagFilterInstanceLoot or { }
+    eSaithBagFilterInstances = eSaithBagFilterInstances or 
+    {   
+        players = { }, 
+        boe = { } 
+    }
 
     if eSaithBagFilterVar == nil then
         eSaithBagFilterVar = {
@@ -677,122 +690,36 @@ local function CreateZoneDropDownList()
         end
     end
 end
-local function GetPlayerInfo()
-    local t = time()
-    local NumPerRow = 4
-    local count = 1
-    local realmName = GetRealmName()
-    local playerName = UnitName("player")
-    local maxWidth = 0
 
-    for zone, players in pairs(eSaithBagFilterInstances) do
-        if zone ~= "players" then
-            if count > 20 then break end
-            local text = "|cffffff00" .. zone
-            for k, player in ipairs(eSaithBagFilterInstances.players) do
-                local name = player
-                if player:find(realmName) then name = player:match("(.*) %- ") end
-
-                if players[player] ~= nil and players[player].time > t then
-                    if name == playerName then
-                        text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. name .. "|cffff2222 - In Progress/Complete|cffB0C4DE ***"
-                    else
-                        text = text .. "\n|cffff2222" .. name .. " - In Progress/Complete"
-                    end
-                else
-                    if name == playerName then
-                        text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. name .. "|cffB0C4DE ***"
-                    else
-                        text = text .. "\n|cffffffff" .. name
-                    end
-                end
-            end
-            local fontstring = _G["eSaithBagFilterInstanceInfoFontString" .. count]
-            if fontstring == nil then
-                fontstring = eSaithBagFilter:CreateFontString("$parentInstanceInfoFontString" .. count, "ARTWORK", "GameFontNormal")
-            end
-
-            if count == 1 then
-                fontstring:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 60, -60)
-            elseif count > NumPerRow then
-                fontstring:SetPoint("TOP", "$parentInstanceInfoFontString" ..(count - NumPerRow), "BOTTOM", 0, -40)
-            else
-                fontstring:SetPoint("LEFT", "$parentInstanceInfoFontString" ..(count - 1), "RIGHT", 60, 0)
-            end
-
-            fontstring:SetText(text)
-            fontstring:Show()
-            count = count + 1
-            if maxWidth < fontstring:GetWidth() then
-                maxWidth = fontstring:GetWidth()
-            end
-        end
-    end
-
-    local fontstring = _G["eSaithBagFilterInstanceInfoFontString" .. count]
-    if fontstring == nil then
-        fontstring = eSaithBagFilter:CreateFontString("$parentInstanceInfoFontString" .. count, "ARTWORK", "GameFontNormal")
-    end
-    fontstring:SetPoint("BOTTOM", "$parent", "BOTTOM", 0, 30)
-    fontstring:SetWidth(450)
-    fontstring:SetText("\n|cffB0C4DE*** |cff20B2AA CHARACTER |cffB0C4DE *** is your current character\n|cffffffff CHARACTER|cffB0C4DE has a refreshed instance \n|cffff2222 CHARACTER - In Progress/Complete |cffB0C4DEis self explanatory")
-    fontstring:Show()
-
-    if count < NumPerRow then
-        eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 450)
-    else
-        eSaithBagFilter:SetSize(maxWidth * NumPerRow * 1.10, 85 * (count / NumPerRow) + 50 * eSaithBagFilterInstances.players)
-    end
-end
 local function GetRarity(ilvl)
     return eSaithBagFilterVar.properties.types[ilvl]
 end  
-local function ParseRaidInfo()
-    local difficulty = {
-        "5 Player Normal ",
-        "5 Player Heroic ",
-        "10 Player Normal ",
-        "25 Player Normal ",
-        "10 Player Heroic ",
-        "25 Player Heroic ",
-        "25 Player LFR ",
-        "5 Player Challenge Mode ",
-        "40 Player Classic "
-    }
+local function ParseRaidInfo() 
+    -- Don't save any character lower than level 70.
+    if UnitLevel("player") < 70 then return end
 
-    local num = GetNumSavedInstances()
-    local playerName = UnitName("player")
-    local realmName = GetRealmName()
-    local key = playerName .. " - " .. realmName
-    if eSaithBagFilterInstances == nil then eSaithBagFilterInstances = { players = { } } end
-    if eSaithBagFilterInstances.players == nil then eSaithBagFilterInstances.players = { } end
-    local found = false
-    for j, k in pairs(eSaithBagFilterInstances.players) do
-        if k == key then
-            found = true
-        end
-    end
+    -- Current Player Info
+    local NumOfInstances = GetNumSavedInstances()
+    local PlayerIndex = UnitName("player").." ("..GetRealmName()..")"
+    if eSaithBagFilterInstances.players == nil then eSaithBagFilterInstances.players = {} end
+    if eSaithBagFilterInstances.players[PlayerIndex] == nil then 
+        eSaithBagFilterInstances.players[PlayerIndex] = { name = UnitName("player"), server = GetRealmName() }
+    end    
 
-    local lvl = UnitLevel("player")
-    if not found and lvl > 70 then table.insert(eSaithBagFilterInstances.players, key) end
-
-    for i = 1, num do
-        local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, maxBosses, defeatedBosses = GetSavedInstanceInfo(i)
-        local InstanceKey = instanceName..' - '..difficulty[instanceDifficulty]
-
-        if eSaithBagFilterInstances == nil then eSaithBagFilterInstances = { } end
-        if eSaithBagFilterInstances[InstanceKey] == nil and instanceDifficulty > 1 then
-            eSaithBagFilterInstances[InstanceKey] = { }
-        end
-
-        local instance = eSaithBagFilterInstances[InstanceKey][key]
-        if instance == nil then instance = { time = 0 } end
-        if instanceReset > 0 then
-            instance.time = time() + instanceReset
-        end
-
-        eSaithBagFilterInstances[InstanceKey][key] = instance
+    for i = 1, NumOfInstances do
+        local iName, _, iReset, iDifficulty, _, _, _, _, _, iDifficultyName = GetSavedInstanceInfo(i)
+        -- Remove 'the' from "The ..." in instance name, if applicable        
+        if string.find(iName, 'The ') == 1 then 
+            iName = string.sub(iName, 5)
+        end        
+        local instance = iName..' - '..iDifficultyName
         
+        if eSaithBagFilterInstances[instance] == nil then eSaithBagFilterInstances[instance] = { } end
+        if eSaithBagFilterInstances[instance][PlayerIndex] == nil then eSaithBagFilterInstances[instance][PlayerIndex] = { time = 0 } end
+                
+        if iReset > 0 then
+            eSaithBagFilterInstances[instance][PlayerIndex].time = time() + iReset
+        end        
     end
 end
 local function PrepareToShowSideTabs()
@@ -824,17 +751,11 @@ local function PrepareToShowSideTabs()
     eSaithBagFilterResetButton:Hide()
 
     eSaithBagFilter:SetSize(450, 400)
-    local count = 1
-    if eSaithBagFilterInstances ~= nil then
-        for k, v in pairs(eSaithBagFilterInstances) do
-            if _G["eSaithBagFilterInstanceInfoFontString" .. count] ~= nil then
-                _G["eSaithBagFilterInstanceInfoFontString" .. count]:Hide()
-                count = count + 1
-            end
-        end
-    end
-
-    if eSaithBagFilterInstanceInfoFontString:IsShown() then eSaithBagFilterInstanceInfoFontString:Hide() end
+   
+    if eSaithBagFilterInstanceInfoFontStringFreshTitle:IsShown() then eSaithBagFilterInstanceInfoFontStringFreshTitle:Hide() end
+    if eSaithBagFilterInstanceInfoFontStringFreshList:IsShown() then eSaithBagFilterInstanceInfoFontStringFreshList:Hide() end
+    if eSaithBagFilterInstanceInfoFontStringSavedTitle:IsShown() then eSaithBagFilterInstanceInfoFontStringSavedTitle:Hide() end
+    if eSaithBagFilterInstanceInfoFontStringSavedList:IsShown() then eSaithBagFilterInstanceInfoFontStringSavedList:Hide() end
 
     -- Options Tab	
     if eSaithBagFilterOptions_Coordinates:IsShown() then eSaithBagFilterOptions_Coordinates:Hide() end
@@ -860,14 +781,17 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
     if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
         self:UnregisterEvent("ADDON_LOADED")
         eSaithBagFilterVar = eSaithBagFilterVar or nil
-        eSaithBagFilterInstances = eSaithBagFilterInstances or { }
+
+        -- Check if an older version. If so do a soft reset
         local version = GetAddOnMetadata("eSaithBagFilter", "Version")
-        if eSaithBagFilterVar ~= nil and tostring(eSaithBagFilterVar.properties.version) ~= tostring(version) then            
-            print("|cffffff99eSaith AddOn has been updated")
-            eSaithBagFilterVar.properties.version = version            
+        if eSaithBagFilterVar ~= nil and tostring(eSaithBagFilterVar.properties.version) ~= tostring(version) then    
             eSaithBagFilterResetButton_Click()
+            eSaithBagFilterVar.properties.version = version            
+            print("|cffffff99eSaith Bag Filter has been updated. Thank you for sticking with me and good luck in all of your endeavors.")
+        else
+            CreateRarityObjects()
         end
-        CreateRarityObjects()
+        
         CreateCheckButtons()
         CreateSliders()
         eSaithBagFilter_ShowFilterZone()
@@ -880,7 +804,7 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
             string.find(arg1, "Received item: ") ~= nil then
 
             local bulk
-            if string.find(arg1, "You receive item: ") ~= nil or string.find(arg1, "Received item: ") ~= nil then
+            if string.find(arg1, "You receive item: ") ~= nil or string.find(arg1, "Received item: ") ~= nil then  -- TODO, consider rewrite
                 bulk = string.match(arg1, ".* item: (.+)%.")
             else
                 bulk = string.match(arg1, ".* loot: (.+)%.")
@@ -1179,7 +1103,6 @@ function eSaithBagFilter_ShowFilterRarity(self, event)
         eSaithBagFilterSellButton:Show()
     end
 end
-
 function eSaithBagFilter_ShowCharacterInfo(self, event)
     if eSaithBagFilterVar.properties.LeftTab ~= 4 then
         RequestRaidInfo()
@@ -1207,49 +1130,87 @@ end
 
 
 local function PlayerInfoItemFunction(self, arg1, arg2, checked)
-
-    local t = time()
-    local realmName = GetRealmName()
+    local time = time()
+    local realm = GetRealmName()
     local CurrentPlayersName = UnitName("player")
-    local text = ""
-    local playersInSelectedInstance = eSaithBagFilterInstances[self.arg1]
+    local SavedText = ""
+    local CleanText = ""
+    local instance = eSaithBagFilterInstances[self.arg1]
+    local count = 0
 
-    for index, player in ipairs(eSaithBagFilterInstances.players) do
-        local charName = player
-        if player:find(realmName) then charName = player:match("(.*)%s%-") end
+    for PlayerServerName, playerInfo in pairs(eSaithBagFilterInstances.players) do
+        local charName
+        if CurrentPlayersName == playerInfo.name and realm == playerInfo.server then 
+            charName = playerInfo.name 
+        else
+            charName = PlayerServerName
+        end
 
-        if playersInSelectedInstance[player] ~= nil and playersInSelectedInstance[player].time > t then
+        if instance[PlayerServerName] ~= nil and instance[PlayerServerName].time > time then
             if charName == CurrentPlayersName then
-                text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. charName .. "|cffff2222 - In Progress/Complete|cffB0C4DE ***"
+                SavedText = SavedText .. "\n|cffFFAA33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
             else
-                text = text .. "\n|cffff2222" .. charName .. " - In Progress/Complete"
+                SavedText = SavedText .. "\n|cff96bdc4" .. charName
             end
         else
             if charName == CurrentPlayersName then
-                text = text .. "\n|cffB0C4DE*** |cff20B2AA" .. charName .. "|cffB0C4DE ***"
+                CleanText = CleanText .. "\n|cffFAAE33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
             else
-                text = text .. "\n|cffffffff" .. charName
+                CleanText = CleanText .. "\n|cffffffff" .. charName
             end
         end
+        count = count + 1
     end
 
-    local fontstring = eSaithBagFilterInstanceInfoFontString
-    fontstring:SetPoint("TOP", "$parent", "TOP", 0, -60)
-    fontstring:SetText(text)
+    -- Font strings for character instance info
+    local fontstring = eSaithBagFilterInstanceInfoFontStringFreshTitle
+    fontstring:SetFont("Fonts\\FRIZQT__.TTF", 25, "OUTLINE, THICKOUTLINE")
+    fontstring:SetPoint("TOP", "$parent", "TOP", 0, -70)    
+    fontstring:SetText("|cffbdf3ff Fresh Instance")
+    fontstring:SetWidth(250)
+    
+    fontstring:Show()
+
+    fontstring = eSaithBagFilterInstanceInfoFontStringFreshList
+    fontstring:SetPoint("TOP", eSaithBagFilterInstanceInfoFontStringFreshTitle, "BOTTOM", 0, 7)
+    fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
+    fontstring:SetText(CleanText)
+    fontstring:SetWidth(250)
+    
+    fontstring:Show()
+
+    fontstring = eSaithBagFilterInstanceInfoFontStringSavedTitle
+    fontstring:SetPoint("TOP", eSaithBagFilterInstanceInfoFontStringFreshList, "BOTTOM", 0, -34)
+    fontstring:SetFont("Fonts\\FRIZQT__.TTF", 23, "OUTLINE, THICKOUTLINE")
+    fontstring:SetText("|cff719096 Saved Instance")
     fontstring:SetWidth(250)
     fontstring:Show()
+
+    fontstring = eSaithBagFilterInstanceInfoFontStringSavedList
+    fontstring:SetPoint("TOP", eSaithBagFilterInstanceInfoFontStringSavedTitle, "BOTTOM", 0, 7)
+    fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
+    fontstring:SetText(SavedText)    
+    fontstring:SetWidth(250)
+    fontstring:Show()    
+
+   
+
     if (not checked) then
         UIDropDownMenu_SetSelectedValue(UIDROPDOWNMENU_OPEN_MENU, self.value)
+    end
+
+    if count > 15 then
+        eSaithBagFilter:SetHeight(eSaithBagFilter:GetHeight() * 2)
     end
 end
 
 function CreatePlayerInfoDropDownList()
     local i = 1;
-    for v, k in pairs(eSaithBagFilterInstances) do
-        if k ~= nil then
+    for instance, TableOfNames in pairs(eSaithBagFilterInstances) do        
+        if TableOfNames ~= nil and instance ~= "boe" and instance ~= 'players' then
             info = UIDropDownMenu_CreateInfo();
-            info.text = tostring(v)
-            info.arg1 = tostring(v)
+            info.text = tostring(instance)
+            info.arg1 = tostring(instance)
             info.value = i;
             info.func = PlayerInfoItemFunction;
             UIDropDownMenu_AddButton(info);
@@ -1303,6 +1264,13 @@ end
 -- List potential mounts that drop in instance/zone/raid
 -- Have a huge table of reagents to sort to filter through
 -- Consider disenchanting if selected
+
+-- ReOrg Saved Instances
+    -- Remove "player' and 'boe' from the saved instances
+    -- Make instances alphabetical
+    -- Allow player to add/remove desired saved instances
+    -- Allow option to choose miniumum required raid level (ie, no need to show lvl 80s when you only want to show level 100s)
+-- Consider renaming eSaithBagFilter to eSFilter
 --]]
 
 --[[
