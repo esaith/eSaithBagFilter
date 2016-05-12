@@ -59,11 +59,11 @@ end
 local function AddLoot(obj, quality)
     local zone = GetRealZoneText()
     if eSaithBagFilterInstanceLoot[zone] == nil then eSaithBagFilterInstanceLoot[zone] = { } end
-    eSaithBagFilterInstanceLoot[zone][obj] = true
-    GameTooltip:SetHyperlink(obj)
-    GameTooltip:SetOwner(_G["UIParent"], 10000, -10000)
+    eSaithBagFilterInstanceLoot[zone][obj] = true    
+    GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+    GameTooltip:SetHyperlink(obj)    
     GameTooltip:Show()   
-
+    GameTooltip:Hide()    
 end
 local function SetIncludedBOEItems()
     eSaithBagFilterVar.properties.BOEGreen = eSaithBagFilterOptions_BOEGreenItems:GetChecked()
@@ -1200,7 +1200,8 @@ local function PlayerInfoItemFunction(self, arg1, arg2, checked)
     end
 
     if count > 15 then
-        eSaithBagFilter:SetHeight(eSaithBagFilter:GetHeight() * 2)
+        local extend = ((count - 15) / 100) * 5 + 1.0
+        eSaithBagFilter:SetHeight(eSaithBagFilter:GetHeight() * extend + 300)
     end
 end
 
