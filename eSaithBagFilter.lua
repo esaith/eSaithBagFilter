@@ -413,14 +413,14 @@ local function CreateRarityObjects()
                 BOEGreen = false,
                 AutoGreedGreenItems,
                 MAX_ITEMS_PER_ROW = 15,
-				SetSizeX = 500,
-				SetSizeY = 600
+				SetSizeX = 600,
+				SetSizeY = 500
             }
         }
         for index, _type in pairs(eVar.properties.types) do
             if _type ~= properties then 
                 eVar[_type] = { }
-                eVar[_type]:SetChecked(false)
+                eVar[_type].checked = false
                 eVar[_type].min = 0
                 eVar[_type].max = 0
                 eVar[_type].minChecked = false
@@ -788,7 +788,7 @@ local function PrepareToShowSideTabs()
 	end
     -- Hide Character Raid tab
     eSaithBagFilterResetButton:Hide()
-    eSaithBagFilter:SetSize(600, 500)
+    eSaithBagFilter:SetSize(eVar.properties.SetSizeX, eVar.properties.SetSizeY)
    
     if eSaithBagFilterInstanceInfoFontStringFreshTitle:IsShown() then eSaithBagFilterInstanceInfoFontStringFreshTitle:Hide() end
     if eSaithBagFilterInstanceInfoFontStringFreshList:IsShown() then eSaithBagFilterInstanceInfoFontStringFreshList:Hide() end
@@ -1307,15 +1307,7 @@ end
 --]]
 
 --[[
-  Updates:   
-    -- Updated global variable to use local variables for easy writing and shorter lines of code.  
-    -- Added Auto greed on green items 
-	-- Included background colors to selected filtered items to more easily distinquish which levels are which rarities
-	-- Increased the base height of the addon so that it doesn't jump as much when 
-	-- Moved the Do Not Sell Trade Goods to the options page. Now all filtering pages have that option.
-		-- When checkbox is marked all trade goods are added to a secondary saved list and become transparent like the normal trade goods. If Trade Goods becomes unmarked then all items will lose their transparency unless they are saved by the manual toggle (normal kept list)
-	-- When Reset now does not reload the game. 
-	-- Included items that don't have 'bind on pickup', 'bind on pick up', or 'soulbound' in the item description. This should help with other items such as patterns 
+ 
 	
 ]]--
 
