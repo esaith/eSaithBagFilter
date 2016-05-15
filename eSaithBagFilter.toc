@@ -1,6 +1,6 @@
-﻿## Interface: 60200
+﻿## Interface: 60400
 ## Title: eSaith Bag Filter
-## Version: 1.32
+## Version: 1.33
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
@@ -10,14 +10,28 @@ eSaithBagFilter.lua
 eSaithBagFilter.xml
 
 
+
+
 -- Special Thanks To:
  -- Stepphy - Nathezrim for the initial tester. You helped modify the original architecture from dependent on default bags to allowable of all bag addons
  -- JuniorDeBoss - For helping me out with tooltip bugs and reducing spamming number
  -- Podden - For helping me out with additional tooltip bugs from (supposedly) other addons that have extensive tooltip use
+ -- Guild Master - Feedback on overall product
+ 
+ 
+ 
+ 
 
-
-
-
+-- 1.33
+ -- Updated global variable to use local variables for easy writing and shorter lines of code.  
+    -- Added Auto greed on green items 
+	-- Included background colors to selected filtered items to more easily distinquish which levels are which rarities
+	-- Increased the base height of the addon so that it doesn't jump as much when 
+	-- Moved the Do Not Sell Trade Goods to the options page. Now all filtering pages have that option.
+		-- When checkbox is marked all trade goods are added to a secondary saved list and become transparent like the normal trade goods. If Trade Goods becomes unmarked then all items will lose their transparency unless they are saved by the manual toggle (normal kept list)
+	-- When Reset now does not reload the game. 
+	-- Included items that don't have 'bind on pickup', 'bind on pick up', or 'soulbound' in the item description. This should help with other items such as patterns 
+	
 -- 1.32
 	-- The issue with the tooltip looking funny while looting should now be resolved. The likely culprit is due to other addons that support and extend extensive tooltip options (multiple boxes). Since the BOE/BOP is checked by using the tooltip and that the tooltip is modified by using other addons, the tooltip is now hidden after reading.  
 

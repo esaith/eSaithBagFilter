@@ -74,8 +74,7 @@
         </Frames>
     </Frame>
 
-    <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">
-        <Size x="400" y="400" />
+    <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">        
         <Anchors>
             <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
         </Anchors>
@@ -96,7 +95,6 @@
             <OnEvent function="eSaithBagFilter_OnEvent" />
             <OnDragStart>self:StartMoving();</OnDragStart>
             <OnDragStop function="eSaithBagFilter_OnStopDrag" />
-            <OnHide function="eSaithBagFilter_OnHide" />
             <OnShow function="eSaithBagFilter_OnShow" />
         </Scripts>
     </Frame>
@@ -133,9 +131,7 @@
             <OnUpdate function="eSaithBagFilterSellButton_OnUpdate" />
             <OnEnter function="eSaithBagFilterSellButton_OnEnter" />
             <OnLeave>GameTooltip:Hide()</OnLeave>
-            <OnHide>
-                eSaithBagFilterVar.properties.update = false
-            </OnHide>
+            <OnHide function="eSaithBagFilterSellButton_OnHide" />
         </Scripts>
     </Button>
 
