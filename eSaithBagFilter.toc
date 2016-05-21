@@ -1,6 +1,6 @@
 ﻿## Interface: 60400
 ## Title: eSaith Bag Filter
-## Version: 1.33
+## Version: 1.34
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
@@ -19,11 +19,22 @@ eSaithBagFilter.xml
  -- Guild Master - Feedback on overall product
  
  
- 
- 
+ -- 1.34
+	-- Loot Frame
+		-- Added a loot frame so that looted items now appear in a separate frame than the main frame
+		-- Background of loot frame may be enabled/disabled. Enabled by default. If disabled a default of a black background is shown		
+		-- Background images change with each new session. Up to 50+ different images can be seen
+		-- The loot frame will have a minimum size close to that of the main frame. If the number of items start to exceed the size then the loot frame should increase in size so accommodate the number of items
+		-- All images are the property of Blizzard. None of them are the authors art work. These images are located inside the game client
+	-- Side tabs have been removed for a cleaner 1 page look
+	-- The options tab is now the cog-wheel located on the top right corner
+	-Zone dropdown
+		-- Slight addition the way the dropped down works for zoning. If all items are desired, then the player must choose "ALL" to view the all items (replaces 3rd tab)
+		-- When selecting a zone/instance all filters are enabled. The player may now filter on zones
+		-- The capability to filter by iLevel is available. Off by default. The player may choose the to turn this option on in the options panel. Same filtering applies from prior version
 
 -- 1.33
- -- Updated global variable to use local variables for easy writing and shorter lines of code.  
+ -- Updated global variables to use local variables for easy writing and shorter lines of code.  
     -- Added Auto greed on green items 
 	-- Included background colors to selected filtered items to more easily distinquish which levels are which rarities
 	-- Increased the base height of the addon so that it doesn't jump as much when 

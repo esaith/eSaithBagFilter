@@ -16,7 +16,7 @@
                 </Scripts>
             </CheckButton>
             <Button name="$parentDownButton">
-                <Size x="20" y="20" />@
+                <Size x="20" y="20" />
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentCheckButton" relativePoint="RIGHT" x="1" />
                 </Anchors>
@@ -30,8 +30,8 @@
                     <OnClick function="eSaithBagFilterSlider_DownButton"/>
                 </Scripts>
             </Button>
-            <Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="800" valueStep="1">
-                <Size x="200"  y="20"/>
+            <Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="1100" valueStep="1">
+                <Size x="100"  y="20"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentDownButton" relativePoint="RIGHT" x="3"/>
                 </Anchors>
@@ -39,7 +39,7 @@
                     <Layer>
                         <FontString name="$parentTitle" inherits="GameFontNormal" text="">
                             <Anchors>
-                                <Anchor point="TOP" relativeTo="$parent" relativePoint="BOTTOM" />
+                                <Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x='30' />
                             </Anchors>
                             <Color r=".7" g=".7" b="0" />
                         </FontString>
@@ -73,7 +73,9 @@
             </Button>
         </Frames>
     </Frame>
-
+	<Button name="eSaithBagFilterItemButtonTemplate" parent="eSaithBagFilter" virtual="true" inherits="UICheckButtonTemplate">
+        <Size x="40" y="40"/>
+    </Button>
     <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">        
         <Anchors>
             <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
@@ -81,14 +83,9 @@
         <Layers>
             <Layer level="BACKGROUND" setAllPoints="true">
                 <Texture name="$parentBackground">
-                    <Color r="1.0" g="1.0" b="1.0" a=".8" />o
-                </Texture>
-                <FontString name="$parentTitle" inherits="GameFontNormal" text="Bag Clean Up Options">
-                    <Anchors>
-                        <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" y="-5"/>
-                    </Anchors>
-                </FontString>
-            </Layer>
+                    <Color r=".7" g=".7" b=".8" a=".8" />o
+                </Texture>  
+            </Layer>			
         </Layers>
         <Scripts>
             <OnLoad function="eSaithBagFilter_OnLoad"/>
@@ -98,12 +95,7 @@
             <OnShow function="eSaithBagFilter_OnShow" />
         </Scripts>
     </Frame>
-
-    <Button name="eSaithBagFilterItemButtonTemplate" parent="eSaithBagFilter" virtual="true" inherits="UICheckButtonTemplate">
-        <Size x="40" y="40"/>
-    </Button>
-
-
+	
     <Button name="$parentSellButton" parent="eSaithBagFilter" movable="true" enableMouse="true" hidden="true" frameStrata="HIGH" topLevel="true">
         <Size x="50" y="50"/>
         <Anchors>
@@ -119,7 +111,7 @@
                 </Texture>
             </Layer>
         </Layers>
-        <PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-GroupLoot-Coin-Highlight" >
+        <PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\ACHIEVEMENT_GUILDPERK_CASHFLOW_RANK2" >
             <Size x="40" y="40"/>
             <Anchors>
                 <Anchor point="CENTER" relativePoint="CENTER" />
@@ -127,260 +119,28 @@
         </PushedTexture>
         <Scripts>
             <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
-            <OnClick function="eSaithBagFilterSellButton_Click" />
-            <OnUpdate function="eSaithBagFilterSellButton_OnUpdate" />
-            <OnEnter function="eSaithBagFilterSellButton_OnEnter" />
+            <OnClick  function="eSaithBagFilter_SellButton_Click" />
+            <OnUpdate function="eSaithBagFilter_SellButton_OnUpdate" />
+            <OnEnter  function="eSaithBagFilter_SellButton_OnEnter" />
             <OnLeave>GameTooltip:Hide()</OnLeave>
-            <OnHide function="eSaithBagFilterSellButton_OnHide" />
+            <OnHide   function="eSaithBagFilter_SellButton_OnHide" />
         </Scripts>
     </Button>
-
-    <Frame name="$parentSideTabs" parent="eSaithBagFilter">
-        <Size x="60" y="180" />
-        <Anchors>
-            <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPLEFT" x="10" y="-1"/>
-        </Anchors>
-        <Frames>
-            <Button name="$parentTab1" inherits="ItemButtonTemplate" id="1" >
-                <Anchors>
-                    <Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" />
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MicroButton-World-Up" >
-                            <Size x="40" y="60"/>
-                            <Anchors>
-                                <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
-                            </Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        eSaithBagFilter_ShowFilterZone(self, button)
-                        eSaithBagFilterSideTabs_OnClick(self, button)
-                    </OnClick>
-                    <OnShow>
-                        CharacterFrame_TabBoundsCheck(self);
-                    </OnShow>
-                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
-                    <OnLeave function="OnGameToolTipLeave" />
-                </Scripts>
-            </Button>
-            <Button name="$parentTab2" inherits="ItemButtonTemplate" id="2">
-                <Anchors>
-                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab1" />
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MicroButton-Spellbook-Up" >
-                            <Size x="40" y="60"/>
-                            <Anchors>
-                                <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
-                            </Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        eSaithBagFilter_ShowFilteriLVL(self, buton)
-                        eSaithBagFilterSideTabs_OnClick(self, button)
-                    </OnClick>
-                    <OnShow>
-                        CharacterFrame_TabBoundsCheck(self);
-                    </OnShow>
-                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
-                    <OnLeave function="OnGameToolTipLeave" />
-                </Scripts>
-            </Button>
-            <Button name="$parentTab3" inherits="ItemButtonTemplate" id="3">
-                <Anchors>
-                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab2" />
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\BUTTONS\UI-MicroButton-Raid-Up" >
-                            <Size x="40" y="60"/>
-                            <Anchors>
-                                <Anchor point="CENTER" relativePoint="CENTER" y="10"/>
-                            </Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        eSaithBagFilter_ShowFilterRarity(self, button)
-                        eSaithBagFilterSideTabs_OnClick(self, button)
-                    </OnClick>
-                    <OnShow>
-                        CharacterFrame_TabBoundsCheck(self);
-                    </OnShow>
-                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
-                    <OnLeave function="OnGameToolTipLeave" />
-                </Scripts>
-            </Button>
-            <Button name="$parentTab4" inherits="ItemButtonTemplate" id="4">
-                <Anchors>
-                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab3" y="0"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\ICONS\Ability_BossGorefiend_GorefiendsCorruption" >
-                            <Size x="35" y="35"/>
-                            <Anchors>
-                                <Anchor point="CENTER" relativePoint="CENTER"/>
-                            </Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        eSaithBagFilterSideTabs_OnClick(self, button)
-                        eSaithBagFilter_ShowCharacterInfo(self, button)
-                    </OnClick>
-                    <OnShow>
-                        CharacterFrame_TabBoundsCheck(self);
-                    </OnShow>
-                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
-                    <OnLeave function="OnGameToolTipLeave" />
-                </Scripts>
-            </Button>            
-            <Button name="$parentTab5" inherits="ItemButtonTemplate" id="5">
-                <Anchors>
-                    <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentTab4" y="0"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY" setAllPoints="true">
-                        <Texture name="$parentTexture" file="Interface\ICONS\Ability_RewindTime" >
-                            <Size x="35" y="35"/>
-                            <Anchors>
-                                <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER" />
-                            </Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnClick>
-                        eSaithBagFilter_ShowOptions(self, button)
-                        eSaithBagFilterSideTabs_OnClick(self, button)
-                    </OnClick>
-                    <OnEnter function="eSaithBagFilterTab_OnEnter" />
-                    <OnLeave function="OnGameToolTipLeave" />
-                </Scripts>
-            </Button>
-        </Frames>
-        <Scripts>
-            <OnLoad function="eSaithBagFilterSideTabs_OnLoad" />
-            <OnShow function="eSaithBagFilterSideTabs_OnShow" />
-            <OnEnter function="eSaithBagFilterTab_OnEnter" />
-            <OnLeave function="OnGameToolTipLeave" />
-        </Scripts>
-    </Frame>
-
-    <Frame name="$parentILVLBottomTabs" parent="eSaithBagFilter">
-        <Size x="400" y="40" />
-        <Anchors>
-            <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
-        </Anchors>
-        <Frames >
-            <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Poor">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-                        eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Common">
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-15"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-                        eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentTab3" inherits="CharacterFrameTabButtonTemplate" id="3" text="Uncommon">
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab2" x="-15"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-                        eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentTab4" inherits="CharacterFrameTabButtonTemplate" id="4" text="Rare">
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab3" x="-15"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-                        eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentTab5" inherits="CharacterFrameTabButtonTemplate" id="5" text="Epic">
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab4" x="-15"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-                        eSaithBagFilterBottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilterILVLBottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-        </Frames>
-        <Scripts>
-            <OnLoad function="eSaithBagFilterILVLBottomTabs_OnLoad" />
-            <OnShow function="eSaithBagFilterILVLBottomTabs_OnShow" />
-        </Scripts>
-    </Frame>
-
     <Button name="$parentDropDown" parent="eSaithBagFilter" inherits="UIDropDownMenuTemplate" hidden="false">
         <Size x="150" y="50" />
         <Anchors>
-            <Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="-10" y="-35"/>
+            <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="10" y="-25"/>
         </Anchors>
         <Scripts>
             <OnLoad>
                 UIDropDownMenu_Initialize(self, eSaithBagFilter_CreateDropDownList);
-                UIDropDownMenu_SetWidth(self, 175);
+                UIDropDownMenu_SetWidth(self, 100);
             </OnLoad>
         </Scripts>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
     </Button>
-
     <Button name="$parentEsaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
         <Anchors>
             <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" relativeTo="$parent" />
