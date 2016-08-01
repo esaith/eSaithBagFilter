@@ -1,6 +1,6 @@
-﻿## Interface: 60400
-## Title: eSaith Bag Filter
-## Version: 1.34
+﻿## Interface: 70000
+## Title: |cffffffffeSaith Bag Filter|r
+## Version: 1.35
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
@@ -15,11 +15,21 @@ eSaithBagFilter.xml
 -- Special Thanks To:
  -- Stepphy - Nathezrim for the initial tester. You helped modify the original architecture from dependent on default bags to allowable of all bag addons
  -- JuniorDeBoss - For helping me out with tooltip bugs and reducing spamming number
- -- Podden - For helping me out with additional tooltip bugs from (supposedly) other addons that have extensive tooltip use
+ -- Podden - For helping me out with additional tooltip bugs from (possibly) other addons that have extensive tooltip use
  -- Guild Master - Feedback on overall product
+ -- _Max_Cavalera_ - For the suggestion to adding an option to keep all BOE when picking up. This is the "Keep All BOE" option on the Options page
  
+ -- 1.35    
+	--Instances and player names are sorted alphabetically
+	--Fixed issue when one of the items is a pet would cause a popup error
+    --When opening options all other tabs, panels, buttons, etc that are not directly related to options is hidden. This should help reduce confusion of 
+        which tab and information the player receives and then when attempting to navigate to another tab.
+    --Added "Quest Complete" which quickly obtains and completes quests. Excellent for leveling! Quest rewards are randomly chosen. 
+    --Added "Keep All BOE" checkbox. When checked every BOE of Uncommon quality (Green) or greater is immediately put in the kept list
+    --Prevents the "Item is busy" error from occurring when selling items
  
  -- 1.34
+    -- Updated for Legion expansion
 	-- Loot Frame
 		-- Added a loot frame so that looted items now appear in a separate frame than the main frame
 		-- Background of loot frame may be enabled/disabled. Enabled by default. If disabled a default of a black background is shown		
