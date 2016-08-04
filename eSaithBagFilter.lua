@@ -14,7 +14,7 @@ local STRINGS = {
 	TO_LOOT = "To use this functionality, you -must- make sure your Auto Loot is enabled. To enable, open your Interface > Controls > Auto Loot is checked. Sorry for this inconvenience. Thank you",
 	STOP_TALKING_TO_VENDOR = "Sorry to be rude but to loot you mustn't be talking to a merchant. Thank you.",
 	NOT_ENOUGH_SPACE = "You do not have enough bag space to safely loot item(s).",
-	ADDON_UPDATED = "AddOn updated to version"
+	ADDON_UPDATED = "eSaith Bag Filter AddOn updated to version "
 } 
 local LOOT_IMAGES = {
 	{"Interface\\GLUES\\CREDITS\\1000px-Coilfangpaintover1", 
@@ -336,13 +336,15 @@ local function ReadToolTip(self, ...)
 	if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or 
 	not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
 		local _, link = GameTooltip:GetItem() 
-		eInstances.boe[link] = true
-        
-        local _, _, quality = GetItemInfo(link)
-        -- If 'Keep all BOE' items is checked then automatically add them to the kept list. Requires quality 3 or higher (green)
-        -- This is to help prevent all white items automatically included in which 
-        if eVar.properties.KeepAllBOE and quality and quality >= 2 then            
-            eVar.properties.keep[link] = true
+        if link ~= nil then    -- Link items can only be items. If scrolling over professions or similar link is nil             
+            eInstances.boe[link] = true
+            
+            local _, _, quality = GetItemInfo(link)
+            -- If 'Keep all BOE' items is checked then automatically add them to the kept list. Requires quality 3 or higher (green)
+            -- This is to help prevent all white items automatically included in which 
+            if eVar.properties.KeepAllBOE and quality and quality >= 2 then            
+                eVar.properties.keep[link] = true
+            end
         end
 	end
 	return OriginalToolTip(self, ...)
@@ -359,7 +361,8 @@ local function ResetAlphaOnAllButtons()
 		end
 	end
 end
-local function AddLoot(link, quality)	local zone = GetRealZoneText()
+local function AddLoot(link, quality)
+	local zone = GetRealZoneText()
 	if eInstanceLoot[zone] == nil then eInstanceLoot[zone] = { } end
 	eInstanceLoot[zone][link] = true   
 	GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -643,7 +646,6 @@ end
 
 local function LootContainers()
 	eVar.properties.EnableAutoLoot = true
-	print("|cffff0000"..STRINGS.TO_LOOT)   
 
 	if MerchantFrame:IsShown() then
 		print("|cffffff00"..STRINGS.STOP_TALKING_TO_VENDOR)
@@ -1140,66 +1142,68 @@ local function CreateOptionButtons()
 end
 local function CreateRarityObjects()
 	eInstanceLoot = eInstanceLoot or { }
-	eInstances = eSaithBagFilterInstances or 
-	{   
-		players = { }, 
-		boe = { } 
-	}
-
-	if eVar == nil then
-		eVar = {
-			properties =
-			{
-				BottomTab = 1,
-				zone = nil,
-				types =
-				{
-					"Poor","Common","Uncommon","Rare","Epic"-- , "Legendary", "Artifact", "Heirloom", "WoW Token" },
-				},
-				colors =
-				{
-					"Gray","White","Green","Blue","Purple"-- , "Orange" , "Gold", "LightBlue", "Cyan"
-				},
-				texture = { 0, 0, .6, .6, .6, 1, 1, 1, 0, 1, 0, .2, .2, 1, 1, 0, 1, .8, .8, 0 },
-				IsSelling = false,
-				IsSellingGrays = false,
-				IsTradeGoodKept = false,
-				updateCount = 0,
-				itemUpdateCount = 0,
-				updateInterval = 0.5,
-				maxTime = 0,
-				keep = { },
-				sell = { },
-				SellTypeList = {},
-				keepTradeGoods = { },
-				EnableCoordinates = false,
-				EnableAutoLoot = false,
-				EnableAutoSellGrays = false,
-				version = 1.34,
-				EnableBOEGreen = false,
-				EnableAutoGreedGreenItems = false,
-				EnableiLevelSliders = false,
-				MAX_ITEMS_PER_ROW = 14,
-				SetSizeX = 400,
-				SetSizeY = 375,
-				EnableFrameLootBackground = true,			
-                KeepAllBOE = false,
-                QuestComplete = false
-			}
-		}
-		for index, _type in pairs(eVar.properties.types) do
-			if _type ~= properties then 
-				eVar[_type] = { 
-					checked = false,
-					min = 0,
-					max = 0,
-					minChecked = false,
-					maxChecked = false
-				}
-			end
-		end
-	end
-	
+        
+    eInstances = eSaithBagFilterInstances or {}   -- when adding more properties update AddOnUpdate() function
+    eInstances.players = eInstances.players or {}
+    eInstances.boe = eInstances.boe or {}
+	eSaithBagFilterInstances = eInstances
+    
+    eVar = eVar or {}
+    eVar.properties = eVar.properties or {}
+    
+    -- statics
+    eVar.properties.version = 1.36
+    eVar.properties.MAX_ITEMS_PER_ROW = 14
+    eVar.properties.SetSizeX = 400
+    eVar.properties.SetSizeY = 375
+    eVar.properties.types =
+    {
+        "Poor","Common","Uncommon","Rare","Epic"-- , "Legendary", "Artifact", "Heirloom", "WoW Token" },
+    }
+    eVar.properties.colors =
+    {
+        "Gray","White","Green","Blue","Purple"-- , "Orange" , "Gold", "LightBlue", "Cyan"
+    }
+    eVar.properties.texture = { 0, 0, .6, .6, .6, 1, 1, 1, 0, 1, 0, .2, .2, 1, 1, 0, 1, .8, .8, 0 }
+    
+    -- Dynamic
+    eVar.properties.BottomTab = eVar.properties.BottomTab or 1
+    eVar.properties.zone = eVar.properties.zone or nil
+    eVar.properties.IsSelling = eVar.properties.IsSelling or false
+    eVar.properties.IsSellingGrays = eVar.properties.IsSellingGrays or false
+    eVar.properties.IsTradeGoodKept = eVar.properties.IsTradeGoodKept or false
+    eVar.properties.updateCount = eVar.properties.updateCount or 0
+    eVar.properties.itemUpdateCount = eVar.properties.itemUpdateCount or 0
+    eVar.properties.updateInterval = eVar.properties.updateInterval or 0.5
+    eVar.properties.maxTime = eVar.properties.maxTime or 0
+    eVar.properties.keep = eVar.properties.keep or { }
+    eVar.properties.sell = eVar.properties.sell or { }
+    eVar.properties.SellTypeList = eVar.properties.SellTypeList or {}
+    eVar.properties.keepTradeGoods = eVar.properties.keepTradeGoods or { }
+    eVar.properties.EnableCoordinates = eVar.properties.EnableCoordinates or false
+    eVar.properties.EnableAutoLoot = eVar.properties.EnableAutoLoot or false
+    eVar.properties.EnableAutoSellGrays = eVar.properties.EnableAutoSellGrays or false
+    eVar.properties.EnableBOEGreen = eVar.properties.EnableBOEGreen or false
+    eVar.properties.EnableAutoGreedGreenItems = eVar.properties.EnableAutoGreedGreenItems or false
+    eVar.properties.EnableiLevelSliders = eVar.properties.EnableiLevelSliders or false				
+    eVar.properties.EnableFrameLootBackground = eVar.properties.EnableFrameLootBackground or true		
+    eVar.properties.KeepAllBOE = eVar.properties.KeepAllBOE or false
+    eVar.properties.QuestComplete = eVar.properties.QuestComplete or false
+			
+		
+    for index, _type in pairs(eVar.properties.types) do
+        if _type ~= properties then 
+            eVar[_type] = { 
+                checked = false,
+                min = 0,
+                max = 0,
+                minChecked = false,
+                maxChecked = false
+            }
+        end
+    end
+	eSaithBagFilterVar = eVar
+    
 	eSaithBagFilter:SetSize(eVar.properties.SetSizeX, eVar.properties.SetSizeY)
 	 --TODO Any gear the character is current wearing when logging in should be immediately put in kept list each time the character logs in
 	    --local slots = {
@@ -1283,11 +1287,26 @@ end
 local function UpdateAddon()
 	local keep = {}
 	if eVar ~= nil and eVar.properties ~= nil and eVar.properties.keep ~= nil then
-		keep = eVar.properties.keep
+		keep = eVar.properties.keep    
 	end
-	eSaithBagFilterInstances = {}
-	eSaithBagFilterResetButton_Click()
+    
+    -- Try to save BOE's and player instance info
+    local BOE = {}
+    local PLAYERS = {}
+    if eInstances ~= nil then
+        BOE = eInstances.boe or {}
+        PLAYERS = eInstances.players or {}
+    end
+        
+	eSaithBagFilterResetButton_Click()   
+    
+    eSaithBagFilterInstances.players = eSaithBagFilterInstances.players or PLAYERS
+    eSaithBagFilterInstances.boe = eSaithBagFilterInstances.boe or BOE   
+    eInstances = eSaithBagFilterInstances
+    
+    eVar.properties.keep = keep
     print(STRINGS.ADDON_UPDATED..tostring(eVar.properties.version))
+    print("Thank you for sticking around and may you have luck in all of your endeavours")
 end
 
 local function UpdateMinAndMax(self, value)
@@ -1304,11 +1323,12 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
 		self:UnregisterEvent("ADDON_LOADED")
 		eVar = eSaithBagFilterVar or nil
+        eInstances = eSaithBagFilterInstances
 		-- Check if an older version. If so do a soft reset
 		local version = GetAddOnMetadata("eSaithBagFilter", "Version")    
-		if eVar ~= nil and tostring(eVar.properties.version) ~= tostring(version) then    
+		if eVar ~= nil and tostring(eVar.properties.version) ~= tostring(version) then             
 			UpdateAddon() -- Creates Rarity Objects and then resaves the players kept list
-		else
+		else         
 			CreateRarityObjects() -- no need to call it twice
 		end
 		
@@ -1432,10 +1452,9 @@ function eSaithBagFilter_SellButton_OnHide(self, event, ...)
 	eVar.properties.IsSelling = false
 end
 
-function eSaithBagFilterResetButton_Click(self, event)
+function eSaithBagFilterResetButton_Click(self, event)    
 	eVar = nil
-	eInstanceLoot = nil
-	eInstances = nil
+	eInstanceLoot = nil	
 	CreateRarityObjects()       
 end
 function eSaithBagFilterSlider_CheckBoxClick(self, button, down)
@@ -1712,14 +1731,12 @@ end
 --]]
 
 --[[
-	Player may disable loot frame background through the options panel
-	Instances and player names are sorted alphabetically
-	Fixed issue when one of the items is a pet would cause a popup error
-    When opening options all other tabs, panels, buttons, etc that are not directly related to options is hidden. This should help reduce confusion of 
-        which tab and information the player receives and then when attempting to navigate to another tab.
-    Added "Quest Complete" which quickly obtains and completes quests. Excellent for leveling! Quest rewards are randomly chosen. 
-    Added "Keep All BOE" checkbox. When checked every BOE of Uncommon quality (Green) or greater is immediately put in the kept list
-    Prevents the "Item is busy" error from occurring when selling items
+    Fixed issue with variables from v1.32 to v1.36
+        This fixed the issue where selecting "Keep all BOE" option would cause LUA error
+    Fixed issue when Updating Addon to a higher version that it kept character instance/raid information and BOE items
+        This fixed the issue when loading a new character for the first time that all saved raid/instance info is reset
+    Fixed issue where hovering over non-link item (e.g. profession enchant that is not an item) and error would occur.
+    
 ]]--
 
 --[[

@@ -1,6 +1,6 @@
 ﻿## Interface: 70000
 ## Title: |cffffffffeSaith Bag Filter|r
-## Version: 1.35
+## Version: 1.36
 ## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
