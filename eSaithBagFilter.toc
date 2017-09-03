@@ -21,13 +21,15 @@ eSaithBagFilter.xml
  
  -- 1.37
 	--Update for 7.3. 
-	--Updated code structure
+	--Significant code update.
+		--Changed saving items from link to Hitem
 	--Saving prior to changing from saving items by link to saving by Hitem
 	
 	--Added Features
 		--After user selects an option from a drop down, the selected item is now saved as the new drop down title 
 		--Raid Info tab now lists all recent lock out instances. 
 			--User may now filter this list to view which characters are saved to which instance
+		--All gear currently worn is automatically added to the players kept list. This should provide additional security that items should not be sold. 
 	
 	--Removed Items
 		--iLevel fitler

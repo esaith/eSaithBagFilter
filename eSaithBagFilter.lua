@@ -90,17 +90,16 @@ local function getHitem(link)
 		return 0
 	end
 	local Hitem = string.match(link, ".*Hitem:(%d*).*")
-	print(tostring(Hitem))	
 	return Hitem
 end
 local function AddItemToItemList(link, isBOE)	
 	if not link or type(link) ~= 'string' then return end
 
+	local Hitem = getHitem(link)
 
-
-	if items[link] == nil then
+	if items[Hitem] == nil then
 		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
-		items[link] = {
+		items[Hitem] = {
 			name = name,
 			quality = quality,
 			rarity = getItemRarity(quality),
@@ -117,17 +116,13 @@ local function AddItemToItemList(link, isBOE)
 
 		if isBOE == nil then
 			-- item has not been seen before. Show the tooltip to get isBOE value prior to adding to items list
-			print(link)
 			GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 			GameTooltip:SetHyperlink(link)    
 			GameTooltip:Show()   
 			GameTooltip:Hide() 	
 			return
 		end
-	end 
-
-	print(link:upper())
-	
+	end 	
 end
 local function ReadToolTip(self, ...)
 	local boundText =  tostring(GameTooltipTextLeft2:GetText()) .. 
@@ -146,8 +141,9 @@ local function ReadToolTip(self, ...)
 			isBOE = true
 		end
 
-		if items[link] then
-			items[link].isBOE = isBOE
+		local Hitem = getHitem(link)		
+		if items[Hitem] then
+			items[Hitem].isBOE = isBOE
 		else	
 			AddItemToItemList(link, isBOE)
 		end
@@ -166,7 +162,7 @@ local function SetAlphaOnItems()
 	for index = 1, MAX_BAG_SLOTS do
 		itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 		if itemBtn and itemBtn:IsShown() then
-			if eVar.items.kept[itemBtn.link] then
+			if eVar.items.kept[itemBtn.Hitem] then
 				itemBtn:SetAlpha(ALPHA)
 			else
 				itemBtn:SetAlpha(1)              
@@ -180,17 +176,19 @@ end
 local function AddLoot(link)
 	-- Must assume this is async with the rest of the function
 	local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
+	
+	-- Need to pass in the link to get Item info
 	AddItemToItemList(link)
+	local Hitem = getHitem(link)
 	
 	zone = GetRealZoneText() or "All"
 	instanceLoot[zone] = instanceLoot[zone] or {}
 	instanceLoot['All'] = instanceLoot['All'] or {}
-	instanceLoot[zone][link] = true
-	instanceLoot['All'][link] = true
-	print('Adding '..link.." to zone: "..zone)
+	instanceLoot[zone][Hitem] = true
+	instanceLoot['All'][Hitem] = true
 end
 local function Item_OnPress(self)  
-	eVar.items.kept[self.link] = not eVar.items.kept[self.link]
+	eVar.items.kept[self.Hitem] = not eVar.items.kept[self.Hitem]
 	SetAlphaOnItems()
 end
 local function RarityType_OnEnter(self, motion)
@@ -200,7 +198,8 @@ local function RarityType_OnEnter(self, motion)
 end
 local function Item_OnEnter(self, motion)
 	PrepreToolTip(self)
-	GameTooltip:SetHyperlink(self.link)
+	local link = select(2, GetItemInfo(self.Hitem))
+	GameTooltip:SetHyperlink(link) -- todo, this may be a problem
 	GameTooltip:Show()
 end
 local function KeepUncommonBOEItems_OnEnter(self, motion)
@@ -322,8 +321,8 @@ end
 local function ToggleQuestComplete(self)
     eVar.options.questComplete = self:GetChecked()
 end
-local function StageAndShowItem(link, index)
-	if link == nil then return end
+local function StageAndShowItem(Hitem, index)
+	if Hitem == nil then return end
 	local previousItem
 	local itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 	if index == 1 then
@@ -341,12 +340,12 @@ local function StageAndShowItem(link, index)
 	
 	itemBtn.texture = _G[itemBtn:GetName() .. "_Texture"] 
 	itemBtn.texture:Show()
-	itemBtn.texture:SetTexture(items[link].texture)
+	itemBtn.texture:SetTexture(items[Hitem].texture)
 	itemBtn.texture = _G[itemBtn:GetName() .. "_TextureBorder"]
 	itemBtn.texture:Show()
-	itemBtn.texture:SetColorTexture(itemTextureColors[3 * (items[link].quality + 1)], itemTextureColors[3 * (items[link].quality + 1) + 1], itemTextureColors[3 * (items[link].quality + 1) + 2])
+	itemBtn.texture:SetColorTexture(itemTextureColors[3 * (items[Hitem].quality + 1)], itemTextureColors[3 * (items[Hitem].quality + 1) + 1], itemTextureColors[3 * (items[Hitem].quality + 1) + 2])
 	itemBtn:Show()
-	itemBtn.link = link
+	itemBtn.Hitem = Hitem
 end
 local function SetItemsPerRow() -- todo, should this be static. Or should this be set in settings and not dependent on how many items are being sold
 	if _G["eSaithBagFilter_LootFrame_Item1"]:IsShown() then
@@ -365,8 +364,8 @@ local function ShowSelectedItems(list)
 	end
 	
 	local index = 1
-	for link, v in pairs(list) do			
-		StageAndShowItem(link, index)
+	for Hitem, v in pairs(list) do			
+		StageAndShowItem(Hitem, index)
 		index = index + 1
 	end
 end
@@ -376,9 +375,7 @@ local function SelectItemsToShow()
 	sellList = { }
 	local loot = instanceLoot[selectedZone]
 	if loot == nil then return end
-	--print('start print instance loot')
-	--printTable(loot)
-	--print('end print instance loot')
+
 	local sellTypeAllowed = {}
 	local rarityCheckButton
 	for i, rarity in ipairs(ItemQualityString) do		
@@ -386,23 +383,20 @@ local function SelectItemsToShow()
 		sellTypeAllowed[rarity] =  rarityCheckButton ~= nil and rarityCheckButton:IsShown() and rarityCheckButton:GetChecked()
 	end
 	
-	local texture, locked, lootable, link  -- todo, add options to sell locked boxes and lootable items
+	local texture, locked, lootable, link, Hitem  -- todo, add options to sell locked boxes and lootable items
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			texture, _, locked, _, _, lootable, link = GetContainerItemInfo(bag, slot)
-			print(link:upper())
 			if texture then
+				Hitem = getHitem(link)
 				-- If not already in the list then not an item to sell. Add item to list and move on
-				if items[link] == nil then 
+				if items[Hitem] == nil then 
 					AddItemToItemList(link) 
 				end 
 				-- Skip all items that cannot be sold to vendors. Do not sell lockboxes				
-				if loot[link] and items[link].vendorPrice > 0 and sellTypeAllowed[items[link].rarity] and not locked and not lootable then					
-					sellList[link] = true;
-				elseif loot[link] then
-					print(link..' is in the instance loot but will not be shown')
+				if loot[Hitem] and items[Hitem].vendorPrice > 0 and sellTypeAllowed[items[Hitem].rarity] and not locked and not lootable then					
+					sellList[Hitem] = true;
 				end
-				
 			end
 		end
 	end
@@ -444,28 +438,21 @@ local function SellListedItems(list)
 			if texture then 				
 				-- If attempting to sell Junk items that have NOT been added to the items array then do so now before attempting to sell otherwise an error will be thrown 
 				-- when comparing against type.
-				if items[link] == null then 
+				local Hitem = getHitem(link)
+				if items[Hitem] == null then 
 					AddItemToItemList(link)
 				end
 
-				if list[link] 
+				if list[Hitem] 
 				and not locked and not lootable
 				and not (
-					eVar.items.kept[link] or 
-					(eVar.options.keepTradeGoods and items[link].class == 'Trade Goods') or
-					(eVar.options.keepUncommonBOEItems and items[link].isBOE and items[link].quality == itemQuality.Uncommon) or 
-					(eVar.options.keepRareBOEItems and items[link].isBOE and items[link].quality ==  itemQuality.Rare) 
+					eVar.items.kept[Hitem] or 
+					(eVar.options.keepTradeGoods and items[Hitem].class == 'Trade Goods') or
+					(eVar.options.keepUncommonBOEItems and items[Hitem].isBOE and items[Hitem].quality == itemQuality.Uncommon) or 
+					(eVar.options.keepRareBOEItems and items[Hitem].isBOE and items[Hitem].quality ==  itemQuality.Rare) 
 				) then 
 					UseContainerItem(bag, slot) 	
-					total = total + 1
-					print('trying to sell '..link)
-				elseif locked then
-					print(link..' is locked');
-					total = total + 1
-				elseif eVar.options.keepUncommonBOEItems then
-					print('eVar.options.keepUncommonBOEItems')
-				elseif eVar.options.keepRareBOEItems then
-					print('keepRareBOEItems')
+					total = total + 1				
 				end
 			end
 		end
@@ -476,17 +463,18 @@ end
 local function SellByQuality(_type)
 	local texture, locked, quality, lootable, link, vendorPrice, personalItem
 	sellList = { }
-	
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			texture, _, _, quality, _, _, link = GetContainerItemInfo(bag, slot)
 			if texture and quality == itemQuality.Poor then
-				sellList[link] = true
+				local Hitem = getHitem(link)
+				sellList[Hitem] = true
 			end
 		end
 	end
 	isSelling = true
 	maxTime = 0
+	
 	SellListedItems(sellList)
 end
 local function ToggleOptionsFrame(self)
@@ -758,7 +746,6 @@ end
 local function ToggleIncludeInstance(self) 
 	savedInstances.hiddenInstances = savedInstances.hiddenInstances or {}
 	savedInstances.hiddenInstances[self.instance] = self:GetChecked()
-	print(self.instance.." "..tostring(savedInstances.hiddenInstances[self.instance]))
 end
 local function isInstanceShown(instance)
 	savedInstances.hiddenInstances = savedInstances.hiddenInstances or {}
@@ -895,7 +882,7 @@ local function InitializeVariables()
     eVar.properties.SetSizeY = 375
     
     eVar.items.kept = eVar.items.keep or eVar.properties.keep or { }    -- todo, convert properties.keep in update and never deal with it again
-	sellList = sellList or { }
+	sellList = sellList or { } 
     sellListTypeList = sellListTypeList or {}
 	eVar.options.keepTradeGoods = eVar.options.keepTradeGoods or false
     eVar.options.coordinatesEnabled = eVar.options.coordinatesEnabled or false
@@ -910,23 +897,20 @@ local function InitializeVariables()
 	eSaithBagFilterVar = eVar
     
 	eSaithBagFilter:SetSize(eVar.properties.SetSizeX, eVar.properties.SetSizeY)
-	 --TODO Any gear the character is current wearing when logging in should be immediately put in kept list each time the character logs in
-	    --local slots = {
-	    --    "HEADSLOT","NECKSLOT","SHOULDERSLOT","BACKSLOT","CHESTSLOT","SHIRTSLOT","TABARDSLOT","WRISTSLOT","HANDSSLOT",
-	    --    "WAISTSLOT","LEGSSLOT","FEETSLOT","FINGER0SLOT","FINGER1SLOT","TRINKET0SLOT","TRINKET1SLOT","MAINHANDSLOT","SECONDARYHANDSLOT"
-	    --}
-        --
-	    --local slotId, _texture, itemId, link
-	    --for _index, item in pairs(slots) do
-	    --    slotId = GetInventorySlotInfo(item)
-	    --    itemId = GetInventoryItemID("player", slotId)
-	    --    if itemId ~= nil then
-	    --        _, link = GetItemInfo(itemId)
-        --        print(link)
-	    --        --eVar.properties.keep[link] = true
-	    --    end
-        --    
-	    --end
+	 --Any gear the character is current wearing when logging in should be immediately put in kept list each time the character logs in
+	local slots = {
+	    "HEADSLOT","NECKSLOT","SHOULDERSLOT","BACKSLOT","CHESTSLOT","SHIRTSLOT","TABARDSLOT","WRISTSLOT","HANDSSLOT",
+	    "WAISTSLOT","LEGSSLOT","FEETSLOT","FINGER0SLOT","FINGER1SLOT","TRINKET0SLOT","TRINKET1SLOT","MAINHANDSLOT","SECONDARYHANDSLOT"
+	}
+    
+	local slotId, _texture, itemId, link
+	for _index, item in pairs(slots) do
+	    slotId = GetInventorySlotInfo(item)
+	    itemId = GetInventoryItemID("player", slotId)
+	    if itemId ~= nil then	            
+            eVar.items.kept[itemId] = true
+	    end            
+	end
 end
 local function ZoneMenuItemFunction(self, arg1, arg2, checked)
 	selectedZone = self.arg1
@@ -1034,7 +1018,7 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 			AddLoot(link)
 		end
 	elseif event == "MERCHANT_SHOW" then
-		if eVar.options.autoSellGrayItems then SellByQuality("Poor") end
+		if eVar.options.enableAutoSellGrays then SellByQuality("Poor") end
 		if tab == 1 and not eSaithBagFilter_OptionsButton:IsShown() then eSaithBagFilter_SellButton:Show() end
 	elseif event == "MERCHANT_CLOSED" then
 		eSaithBagFilter_SellButton:Hide()
@@ -1104,7 +1088,6 @@ function eSaithBagFilter_SellButton_OnUpdate(self, elapsed)
 		maxTime = maxTime + 1
 
 		if SellListedItems(sellList) == 0 or maxTime > 60 then
-			print('max time '..maxTime)
 			isSelling = false
 			sellList = { }
 			maxTime = 0
