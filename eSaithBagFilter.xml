@@ -2,205 +2,205 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ 
                    ..\..\FrameXML\UI.xsd">
-    <Script File="eSaithBagFilter.lua"/>
-    <Frame name="eSaithBagFilterSliderTemplate" virtual="true">
-        <Size x="300" y="50" />
-        <Frames>
-            <CheckButton name="$parentCheckButton" inherits="UICheckButtonTemplate">
-                <Size x="30" y="30" />
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" />
-                </Anchors>
-                <Scripts>
-                    <OnClick function="eSaithBagFilterSlider_CheckBoxClick" />
-                </Scripts>
-            </CheckButton>
-            <Button name="$parentDownButton">
-                <Size x="20" y="20" />
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentCheckButton" relativePoint="RIGHT" x="1" />
-                </Anchors>
-                <Layers>
-                    <Layer level="LAYOUT" setAllPoints="true">
-                        <Texture name="$parentBackground" file="Interface\BUTTONS\UI-MinusButton-Up" />
-                    </Layer>
-                </Layers>
-                <PushedTexture name="$parent_buttonPushed" file="Interface\BUTTONS\UI-MinusButton-Down" />
-                <Scripts>
-                    <OnClick function="eSaithBagFilterSlider_DownButton"/>
-                </Scripts>
-            </Button>
-            <Slider name="$parentSlider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="1100" valueStep="1">
-                <Size x="100"  y="20"/>
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentDownButton" relativePoint="RIGHT" x="3"/>
-                </Anchors>
-                <Layers>
-                    <Layer>
-                        <FontString name="$parentTitle" inherits="GameFontNormal" text="">
-                            <Anchors>
-                                <Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x='30' />
-                            </Anchors>
-                            <Color r=".7" g=".7" b="0" />
-                        </FontString>
-                        <FontString name="$parentValue" inherits="GameFontNormal" text="">
-                            <Anchors>
-                                <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="TOP"/>
-                            </Anchors>
-                            <Color r=".7" g=".7" b="0" />
-                        </FontString>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnLoad function="eSaithBagFilterSlider_OnLoad" />
-                    <OnValueChanged function="eSaithBagFilterSlider_SliderValueChanged" />
-                </Scripts>
-            </Slider>
-            <Button name="$parentUpButton">
-                <Size x="20" y="20" />
-                <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentSlider" relativePoint="RIGHT" x="5"/>
-                </Anchors>
-                <Layers>
-                    <Layer level="LAYOUT" setAllPoints="true">
-                        <Texture name="$parent_ButtonRest" file="Interface\BUTTONS\UI-PlusButton-Up" />
-                    </Layer>
-                </Layers>
-                <PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-PlusButton-Down" />
-                <Scripts>
-                    <OnClick function="eSaithBagFilterSlider_UpButton"/>
-                </Scripts>
-            </Button>
-        </Frames>
-    </Frame>
-	<Button name="eSaithBagFilterItemButtonTemplate"  virtual="true" inherits="UICheckButtonTemplate">
-        <Size x="40" y="40"/>
-    </Button>
-    <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">        
+  <Script File="eSaithBagFilter.lua"/>
+  <Frame name="eSaithBagFilter_Slider_Template" virtual="true">
+    <Size x="300" y="50" />
+    <Frames>
+      <CheckButton name="$parent_CheckButton" inherits="UICheckButtonTemplate">
+        <Size x="30" y="30" />
         <Anchors>
-            <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
+          <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" />
+        </Anchors>
+        <Scripts>
+          <OnClick function="eSaithBagFilter_Slider_CheckBox_OnClick" />
+        </Scripts>
+      </CheckButton>
+      <Button name="$parent_DownButton">
+        <Size x="20" y="20" />
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_CheckButton" relativePoint="RIGHT" x="1" />
         </Anchors>
         <Layers>
-            <Layer level="BACKGROUND" setAllPoints="true">
-                <Texture name="$parentBackground">
-                    <Color r=".7" g=".7" b=".8" a=".8" />o
-                </Texture>  
-            </Layer>			
+          <Layer level="LAYOUT" setAllPoints="true">
+            <Texture name="$parentBackground" file="Interface\BUTTONS\UI-MinusButton-Up" />
+          </Layer>
         </Layers>
+        <PushedTexture name="$parent_OnClick" file="Interface\BUTTONS\UI-MinusButton-Down" />
         <Scripts>
-            <OnLoad function="eSaithBagFilter_OnLoad"/>
-            <OnEvent function="eSaithBagFilter_OnEvent" />
-            <OnDragStart>self:StartMoving();</OnDragStart>
-            <OnDragStop function="eSaithBagFilter_OnStopDrag" />
-            <OnShow function="eSaithBagFilter_OnShow" />
+          <OnClick function="eSaithBagFilter_Slider_DownButton_OnClick"/>
         </Scripts>
-    </Frame>
-	
-	<Frame name="$parent_BottomTabs" parent="eSaithBagFilter">
-        <Size x="400" y="40" />
+      </Button>
+      <Slider name="$parent_Slider" inherits="OptionsSliderTemplate"  minValue="0" maxValue="1100" valueStep="1">
+        <Size x="100"  y="20"/>
         <Anchors>
-            <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
-        </Anchors>
-        <Frames>
-            <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Loot">
-                <Anchors>
-                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-						eSaithBagFilter_BottomTab_Click(self, "OnClick" )
-						PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Raid Info">
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-15"/>
-                </Anchors>
-                <Scripts>
-                    <OnShow>
-                        PanelTemplates_TabResize(self, 0)
-                        PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-                    </OnShow>
-                    <OnClick>
-						eSaithBagFilter_BottomTab_Click(self, "OnClick" )
-                        PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>            
-        </Frames>
-		<Scripts>
-			<OnLoad>
-				PanelTemplates_SetNumTabs(self, 2)
-				PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, 1)
-			</OnLoad>
-			<OnShow function="eSaithBagFilter_OnShow" />
-		</Scripts>
-    </Frame>
-	
-    <Button name="$parentSellButton" parent="eSaithBagFilter" enableMouse="true" hidden="true" frameStrata="HIGH" topLevel="true">
-        <Size x="30" y="30"/>
-        <Anchors>
-            <Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="0" y="-27"/>
+          <Anchor point="LEFT" relativeTo="$parent_DownButton" relativePoint="RIGHT" x="3"/>
         </Anchors>
         <Layers>
-            <Layer level="HIGH">
-                <Texture name="$parentTexture" file="Interface\ICONS\ACHIEVEMENT_GUILDPERK_CASHFLOW_RANK2">
-                    <Size x="28" y="28"/>
-                    <Anchors>
-                        <Anchor point="CENTER" relativePoint="CENTER" />
-                    </Anchors>
-                </Texture>
-            </Layer>
+          <Layer>
+            <FontString name="$parentTitle" inherits="GameFontNormal" text="">
+              <Anchors>
+                <Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x='30' />
+              </Anchors>
+              <Color r=".7" g=".7" b="0" />
+            </FontString>
+            <FontString name="$parentValue" inherits="GameFontNormal" text="">
+              <Anchors>
+                <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="TOP"/>
+              </Anchors>
+              <Color r=".7" g=".7" b="0" />
+            </FontString>
+          </Layer>
         </Layers>
         <Scripts>
-            <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
-            <OnClick  function="eSaithBagFilter_SellButton_Click" />
-			<OnMouseDown> self:SetAlpha(.6) </OnMouseDown>
-			<OnMouseUp> self:SetAlpha(1) </OnMouseUp>
-		    <OnUpdate function="eSaithBagFilter_SellButton_OnUpdate" />
-            <OnEnter  function="eSaithBagFilter_SellButton_OnEnter" />
-            <OnLeave>GameTooltip:Hide()</OnLeave>
-            <OnHide   function="eSaithBagFilter_SellButton_OnHide" />
+          <OnLoad function="eSaithBagFilter_Slider_OnLoad" />
+          <OnValueChanged function="eSaithBagFilterSlider_Slider_OnChange" />
         </Scripts>
-    </Button>
-    <Button name="$parentDropDown" parent="eSaithBagFilter" inherits="UIDropDownMenuTemplate" hidden="false">
-        <Size x="150" y="50" />
+      </Slider>
+      <Button name="$parent_UpButton">
+        <Size x="20" y="20" />
         <Anchors>
-            <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="10" y="-25"/>
-        </Anchors>
-        <Scripts>
-            <OnLoad>
-                UIDropDownMenu_Initialize(self, eSaithBagFilter_CreateDropDownList);
-                UIDropDownMenu_SetWidth(self, 100);
-            </OnLoad>
-        </Scripts>
-        <Anchors>
-            <Anchor point="CENTER"/>
-        </Anchors>
-    </Button>
-    <Button name="$parentEsaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
-        <Anchors>
-            <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-38" y="-35"/>
+          <Anchor point="LEFT" relativeTo="$parent_Slider" relativePoint="RIGHT" x="5"/>
         </Anchors>
         <Layers>
-            <Layer level="OVERLAY" setAllPoints="true">
-                <Texture name="$parentTexture" file="Interface\ICONS\Ability_BossFelOrcs_Necromancer_Orange" >
-                    <Size x="35" y="35"/>
-                    <Anchors>
-                        <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" />
-                    </Anchors>
-                </Texture>
-            </Layer>
+          <Layer level="LAYOUT" setAllPoints="true">
+            <Texture name="$parent_ButtonRest" file="Interface\BUTTONS\UI-PlusButton-Up" />
+          </Layer>
         </Layers>
+        <PushedTexture name="$parent_ButtonPushed" file="Interface\BUTTONS\UI-PlusButton-Down" />
         <Scripts>
-            <OnClick function="eSaithBagFilterOpenFrame_OnClick" />
-            <OnEnter function="eSaithBagFilterOpenFrame_OnEnter" />
-            <OnLeave function="OnGameToolTipLeave" />
+          <OnClick function="eSaithBagFilter_Slider_UpButton_OnClick"/>
         </Scripts>
-    </Button>
+      </Button>
+    </Frames>
+  </Frame>
+  <Button name="eSaithBagFilterItemButtonTemplate"  virtual="true" inherits="UICheckButtonTemplate">
+    <Size x="40" y="40"/>
+  </Button>
+  <Frame name="eSaithBagFilter" parent="UIParent" hidden="true" frameStrata="HIGH" inherits="BasicFrameTemplateWithInset" movable="true">
+    <Anchors>
+      <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
+    </Anchors>
+    <Layers>
+      <Layer level="BACKGROUND" setAllPoints="true">
+        <Texture name="$parentBackground">
+          <Color r=".7" g=".7" b=".8" a=".8" />o
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad function="eSaithBagFilter_OnLoad"/>
+      <OnEvent function="eSaithBagFilter_OnEvent" />
+      <OnDragStart>self:StartMoving();</OnDragStart>
+      <OnDragStop function="eSaithBagFilter_OnStopDrag" />
+      <OnShow function="eSaithBagFilter_OnShow" />
+    </Scripts>
+  </Frame>
+
+  <Frame name="$parent_BottomTabs" parent="eSaithBagFilter">
+    <Size x="400" y="40" />
+    <Anchors>
+      <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
+    </Anchors>
+    <Frames>
+      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Loot">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
+        </Anchors>
+        <Scripts>
+          <OnShow>
+            PanelTemplates_TabResize(self, 0)
+            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
+          </OnShow>
+          <OnClick>
+            eSaithBagFilter_BottomTab_OnClick(self, "OnClick" )
+            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
+          </OnClick>
+        </Scripts>
+      </Button>
+      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Raid Info">
+        <Anchors>
+          <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-15"/>
+        </Anchors>
+        <Scripts>
+          <OnShow>
+            PanelTemplates_TabResize(self, 0)
+            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
+          </OnShow>
+          <OnClick>
+            eSaithBagFilter_BottomTab_OnClick(self, "OnClick" )
+            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
+          </OnClick>
+        </Scripts>
+      </Button>
+    </Frames>
+    <Scripts>
+      <OnLoad>
+        PanelTemplates_SetNumTabs(self, 2)
+        PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, 1)
+      </OnLoad>
+    </Scripts>
+  </Frame>
+  <Button name="$parent_SellButton" parent="eSaithBagFilter" enableMouse="true" hidden="true" frameStrata="HIGH" topLevel="true">
+    <Size x="30" y="30"/>
+    <Anchors>
+      <Anchor point="TOP" relativePoint="TOP" relativeTo="$parent" x="20" y="-27"/>
+    </Anchors>
+    <Layers>
+      <Layer level="HIGH">
+        <Texture name="$parentTexture" file="Interface\ICONS\ACHIEVEMENT_GUILDPERK_CASHFLOW_RANK2">
+          <Size x="28" y="28"/>
+          <Anchors>
+            <Anchor point="CENTER" relativePoint="CENTER" />
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad>self.TimeSinceLastUpdate = 0</OnLoad>
+      <OnClick  function="eSaithBagFilter_SellButton_OnClick" />
+      <OnMouseDown> self:SetAlpha(.6) </OnMouseDown>
+      <OnMouseUp> self:SetAlpha(1) </OnMouseUp>
+      <OnUpdate function="eSaithBagFilter_SellButton_OnUpdate" />
+      <OnEnter  function="eSaithBagFilter_SellButton_OnEnter" />
+      <OnLeave>GameTooltip:Hide()</OnLeave>
+      <OnHide   function="eSaithBagFilter_SellButton_OnHide" />
+    </Scripts>
+  </Button>
+  <Button name="$parent_DropDown" parent="eSaithBagFilter" inherits="UIDropDownMenuTemplate" hidden="false">
+    <Size x="150" y="50" />
+    <Anchors>
+      <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="10" y="-25"/>
+    </Anchors>
+    <Scripts>
+      <OnLoad>
+        self.Title = "All";
+        UIDropDownMenu_Initialize(self, eSaithBagFilter_CreateDropDownList);
+        UIDropDownMenu_SetText(self, self.Title);
+        UIDropDownMenu_SetWidth(self, 150);
+      </OnLoad>
+    </Scripts>
+    <Anchors>
+      <Anchor point="CENTER"/>
+    </Anchors>
+  </Button>
+  <Button name="$parentEsaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
+    <Anchors>
+      <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-38" y="-35"/>
+    </Anchors>
+    <Layers>
+      <Layer level="OVERLAY" setAllPoints="true">
+        <Texture name="$parentTexture" file="Interface\ICONS\Ability_BossFelOrcs_Necromancer_Orange" >
+          <Size x="35" y="35"/>
+          <Anchors>
+            <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" />
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnClick function="eSaithBagFilter_OnClick" />
+      <OnEnter function="eSaithBagFilter_OnEnter" />
+      <OnLeave function="OnGameToolTipLeave" />
+    </Scripts>
+  </Button>
 </Ui>

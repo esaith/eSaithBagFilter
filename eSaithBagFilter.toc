@@ -1,7 +1,7 @@
-﻿## Interface: 70000
-## Title: |cffffffffeSaith Bag Filter|r
-## Version: 1.36
-## Notes: Allows filtering of bag items to sell to vendor by rarity, current session instance/zones, and ilvl.
+﻿## Interface: 70300
+## Title: Saith Bag Filter
+## Version: 1.37
+## Notes: Allows mass selling of bag items to vendor by rarity, instance, and zones.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances
 ## SavedVariablesPerCharacter: eSaithBagFilterVar
@@ -19,6 +19,32 @@ eSaithBagFilter.xml
  -- Guild Master - Feedback on overall product
  -- _Max_Cavalera_ - For the suggestion to adding an option to keep all BOE when picking up. This is the "Keep All BOE" option on the Options page
  
+ -- 1.37
+	--Update for 7.3. 
+	--Updated code structure
+	--Saving prior to changing from saving items by link to saving by Hitem
+	
+	--Added Features
+		--After user selects an option from a drop down, the selected item is now saved as the new drop down title 
+		--Raid Info tab now lists all recent lock out instances. 
+			--User may now filter this list to view which characters are saved to which instance
+	
+	--Removed Items
+		--iLevel fitler
+		--Removed artwork background. Images are cool but deters from actual use of Addon
+		--Removed background colors for items. Should be reintroduced after Hitem fix
+		--BOE section removed. Should be reintroduced after Hitem fix
+	
+	--Known Issues
+		--Scrolling on Raid Info raw list with middle mouse does not update scroll position
+		--Some green items are not able to be distinguished well enough to show up for icons to sell due to link string variations between looting and final link string value. 
+	
+-- 1.36
+	  --Fixed issue with variables from v1.32 to v1.36 This fixed the issue when selecting "Keep all BOE" option would cause LUA error
+    --Fixed issue when updating the AddOn to a higher version all instance and raid info would be erased.
+    --Fixed issue where hovering over non-link item (e.g. profession enchant that is not an item) an error would occur.
+
+
  -- 1.35    
 	--Instances and player names are sorted alphabetically
 	--Fixed issue when one of the items is a pet would cause a popup error

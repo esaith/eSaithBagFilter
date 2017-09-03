@@ -1,306 +1,65 @@
 ﻿SLASH_ESAITHBAGFILTER1 = '/efilter'
 local MAX_ITEM_COUNT = -1
-local ZONE -- used for updating world coordinates
-local OriginalToolTip  -- used to save original functionality to the tooltip. Used for hooking a function
-local MAX_BAG_SLOTS = 200    
+local ORIGINALTOOLTIP  -- used to save original functionality to the tooltip. Used for hooking a function
+local MAX_BAG_SLOTS = 175    
 local eVar -- Short for eSaithBagFilter
-local eInstances -- short for eSaithBagFilterInstances. For saving instances on all characters on all realms
-local eInstanceLoot -- short for eSaithBagFilterInstanceLoot. Loot from each zone, dungeon, raid, etc.
+local savedInstances -- short for eSaithBagFilterInstances. For saving instances on all characters on all realms
+local instanceLoot -- short for eSaithBagFilterInstanceLoot. Loot from each zone, dungeon, raid, etc.
+	-- eVar.instance[instanceName].loot[item]
 local ALPHA = .4
 local StartLootRollID = nil
-local STRINGS = {
-	OPEN_ADDON = "Open ESaith Item Filter",
-	SELL = "Sell",
-	TO_LOOT = "To use this functionality, you -must- make sure your Auto Loot is enabled. To enable, open your Interface > Controls > Auto Loot is checked. Sorry for this inconvenience. Thank you",
-	STOP_TALKING_TO_VENDOR = "Sorry to be rude but to loot you mustn't be talking to a merchant. Thank you.",
-	NOT_ENOUGH_SPACE = "You do not have enough bag space to safely loot item(s).",
-	ADDON_UPDATED = "eSaith Bag Filter AddOn updated to version "
-} 
-local LOOT_IMAGES = {
-	{"Interface\\GLUES\\CREDITS\\1000px-Coilfangpaintover1", 
-	"Interface\\GLUES\\CREDITS\\1000px-Coilfangpaintover2",
-	"Interface\\GLUES\\CREDITS\\1000px-Coilfangpaintover4",
-	"Interface\\GLUES\\CREDITS\\1000px-Coilfangpaintover5"},
-	
-	{"Interface\\GLUES\\CREDITS\\Acrest1", 
-	"Interface\\GLUES\\CREDITS\\Acrest2",
-	"Interface\\GLUES\\CREDITS\\Acrest3",
-	"Interface\\GLUES\\CREDITS\\Acrest4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Axe2Drak1", 
-	"Interface\\GLUES\\CREDITS\\Axe2Drak2",
-	"Interface\\GLUES\\CREDITS\\Axe2Drak5",
-	"Interface\\GLUES\\CREDITS\\Axe2Drak6"},
-	
-	{"Interface\\GLUES\\CREDITS\\AxeDrak1", 
-	"Interface\\GLUES\\CREDITS\\AxeDrak2",
-	"Interface\\GLUES\\CREDITS\\AxeDrak5",
-	"Interface\\GLUES\\CREDITS\\AxeDrak6"},
-	
-	{"Interface\\GLUES\\CREDITS\\BE_Building_Two2", 
-	"Interface\\GLUES\\CREDITS\\BE_Building_Two3",
-	"Interface\\GLUES\\CREDITS\\BE_Building_Two5",
-	"Interface\\GLUES\\CREDITS\\BE_Building_Two6"},
-	
-	{"Interface\\GLUES\\CREDITS\\BladesEdgeMountains1", 
-	"Interface\\GLUES\\CREDITS\\BladesEdgeMountains2",
-	"Interface\\GLUES\\CREDITS\\BladesEdgeMountains4",
-	"Interface\\GLUES\\CREDITS\\BladesEdgeMountains5"},
-	
-	{"Interface\\GLUES\\CREDITS\\BlastedLands1", 
-	"Interface\\GLUES\\CREDITS\\BlastedLands2",
-	"Interface\\GLUES\\CREDITS\\BlastedLands4",
-	"Interface\\GLUES\\CREDITS\\BlastedLands5"},
-		
-	{"Interface\\GLUES\\CREDITS\\BloodElf_Priestess_Master1", 
-	"Interface\\GLUES\\CREDITS\\BloodElf_Priestess_Master2",
-	"Interface\\GLUES\\CREDITS\\BloodElf_Priestess_Master4",
-	"Interface\\GLUES\\CREDITS\\BloodElf_Priestess_Master5"},
-	
-	{"Interface\\GLUES\\CREDITS\\Bloodelf_Two2", 
-	"Interface\\GLUES\\CREDITS\\Bloodelf_Two3",
-	"Interface\\GLUES\\CREDITS\\Bloodelf_Two5",
-	"Interface\\GLUES\\CREDITS\\Bloodelf_Two6"},
-	
-	{"Interface\\GLUES\\CREDITS\\BloodElf_Webimage1", 
-	"Interface\\GLUES\\CREDITS\\BloodElf_Webimage2",
-	"Interface\\GLUES\\CREDITS\\BloodElf_Webimage3",
-	"Interface\\GLUES\\CREDITS\\BloodElf_Webimage4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Centaur1", 
-	"Interface\\GLUES\\CREDITS\\Centaur2",
-	"Interface\\GLUES\\CREDITS\\Centaur4",
-	"Interface\\GLUES\\CREDITS\\Centaur5"},
-	
-	{"Interface\\GLUES\\CREDITS\\DeathKnight501", 
-	"Interface\\GLUES\\CREDITS\\DeathKnight502",
-	"Interface\\GLUES\\CREDITS\\DeathKnight505",
-	"Interface\\GLUES\\CREDITS\\DeathKnight506"},
-	
-	{"Interface\\GLUES\\CREDITS\\Draenei_Character1", 
-	"Interface\\GLUES\\CREDITS\\Draenei_Character2",
-	"Interface\\GLUES\\CREDITS\\Draenei_Character3",
-	"Interface\\GLUES\\CREDITS\\Draenei_Character4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Dranei_F_Hair2", 
-	"Interface\\GLUES\\CREDITS\\Dranei_F_Hair3",
-	"Interface\\GLUES\\CREDITS\\Dranei_F_Hair4",
-	"Interface\\GLUES\\CREDITS\\Dranei_F_Hair5"},
-	
-	{"Interface\\GLUES\\CREDITS\\EpicSwordTGA1", 
-	"Interface\\GLUES\\CREDITS\\EpicSwordTGA2",
-	"Interface\\GLUES\\CREDITS\\EpicSwordTGA5",
-	"Interface\\GLUES\\CREDITS\\EpicSwordTGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Frostwyrm01TGA1", 
-	"Interface\\GLUES\\CREDITS\\Frostwyrm01TGA2",
-	"Interface\\GLUES\\CREDITS\\Frostwyrm01TGA5",
-	"Interface\\GLUES\\CREDITS\\Frostwyrm01TGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\gargoyle1", 
-	"Interface\\GLUES\\CREDITS\\gargoyle2",
-	"Interface\\GLUES\\CREDITS\\gargoyle3",
-	"Interface\\GLUES\\CREDITS\\gargoyle4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Grizzlemaw2TGA2", 
-	"Interface\\GLUES\\CREDITS\\Grizzlemaw2TGA3",
-	"Interface\\GLUES\\CREDITS\\Grizzlemaw2TGA6",
-	"Interface\\GLUES\\CREDITS\\Grizzlemaw2TGA7"},
-	
-	{"Interface\\GLUES\\CREDITS\\GRIZZLYHILLS2TGA1", 
-	"Interface\\GLUES\\CREDITS\\GRIZZLYHILLS2TGA2",
-	"Interface\\GLUES\\CREDITS\\GRIZZLYHILLS2TGA5",
-	"Interface\\GLUES\\CREDITS\\GRIZZLYHILLS2TGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\GrizzlyHills3TGA1", 
-	"Interface\\GLUES\\CREDITS\\GrizzlyHills3TGA2",
-	"Interface\\GLUES\\CREDITS\\GrizzlyHills3TGA5",
-	"Interface\\GLUES\\CREDITS\\GrizzlyHills3TGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Hunter01TGA1", 
-	"Interface\\GLUES\\CREDITS\\Hunter01TGA2",
-	"Interface\\GLUES\\CREDITS\\Hunter01TGA5",
-	"Interface\\GLUES\\CREDITS\\Hunter01TGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Illidan1", 
-	"Interface\\GLUES\\CREDITS\\Illidan2",
-	"Interface\\GLUES\\CREDITS\\Illidan5",
-	"Interface\\GLUES\\CREDITS\\Illidan6"},
-	
-	{"Interface\\GLUES\\CREDITS\\L60ETC1", 
-	"Interface\\GLUES\\CREDITS\\L60ETC2",
-	"Interface\\GLUES\\CREDITS\\L60ETC3",
-	"Interface\\GLUES\\CREDITS\\L60ETC4"},
-	
-	{"Interface\\GLUES\\CREDITS\\MaginnisTGA1", 
-	"Interface\\GLUES\\CREDITS\\MaginnisTGA2",
-	"Interface\\GLUES\\CREDITS\\MaginnisTGA5",
-	"Interface\\GLUES\\CREDITS\\MaginnisTGA6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Magnataur21", 
-	"Interface\\GLUES\\CREDITS\\Magnataur22",
-	"Interface\\GLUES\\CREDITS\\Magnataur25",
-	"Interface\\GLUES\\CREDITS\\Magnataur26"},
-	
-	{"Interface\\GLUES\\CREDITS\\Mergul011", 
-	"Interface\\GLUES\\CREDITS\\Mergul012",
-	"Interface\\GLUES\\CREDITS\\Mergul015",
-	"Interface\\GLUES\\CREDITS\\Mergul016"},
-	
-	{"Interface\\GLUES\\CREDITS\\Nightelfcrest1", 
-	"Interface\\GLUES\\CREDITS\\Nightelfcrest2",
-	"Interface\\GLUES\\CREDITS\\Nightelfcrest3",
-	"Interface\\GLUES\\CREDITS\\Nightelfcrest4"},
-	
-	{"Interface\\GLUES\\CREDITS\\NorthGiant1", 
-	"Interface\\GLUES\\CREDITS\\NorthGiant2",
-	"Interface\\GLUES\\CREDITS\\NorthGiant5",
-	"Interface\\GLUES\\CREDITS\\NorthGiant6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Orcshield1", 
-	"Interface\\GLUES\\CREDITS\\Orcshield2",
-	"Interface\\GLUES\\CREDITS\\Orcshield3",
-	"Interface\\GLUES\\CREDITS\\Orcshield4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Revanent21", 
-	"Interface\\GLUES\\CREDITS\\Revanent22",
-	"Interface\\GLUES\\CREDITS\\Revanent25",
-	"Interface\\GLUES\\CREDITS\\Revanent26"},
-	
-	{"Interface\\GLUES\\CREDITS\\Sanctification1", 
-	"Interface\\GLUES\\CREDITS\\Sanctification2",
-	"Interface\\GLUES\\CREDITS\\Sanctification5",
-	"Interface\\GLUES\\CREDITS\\Sanctification6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Shivan1", 
-	"Interface\\GLUES\\CREDITS\\Shivan2",
-	"Interface\\GLUES\\CREDITS\\Shivan3",
-	"Interface\\GLUES\\CREDITS\\Shivan4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Shol021", 
-	"Interface\\GLUES\\CREDITS\\Shol022",
-	"Interface\\GLUES\\CREDITS\\Shol025",
-	"Interface\\GLUES\\CREDITS\\Shol026"},
-	
-	{"Interface\\GLUES\\CREDITS\\Sword_1H1", 
-	"Interface\\GLUES\\CREDITS\\Sword_1H2",
-	"Interface\\GLUES\\CREDITS\\Sword_1H5",
-	"Interface\\GLUES\\CREDITS\\Sword_1H6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Tauren1", 
-	"Interface\\GLUES\\CREDITS\\Tauren2",
-	"Interface\\GLUES\\CREDITS\\Tauren4",
-	"Interface\\GLUES\\CREDITS\\Tauren5"},
-	
-	{"Interface\\GLUES\\CREDITS\\Taurencrest1", 
-	"Interface\\GLUES\\CREDITS\\Taurencrest2",
-	"Interface\\GLUES\\CREDITS\\Taurencrest3",
-	"Interface\\GLUES\\CREDITS\\Taurencrest4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Tempest_Keep1", 
-	"Interface\\GLUES\\CREDITS\\Tempest_Keep2",
-	"Interface\\GLUES\\CREDITS\\Tempest_Keep5",
-	"Interface\\GLUES\\CREDITS\\Tempest_Keep6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Tier4_Druid1", 
-	"Interface\\GLUES\\CREDITS\\Tier4_Druid2",
-	"Interface\\GLUES\\CREDITS\\Tier4_Druid4",
-	"Interface\\GLUES\\CREDITS\\Tier4_Druid5"},
-	
-	{"Interface\\GLUES\\CREDITS\\Troll1", 
-	"Interface\\GLUES\\CREDITS\\Troll2",
-	"Interface\\GLUES\\CREDITS\\Troll4",
-	"Interface\\GLUES\\CREDITS\\Troll5"},
-	
-	{"Interface\\GLUES\\CREDITS\\Uld_Hall1", 
-	"Interface\\GLUES\\CREDITS\\Uld_Hall2",
-	"Interface\\GLUES\\CREDITS\\Uld_Hall5",
-	"Interface\\GLUES\\CREDITS\\Uld_Hall6"},
-	
-	{"Interface\\GLUES\\CREDITS\\undeadcrest1", 
-	"Interface\\GLUES\\CREDITS\\undeadcrest2",
-	"Interface\\GLUES\\CREDITS\\undeadcrest3",
-	"Interface\\GLUES\\CREDITS\\undeadcrest4"},
-	
-	{"Interface\\GLUES\\CREDITS\\Vamp1", 
-	"Interface\\GLUES\\CREDITS\\Vamp2",
-	"Interface\\GLUES\\CREDITS\\Vamp5",
-	"Interface\\GLUES\\CREDITS\\Vamp6"},
-	
-	{"Interface\\GLUES\\CREDITS\\VrykDoor1", 
-	"Interface\\GLUES\\CREDITS\\VrykDoor2",
-	"Interface\\GLUES\\CREDITS\\VrykDoor5",
-	"Interface\\GLUES\\CREDITS\\VrykDoor6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Wrathguard1", 
-	"Interface\\GLUES\\CREDITS\\Wrathguard2",
-	"Interface\\GLUES\\CREDITS\\Wrathguard4",
-	"Interface\\GLUES\\CREDITS\\Wrathguard5"},
-	
-	{"Interface\\GLUES\\CREDITS\\ZulDrak2", 
-	"Interface\\GLUES\\CREDITS\\ZulDrak3",
-	"Interface\\GLUES\\CREDITS\\ZulDrak6",
-	"Interface\\GLUES\\CREDITS\\ZulDrak7"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\CHIMERA011", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\CHIMERA012",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\CHIMERA015",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\CHIMERA016"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\FIRELANDS GORGE011", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\FIRELANDS GORGE012",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\FIRELANDS GORGE015",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\FIRELANDS GORGE016"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\GOBLIN_INN01A1", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GOBLIN_INN01A2",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GOBLIN_INN01A5",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GOBLIN_INN01A6"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\GREYMANE_LIGHTHOUSE_0031", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GREYMANE_LIGHTHOUSE_0032",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GREYMANE_LIGHTHOUSE_0035",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\GREYMANE_LIGHTHOUSE_0036"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\LESSERELEMENTAL_FIRE_03B1", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\LESSERELEMENTAL_FIRE_03B2",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\LESSERELEMENTAL_FIRE_03B5",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\LESSERELEMENTAL_FIRE_03B6"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_HUNTER011", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_HUNTER012",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_HUNTER015",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_HUNTER016"},
-	
-	{"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_WARRIOR011", 
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_WARRIOR012",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_WARRIOR015",
-	"Interface\\GLUES\\CREDITS\\CATACLYSM\\TIER11_WARRIOR016"},
-	
-	{"Interface\\GLUES\\CREDITS\\Pandaria\\DruidChallenge1", 
-	"Interface\\GLUES\\CREDITS\\Pandaria\\DruidChallenge2",
-	"Interface\\GLUES\\CREDITS\\Pandaria\\DruidChallenge5",
-	"Interface\\GLUES\\CREDITS\\Pandaria\\DruidChallenge6"},
-	
-	{"Interface\\GLUES\\CREDITS\\Pandaria\\Tier13_Priest011", 
-	"Interface\\GLUES\\CREDITS\\Pandaria\\Tier13_Priest012",
-	"Interface\\GLUES\\CREDITS\\Pandaria\\Tier13_Priest015",
-	"Interface\\GLUES\\CREDITS\\Pandaria\\Tier13_Priest016"},
-	
-	{"Interface\\GLUES\\CREDITS\\Pandaria\\Tier14_Monk011", 
-	"Interface\\GLUES\\CREDITS\\Pandaria\\Tier14_Monk012",
-	"Interface\\GLUES\\CREDITS\\Pandaria\\Tier14_Monk015",
-	"Interface\\GLUES\\CREDITS\\\Pandaria\\Tier14_Monk016"},
-	
+local zone -- todo, verify this is set when zone is changed
+local items -- list of all items that player has ever dealt with regardless of quality|rarity
+local tab = 1
+local isSelling = isSelling or false
+local updateInterval = updateInterval or 0.5
+local maxTime = maxTime or 0
+ 
+local itemTextureColors = {  
+	.6, .6, .6, --Gray
+	1, 1, 1, 	--White
+	0, 1, 0, 	--Green
+	.2, .2, 1, 	--Blue
+	1, 0, 1, 	--Purple
+	.8, .8, 0, 	--Orange
+	.83, .68, 0, --Gold
+	.37,.62,.63, --Lightblue
+	0, 1, 1		--Cyan
 }
-local BACKGROUND_STRINGS = {
-	"bg-deathknight-blood",	"bg-deathknight-frost", "bg-deathknight-unholy", "bg-druid-balance", "bg-druid-bear", "bg-druid-cat", "bg-druid-restoration",
-	"bg-hunter-beastmaster", "bg-hunter-marksman", "bg-hunter-survival", "bg-hunter-survival", "bg-mage-fire", "bg-mage-frost", "bg-monk-battledancer", 
-	"bg-monk-brewmaster", "bg-monk-mistweaver", "bg-paladin-protection", "bg-paladin-retribution", "bg-priest-discipline", 
-	"bg-priest-holy", "bg-priest-shadow", "bg-rogue-assassination", "bg-rogue-combat", "bg-rogue-subtlety", "bg-shaman-elemental", "bg-shaman-enhancement", 
-	"bg-shaman-restoration", "bg-warlock-affliction", "bg-warlock-demonology", "bg-warlock-destruction", "bg-warrior-arms", "bg-warrior-fury", "bg-warrior-protection", "DeathKnightUnholy-TopLeft"	, "HunterSurvival-TopLeft", "PALADINHOLY-TOPLEFT", "PriestHoly-TopLeft", "PriestDiscipline-TopLeft", 
-	"RogueSubtlety-TopLeft"
+
+local MAX_ITEMS_PER_ROW = 10
+local selectedZone = nil
+local sellList
+
+local ItemQualityString = {
+	"Poor",
+	"Common", 
+	"Uncommon",
+	"Rare",
+	"Epic",
+	"Legendary",
+	"Artifact",
+	"Heirloom"
 }
+
+local itemQuality = {
+	Poor = 0,
+	Common = 1, 
+	Uncommon = 2,
+	Rare = 3,
+	Epic = 4,
+	Legendary = 5,
+	Artifact = 6,
+	Heirloom = 7
+}
+
+function getItemRarity(_quality)
+	for rarity, quality in pairs(itemQuality) do
+		if quality == _quality then
+			return rarity
+		end
+	end
+end
 local function printTable(tb, spacing)
 	if spacing == nil then spacing = "" end
 	if tb == nil then print("Table is nil") return end
@@ -316,9 +75,8 @@ local function printTable(tb, spacing)
 			printTable(v, "   " .. spacing)
 		end
 	end
-	print(spacing .. "Leaving Table")
+	print(spacing.."Leaving table")
 end
-
 local function PrepreToolTip(self)
 	local x = self:GetRight();
 	if (x >=(GetScreenWidth() / 2)) then
@@ -327,618 +85,520 @@ local function PrepreToolTip(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	end
 end
+local function getHitem(link)
+	if link == nil or type(link) ~= 'string' then
+		return 0
+	end
+	local Hitem = string.match(link, ".*Hitem:(%d*).*")
+	print(tostring(Hitem))	
+	return Hitem
+end
+local function AddItemToItemList(link, isBOE)	
+	if not link or type(link) ~= 'string' then return end
+
+
+
+	if items[link] == nil then
+		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
+		items[link] = {
+			name = name,
+			quality = quality,
+			rarity = getItemRarity(quality),
+			iLevel, iLevel,
+			reqLevel = reqLevel,
+			class = class,
+			subclass = subclass,
+			maxStack = maxStack,
+			equipSlot = equipSlot, 
+			texture = texture, 
+			vendorPrice = vendorPrice or 0,
+			isBOE = isBOE
+		}
+
+		if isBOE == nil then
+			-- item has not been seen before. Show the tooltip to get isBOE value prior to adding to items list
+			print(link)
+			GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+			GameTooltip:SetHyperlink(link)    
+			GameTooltip:Show()   
+			GameTooltip:Hide() 	
+			return
+		end
+	end 
+
+	print(link:upper())
+	
+end
 local function ReadToolTip(self, ...)
 	local boundText =  tostring(GameTooltipTextLeft2:GetText()) .. 
 						tostring(GameTooltipTextLeft3:GetText()) .. 
 						tostring(GameTooltipTextLeft4:GetText()) .. 
 						tostring(GameTooltipTextLeft5:GetText())
 
-	if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or 
-	not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
-		local _, link = GameTooltip:GetItem() 
-        if link ~= nil then    -- Link items can only be items. If scrolling over professions or similar link is nil             
-            eInstances.boe[link] = true
-            
-            local _, _, quality = GetItemInfo(link)
-            -- If 'Keep all BOE' items is checked then automatically add them to the kept list. Requires quality 3 or higher (green)
-            -- This is to help prevent all white items automatically included in which 
-            if eVar.properties.KeepAllBOE and quality and quality >= 2 then            
-                eVar.properties.keep[link] = true
-            end
-        end
+	local link = select(2, GameTooltip:GetItem())
+    
+	-- Link items can only be items. If scrolling over professions button in professions tab or similar action then link is nil    
+	if link and type(link) == 'string' then            
+		local isBOE = false
+
+		if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or 
+		not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
+			isBOE = true
+		end
+
+		if items[link] then
+			items[link].isBOE = isBOE
+		else	
+			AddItemToItemList(link, isBOE)
+		end
 	end
-	return OriginalToolTip(self, ...)
+	return ORIGINALTOOLTIP(self, ...)
 end
-local function ResetAlphaOnAllButtons()
-	for index = 1, MAX_ITEM_COUNT do
-		local btn = _G["eSaithBagFilterLootFrameSellItem" .. index]
-		if _G["eSaithBagFilterLootFrameSellItem" .. index] and _G["eSaithBagFilterLootFrameSellItem" .. index]:IsShown() then
-			if eVar.properties.keep[_G["eSaithBagFilterLootFrameSellItem" .. index].link] or eVar.properties.keepTradeGoods[_G["eSaithBagFilterLootFrameSellItem" .. index].link] then
-				_G["eSaithBagFilterLootFrameSellItem" .. index]:SetAlpha(ALPHA)
+local function ToggleAlphaOnItem(self, item)
+	if item then
+		self:SetAlpha(ALPHA)
+	else
+		self:SetAlpha(1)              
+	end
+end
+local function SetAlphaOnItems()
+	local itemBtn
+	for index = 1, MAX_BAG_SLOTS do
+		itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
+		if itemBtn and itemBtn:IsShown() then
+			if eVar.items.kept[itemBtn.link] then
+				itemBtn:SetAlpha(ALPHA)
 			else
-				_G["eSaithBagFilterLootFrameSellItem" .. index]:SetAlpha(1)              
+				itemBtn:SetAlpha(1)              
 			end
+		else
+			return
 		end
 	end
 end
-local function AddLoot(link, quality)
-	local zone = GetRealZoneText()
-	if eInstanceLoot[zone] == nil then eInstanceLoot[zone] = { } end
-	eInstanceLoot[zone][link] = true   
-	GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
-	GameTooltip:SetHyperlink(link)    
-	GameTooltip:Show()   
-	GameTooltip:Hide()    
+-- Adds loot to the instance|zone. Checks if the item is BOE and adds to the BOE list if true
+local function AddLoot(link)
+	-- Must assume this is async with the rest of the function
+	local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
+	AddItemToItemList(link)
+	
+	zone = GetRealZoneText() or "All"
+	instanceLoot[zone] = instanceLoot[zone] or {}
+	instanceLoot['All'] = instanceLoot['All'] or {}
+	instanceLoot[zone][link] = true
+	instanceLoot['All'][link] = true
+	print('Adding '..link.." to zone: "..zone)
 end
-local function ToggleGreenBOEItems()
-	eVar.properties.EnableBOEGreen = eSaithBagFilterOptionsFrameOptions_BOEGreenItems:GetChecked()
+local function Item_OnPress(self)  
+	eVar.items.kept[self.link] = not eVar.items.kept[self.link]
+	SetAlphaOnItems()
 end
-
-local function ItemButton_OnPress(self, event, button)  
-	eVar.properties.keep[self.link] = not eVar.properties.keep[self.link]
-	ResetAlphaOnAllButtons()
+local function RarityType_OnEnter(self, motion)
+	PrepreToolTip(self)
+	GameTooltip:AddLine("Show or hide "..self.type.." items")
+	GameTooltip:Show()
 end
-local function ItemButton_OnEnter(self, motion)
+local function Item_OnEnter(self, motion)
 	PrepreToolTip(self)
 	GameTooltip:SetHyperlink(self.link)
 	GameTooltip:Show()
 end
-local function KeepAllBOEOnEnter(self, motion)
+local function KeepUncommonBOEItems_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Default all BOE of Uncommon (Green) quality or greater \nto be saved in characters kept list")
+	GameTooltip:AddLine("Keep all uncommon (green) BOE items")
 	GameTooltip:Show()
 end
-local function QuestCompleteOnEnter(self, motion)
+local function KeepRareBOEItems_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Quickly obtains and complete quests.\nQuest rewards are chosen at random.")
+	GameTooltip:AddLine("Keep all rare (blue) BOE items.\n Note: This disables the normal toggle keep or sell functionality")
 	GameTooltip:Show()
 end
-local function CoordinatesOnEnter(self, motion)
+local function ToggleKeepUncommonBOEItems(self)
+	eVar.options.keepUncommonBOEItems = self:GetChecked()
+end
+local function ToggleKeepRareBOEItems(self)
+	eVar.options.keepRareBOEItems = self:GetChecked()
+end
+local function IncludeUncommonBOEItemsInRareSection_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Shows (x, y) coordinates under mini-map")
+	GameTooltip:AddLine("Include uncommon (green) items in the BOE section")
 	GameTooltip:Show()
 end
-local function AutoSellGrayOnEnter(self, motion)
+local function QuestComplete_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Auto sells all Poor (Green) items \nto the vendor upon opening their merchant window")
+	GameTooltip:AddLine("Quickly obtains and complete quests.\nQuest rewards are chosen at random.") --todo. Not by random but highest gold selling price
 	GameTooltip:Show()
 end
-local function GreenBOEItemsOnEnter(self, motion)
+local function Coordinates_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Include Uncommon (Green) items in the BOE section")
+	GameTooltip:AddLine("Shows (x, y) coordinates under mini-map - when available. \nUnavailable in instances since 7.1 patch")
 	GameTooltip:Show()
 end
-local function AutoGreedGreenItemsOnEnter(self, motion)
+local function AutoSellGray_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("The Need or Greed pop-up is disabled for BOP and BOE items,\nand is automatically auto-greeded.")
+	GameTooltip:AddLine("Auto sells junk items. \n(Gray items)")
 	GameTooltip:Show()
 end
-local function KeepTradeGoodsOnEnter(self, motion)
+local function AutoGreedGreenItems_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Trade good items will not be sold regardless if in kept list.")
+	GameTooltip:AddLine("The Need or Greed pop-up is disabled for all items \nand is automatically auto-greeded.")
 	GameTooltip:Show()
 end
-local function iLevelSlidersOnEnter(self, motion)
+local function KeepTradeGoods_OnEnter(self, motion)
     PrepreToolTip(self)
-	GameTooltip:AddLine("Turns on item level sliders per rarity.")
+	GameTooltip:AddLine("Does not vendor trade good items. \n Note: This disables the normal toggle keep or sell functionality")
 	GameTooltip:Show()
 end
-local function FrameLootBackgroundOnEnter(self, motion)
-    PrepreToolTip(self)
-	GameTooltip:AddLine("Disables background for easier viewing.")
-	GameTooltip:Show()
-end
-local function LootContainersOnEnter(self, motion)
+local function LootContainers_OnEnter(self, motion)
     PrepreToolTip(self)
 	GameTooltip:AddLine("Auto loot containers that do not have a cast time. \n(e.g. Unlocked lock boxes, clams, etc) Does not work on salvage items")
 	GameTooltip:Show()
 end
-local function OptionsOnEnter(self, event, ...)
+local function Options_OnEnter(self, event, ...)
 	PrepreToolTip(self)
 	GameTooltip:AddLine("Options")
 	GameTooltip:Show()
 end
 function eSaithBagFilter_SellButton_OnEnter(self, event, ...)
 	PrepreToolTip(self)
-	GameTooltip:AddLine(STRINGS.SELL)
+	GameTooltip:AddLine("Sell items")
 	GameTooltip:Show()
 end
-
 function OnGameToolTipLeave(self, motion)
 	GameTooltip:Hide()
 end
-
-function eSaithBagFilterOpenFrame_OnClick(self, event, ...)
+function eSaithBagFilter_OnClick(self, event, ...)
 	if eSaithBagFilter:IsShown() then
 		eSaithBagFilter:Hide()
 	else
 		eSaithBagFilter:Show()
-		if eVar.properties.BottomTab == 1 then
-			eSaithBagFilterSellButton:Show()
+		if tab == 1 then
+			eSaithBagFilter_SellButton:Show()
 		end
 	end
 end
-function eSaithBagFilterOpenFrame_OnEnter(self, motion)
+function eSaithBagFilter_OnEnter(self, motion)
 	PrepreToolTip(self)
-	GameTooltip:AddLine(STRINGS.OPEN_ADDON)
+	GameTooltip:AddLine("Open ESaith Item Filter")
 	GameTooltip:Show()
 end
-function eSaithBagFilterTab_OnEnter(self, motion)
-	local array = { "Filter By Zone", "Characters Log", "Options Tab" }
-	PrepreToolTip(self)
-	GameTooltip:AddLine(array[self:GetID()])
-	GameTooltip:Show()
-end
+local function UpdateCoordinates(self, elapsed)	
+	self.TimeSinceLastUpdate =  (self.TimeSinceLastUpdate or 0) + elapsed
 
-local function UpdateCoordinates(self, elapsed)
-	if not eVar.properties.EnableCoordinates then return end
-	if ZONE ~= GetRealZoneText() then
-		ZONE = GetRealZoneText()
-		SetMapToCurrentZone()
-	end
-
-	if self.TimeSinceLastUpdate == nil then self.TimeSinceLastUpdate = 0 end
-	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
-	if self.TimeSinceLastUpdate > .5 then
+	if self.TimeSinceLastUpdate > .75 then
 		self.TimeSinceLastUpdate = 0
 		local posX, posY = GetPlayerMapPosition("player");
-		local fontstring = eSaithBagFilterCoordinatesFontString
-		local x = math.floor(posX * 10000) / 100
-		local y = math.floor(posY * 10000) / 100
-		fontstring:SetText("|cff98FB98(" .. x .. ", " .. y .. ")")
+		local fontstring = eSaithBagFilter_Coordinates_FontString
+		if posX and posY then 
+			local x = math.floor(posX * 10000) / 100
+			local y = math.floor(posY * 10000) / 100		
+			fontstring:SetText("|cff98FB98(" .. x .. ", " .. y .. ")") --todo, allow player to change color or at min change location on minimap			
+		else
+			fontstring:SetText("|cff98FB98(Not Available)")
+		end
+
 		fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
 		fontstring:Show()
 	end
 end
 local function ToggleCoordinates(self, event, button)
-	eVar.properties.EnableCoordinates = eSaithBagFilterOptionsFrameOptions_Coordinates:GetChecked()
-
-	if eSaithBagFilterOptionsFrameOptions_Coordinates:GetChecked() then
-		eSaithBagFilterCoordinates:Show()
+	if self:GetChecked() then
+		eVar.options.coordinatesEnabled = true
+		eSaithBagFilter_Coordinates:Show()
 	else
-		eSaithBagFilterCoordinates:Hide()
+		eVar.options.enableCoordinates = false
+		eSaithBagFilter_Coordinates:Hide()
 	end
 end
-local function PassMin(ilevel, minlvl, required)
-	return not required or ilevel >= minlvl
+local function ToggleAutoSellGray(self)
+	eVar.options.enableAutoSellGrays = self:GetChecked()
 end
-local function PassMax(ilevel, maxlvl, required)
-	return not required or ilevel <= maxlvl
+local function ToggleAutoGreedGreenItems(self)
+	eVar.options.enableAutoGreedGreenItems = self:GetChecked()
 end
-local function CreateItemButton(item, index, xoffset, yoffset)	
-	local btn = _G["eSaithBagFilterLootFrameSellItem" .. index]
-	btn:SetPoint("TOPLEFT", "eSaithBagFilterLootFrame", "TOPLEFT", 41 * xoffset - 27, -yoffset * 45 - 5)
-	btn.texture = _G[btn:GetName() .. "Texture"]
-	btn.texture:Show()
-	btn.texture:SetTexture(item.text)
-	btn.texture = _G[btn:GetName() .. "TextureBorder"]
-	btn.texture:Show()
-	btn.texture:SetColorTexture(eVar.properties.texture[3 * item.colorIndex], eVar.properties.texture[3 * item.colorIndex + 1], eVar.properties.texture[3 * item.colorIndex + 2], 1)
-	btn:Show()
-	btn.link = item.link
+local function ToggleKeepTradeGoods(self) 
+	eVar.options.keepTradeGoods = self:GetChecked()
 end
-local function ChangeItemsPerRow(count)
-	if count < 11 then count = 11 end
-	if count > 20 then count = 20 end
-	eVar.properties.MAX_ITEMS_PER_ROW = math.ceil(count)
+local function ToggleQuestComplete(self)
+    eVar.options.questComplete = self:GetChecked()
+end
+local function StageAndShowItem(link, index)
+	if link == nil then return end
+	local previousItem
+	local itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
+	if index == 1 then
+		-- First item
+		itemBtn:SetPoint("TOPLEFT", eSaithBagFilter_LootFrame, "TOPLEFT", 20, -20)
+	elseif index % (MAX_ITEMS_PER_ROW + 1) == 0 and _G["eSaithBagFilter_LootFrame_Item" .. (index - MAX_ITEMS_PER_ROW + 1)] then
+		-- New line
+		previousItem = _G["eSaithBagFilter_LootFrame_Item" .. (index - MAX_ITEMS_PER_ROW)]
+		itemBtn:SetPoint("TOP", previousItem, "BOTTOM", 0, -10)
+	else 
+		-- Next in line
+		previousItem = _G["eSaithBagFilter_LootFrame_Item" .. (index - 1)]
+		itemBtn:SetPoint("LEFT", previousItem, "RIGHT", 5, 0)
+	end
 	
-	-- Change frame loot dependent on the number of items per row
-	local width = 30 + count * 40
-	local corners = {"TOPLEFT", 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT'}
-	eSaithBagFilterLootFrame:SetSize(width, width * 5 / 6)
-	for i = 1, 4 do
-		_G['eSaithBagFilterLootFrameTexture'..corners[i]]:SetSize(eSaithBagFilterLootFrame:GetWidth()/2, eSaithBagFilterLootFrame:GetHeight()/2)
+	itemBtn.texture = _G[itemBtn:GetName() .. "_Texture"] 
+	itemBtn.texture:Show()
+	itemBtn.texture:SetTexture(items[link].texture)
+	itemBtn.texture = _G[itemBtn:GetName() .. "_TextureBorder"]
+	itemBtn.texture:Show()
+	itemBtn.texture:SetColorTexture(itemTextureColors[3 * (items[link].quality + 1)], itemTextureColors[3 * (items[link].quality + 1) + 1], itemTextureColors[3 * (items[link].quality + 1) + 2])
+	itemBtn:Show()
+	itemBtn.link = link
+end
+local function SetItemsPerRow() -- todo, should this be static. Or should this be set in settings and not dependent on how many items are being sold
+	if _G["eSaithBagFilter_LootFrame_Item1"]:IsShown() then
+		local width = (MAX_ITEMS_PER_ROW + 20) * _G["eSaithBagFilter_LootFrame_Item1"]:GetWidth()
+		eSaithBagFilter_LootFrame:SetSize(width, width * 5 / 6)
 	end
 end
-local function ShowListedItems(count)
-
-	-- Try to keep the lootframe square. Not too small or too large
-	ChangeItemsPerRow(math.ceil(math.sqrt(count)) + 5)
-	-- Hide old items prior to showing updated list
-	for i = 1, MAX_ITEM_COUNT do
-		_G["eSaithBagFilterLootFrameSellItem" .. i]:Hide()
-	end
-	MAX_ITEM_COUNT = count
-	if eVar.properties.sell == nil then return end
+local function ShowSelectedItems(list)  
+	--SetItemsPerRow()
 	
-	local MAX_ROW = eVar.properties.MAX_ITEMS_PER_ROW
-	local yoffset = 0
-	local xoffset = 1
-	local list = eVar.properties.sell
-	local color_found  -- finds the next item in the loot bag that is the current color in index
-	local begin_height
-	local boe = nil
-	local ButtonIndex = 0
-	local base = 155
-	
-	for _index, color in pairs(eVar.properties.colors) do
-		color_found = false
-		begin_height = yoffset
-		for link, props in pairs(eVar.properties.sell) do			
-			if tostring(list[link].colorIndex) == tostring(_index) then				
-				if xoffset % (MAX_ROW + 1) == 0 then
-					yoffset = yoffset + .85
-					xoffset = 1
-				end
-				
-				if eInstances.boe[link] and (list[link].colorIndex > 3  or (eVar.properties.EnableBOEGreen and list[link].colorIndex > 2)) then    
-					if boe == nil then boe = { } end	
-					boe[link] = eVar.properties.sell[link]
-				else					
-					ButtonIndex = ButtonIndex + 1
-					CreateItemButton(list[link], ButtonIndex, xoffset, yoffset)
-					xoffset = xoffset + 1
-					color_found = true      
-				end
-			end
+	-- Hide old items as they may no longer exist prior to showing updated list
+	for i = 1, MAX_BAG_SLOTS do
+		if _G["eSaithBagFilter_LootFrame_Item" .. i]:IsShown() then
+			_G["eSaithBagFilter_LootFrame_Item" .. i]:Hide()
 		end
-		
-		local texture = _G["eSaithBagFilterLootTextureTypeBackgroundColor"..eVar.properties.types[_index]]
-		if color_found then -- Create background only for rarities that are listed
-			yoffset = yoffset + 1
-			texture:SetPoint("LEFT", "$parent", "LEFT", 8, 0)
-			texture:SetPoint("RIGHT", "$parent", "RIGHT", -10, 0)
-			texture:SetPoint("TOP", "$parent", "TOP", 0, -begin_height * 45 - 1)
-			texture:SetHeight( (yoffset - begin_height) * 45 )
-			texture:Show()            
-		else
-			texture:Hide()
-		end  
-		xoffset = 1
 	end
-		-- Append BOE items at the end
-	local frameHeight = -begin_height * 45 + 5 - ((yoffset - begin_height) * 45 +15)
-	begin_height = yoffset
-	if boe ~= nil then
-		zoffset = 1
-		local fontstring = eSaithBagFilterLootFrameBOEFontString
-		fontstring:SetPoint("TOP", "$parent", "TOP", 0, frameHeight)
-		fontstring:Show()
-		yoffset = yoffset + .5
-		for item, content in pairs(boe) do
-			if xoffset % MAX_ROW == 0 then
-				yoffset = yoffset + 1
-				xoffset = 1
-			end				
-			ButtonIndex = ButtonIndex + 1
-			CreateItemButton(content, ButtonIndex, xoffset, yoffset)
-			xoffset = xoffset + 1			
-		end
-	else        
-		eSaithBagFilterLootFrameBOEFontString:Hide()
+	
+	local index = 1
+	for link, v in pairs(list) do			
+		StageAndShowItem(link, index)
+		index = index + 1
 	end
 end
-local function SelectItems()
-	eVar.properties.sell = { }
-	local zone = eVar.properties.zone
-	local zoneTable = eInstanceLoot[zone]
-	if zoneTable == nil then return end
+-- Selects which items to show from bags. Determined by the zone and quality selected
+local function SelectItemsToShow()
+	selectedZone = selectedZone or "All"
+	sellList = { }
+	local loot = instanceLoot[selectedZone]
+	if loot == nil then return end
+	--print('start print instance loot')
+	--printTable(loot)
+	--print('end print instance loot')
+	local sellTypeAllowed = {}
+	local rarityCheckButton
+	for i, rarity in ipairs(ItemQualityString) do		
+		rarityCheckButton = _G["eSaithBagFilter_LootFilterFrame_"..rarity.."_CheckButton"]
+		sellTypeAllowed[rarity] =  rarityCheckButton ~= nil and rarityCheckButton:IsShown() and rarityCheckButton:GetChecked()
+	end
 	
-	local texture, locked, quality, lootable, link, ItemName, ilevel
-	local count = 0
+	local texture, locked, lootable, link  -- todo, add options to sell locked boxes and lootable items
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
-			texture, _, locked, quality, _, lootable, link = GetContainerItemInfo(bag, slot)
+			texture, _, locked, _, _, lootable, link = GetContainerItemInfo(bag, slot)
+			print(link:upper())
 			if texture then
-				ItemName, _, _, ilevel, _, _, _, _, _, _, vendorPrice = GetItemInfo(link)		
-				if vendorPrice and vendorPrice > 0 and not locked and not lootable then
-					-- Skip all items that cannot be sold to vendors					
-					local _type = eVar.properties.types[quality + 1]					
-					if _type ~= nil and _G["eSaithBagFilterCheckButton" .. _type]:GetChecked()						
-					and PassMin(ilevel, eVar[_type].min, eVar[_type].minChecked)
-					and PassMax(ilevel, eVar[_type].max, eVar[_type].maxChecked) 
-					and (zoneTable[link] or zone == "ALL") then
-						count = count + 1
-						eVar.properties.sell[link] = { link = link, text = texture, colorIndex = quality + 1, itemName = ItemName }
-						
-							-- If item is a Trade Good and "Do not sell trade good items options" is selected. Add to KeepTradeGoods list
-						if eVar.properties.IsTradeGoodKept and class == "Trade Goods" then							
-							eVar.properties.keepTradeGoods[link] = true
-						end
-					end
+				-- If not already in the list then not an item to sell. Add item to list and move on
+				if items[link] == nil then 
+					AddItemToItemList(link) 
+				end 
+				-- Skip all items that cannot be sold to vendors. Do not sell lockboxes				
+				if loot[link] and items[link].vendorPrice > 0 and sellTypeAllowed[items[link].rarity] and not locked and not lootable then					
+					sellList[link] = true;
+				elseif loot[link] then
+					print(link..' is in the instance loot but will not be shown')
 				end
+				
 			end
 		end
 	end
-	ShowListedItems(count)
-	ResetAlphaOnAllButtons()
+	ShowSelectedItems(sellList)
+	SetAlphaOnItems()
 end
-
 local function LootContainers()
-	eVar.properties.EnableAutoLoot = true
+	eVar.options.enableAutoLoot = true
+	local found = false
 
 	if MerchantFrame:IsShown() then
-		print("|cffffff00"..STRINGS.STOP_TALKING_TO_VENDOR)
+		print("|cffffff00Sorry but merchant window must be closed prior to looting. This is to prevent accidental selling of item")
 		MerchantFrame:Hide()
 	end
-
-	local count = 0
-	local found = false
+	
 	for bag = 0, NUM_BAG_SLOTS do
-		count = count + GetContainerNumFreeSlots(bag)
-	end
-
-	if count > 0 then   -- save on runtime on dual loop
-		for bag = 0, NUM_BAG_SLOTS do
-			if not found then
-				for slot = 1, GetContainerNumSlots(bag) do
-					local texture, NumOfItems, locked, quality, readable, lootable, link = GetContainerItemInfo(bag, slot)
-					if texture and lootable then
-						if not locked and count > 0 then
-							UseContainerItem(bag, slot, false)
-							found = true
-						end
-					end
+		if not found then
+			for slot = 1, GetContainerNumSlots(bag) do
+				local texture, _, locked, _, _, lootable, _ = GetContainerItemInfo(bag, slot)
+				if texture and lootable and not locked then
+					UseContainerItem(bag, slot, false)
+					found = true
 				end
 			end
 		end
-	else    
-		print(STRINGS.NOT_ENOUGH_SPACE)
 	end
-
+		
 	if not found then
-		eVar.properties.EnableAutoLoot = false
+		eVar.options.enableAutoLoot = false
 	end
 end
 local function SellListedItems(list)
+	if list == nil then return end
+
 	local total = 0
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
-			local texture, count, locked, quality, readable, lootable, link, isFiltered = GetContainerItemInfo(bag, slot)					
+			local texture, _, locked, _, _, lootable, link, _ = GetContainerItemInfo(bag, slot)					
 			if texture then 				
-				if list[link] then 	
-					local _, _, _, ilevel, _, class, _, _, _, _, vendorPrice = GetItemInfo(link)
-					local _type = eVar.properties.types[quality + 1]	
-					if PassMin(ilevel, eVar[_type].min, eVar[_type].minChecked) 
-					and PassMax(ilevel, eVar[_type].max, eVar[_type].maxChecked)
-					and not (eVar.properties.keep[link] or eVar.properties.keepTradeGoods[link]) then
-						if not locked then UseContainerItem(bag, slot) end 	
-						total = total + 1
-                        UIErrorsFrame:Clear()
-					end
-				end					
-			end
-		end
-	end	
-	return total
-end
-local function ToggleAutoSellGray()
-	eVar.properties.EnableAutoSellGrays = eSaithBagFilterOptionsFrameOptions_AutoSellGray:GetChecked()
-end
-local function SellByQuality(_type)
-	eVar.properties.SellTypeList = {}
-	local texture, locked, quality, lootable, link, vendorPrice, personalItem
-	eVar.properties.SellTypeList = { }
-	
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 1, GetContainerNumSlots(bag) do
-			texture, _, locked, quality, _, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				_, _, _, _, _, _, _, _, _, _, vendorPrice = GetItemInfo(link)
-				personalItem = eVar.properties.keep[link] or eVar.properties.keepTradeGoods[link]
-				if (personalItem == nil or not personalItem) and not (locked or lootable) and vendorPrice > 0 and quality < 5 then
-					if eVar.properties.types[quality + 1] == _type then
-						if eVar.properties.SellTypeList[link] == nil then eVar.properties.SellTypeList[link] = true end                        
-					end
+				-- If attempting to sell Junk items that have NOT been added to the items array then do so now before attempting to sell otherwise an error will be thrown 
+				-- when comparing against type.
+				if items[link] == null then 
+					AddItemToItemList(link)
+				end
+
+				if list[link] 
+				and not locked and not lootable
+				and not (
+					eVar.items.kept[link] or 
+					(eVar.options.keepTradeGoods and items[link].class == 'Trade Goods') or
+					(eVar.options.keepUncommonBOEItems and items[link].isBOE and items[link].quality == itemQuality.Uncommon) or 
+					(eVar.options.keepRareBOEItems and items[link].isBOE and items[link].quality ==  itemQuality.Rare) 
+				) then 
+					UseContainerItem(bag, slot) 	
+					total = total + 1
+					print('trying to sell '..link)
+				elseif locked then
+					print(link..' is locked');
+					total = total + 1
+				elseif eVar.options.keepUncommonBOEItems then
+					print('eVar.options.keepUncommonBOEItems')
+				elseif eVar.options.keepRareBOEItems then
+					print('keepRareBOEItems')
 				end
 			end
 		end
-	end
-	eVar.properties.IsSellingGrays = true
-	SellListedItems(eVar.properties.SellTypeList)
+	end	
+	UIErrorsFrame:Clear()
+	return total
 end
-local function ToggleAutoGreedGreenItems()
-	eVar.properties.EnableAutoGreedGreenItems = eSaithBagFilterOptionsFrameOptions_AutoGreedGreen:GetChecked()
-end
-local function ToggleKeepTradeGoods()
-	eVar.properties.IsTradeGoodKept = eSaithBagFilterOptionsFrameCheckButton_TradeGoods:GetChecked()
-	eVar.properties.keepTradeGoods = { } 
-end
-local function ToggleiLevelSliders()
-	eVar.properties.EnableiLevelSliders = eSaithBagFilterOptionsFrameCheckButton_EnableiLevel:GetChecked()
+local function SellByQuality(_type)
+	local texture, locked, quality, lootable, link, vendorPrice, personalItem
+	sellList = { }
 	
-	-- if disabling then uncheck each of the sliders
-	if eVar.properties.EnableiLevelSliders then
-		for index, _type in ipairs(eVar.properties.types) do
-			_G["eSaithBagFilterSliderMax".._type]:Show()	
-			_G["eSaithBagFilterSliderMin".._type]:Show()						
-		end		
-	else
-		for index, _type in ipairs(eVar.properties.types) do
-			_G["eSaithBagFilterSliderMax".._type.."CheckButton"]:SetChecked(false)
-			_G["eSaithBagFilterSliderMin".._type.."CheckButton"]:SetChecked(false)		
-			_G["eSaithBagFilterSliderMin".._type]:Hide()	
-			_G["eSaithBagFilterSliderMax".._type]:Hide()			
-			eVar[_type].minChecked = false
-			eVar[_type].maxChecked = false
-		end				
-	end
-	SelectItems()
-end
-local function ToggleOptionsFrame()
-    -- Hide everything but options when it is open. 
-
-	if eSaithBagFilterOptionsFrame:IsShown() then 
-        eSaithBagFilterLootFrame:Show()
-        eSaithBagFilter_BottomTabs:Show()        
-        if MerchantFrame:IsShown() then eSaithBagFilterSellButton:Show() end
-		eSaithBagFilterOptionsFrame:Hide()
-	else
-        eSaithBagFilter_BottomTabs:Hide()
-		eSaithBagFilterLootFrame:Hide()
-        eSaithBagFilterSellButton:Hide()
-		eSaithBagFilterOptionsFrame:Show()
-	end
-end
-local function ToggleFrameLootBackground()
-	eVar.properties.EnableFrameLootBackground = eSaithBagFilterOptionsFrameCheckButton_EnableLootFrameBackground:GetChecked()
-	local corners ={"TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT"}
-	
-	for i = 1, 4 do
-		local corner =  _G["eSaithBagFilterLootFrameTexture"..corners[i]]
-		if eVar.properties.EnableFrameLootBackground then
-			corner:Show()
-		else
-			corner:Hide()
+	for bag = 0, NUM_BAG_SLOTS do
+		for slot = 1, GetContainerNumSlots(bag) do
+			texture, _, _, quality, _, _, link = GetContainerItemInfo(bag, slot)
+			if texture and quality == itemQuality.Poor then
+				sellList[link] = true
+			end
 		end
 	end
+	isSelling = true
+	maxTime = 0
+	SellListedItems(sellList)
 end
-local function ToggleKeepAllBOE()
-    eVar.properties.KeepAllBOE = eSaithBagFilterOptionsFrameCheckButton_KeepAllBOE:GetChecked()
-    local _, quality
-    
-    -- If checked, loop through all BOE items and all them to the saved list that has a quality of 2 (green) or higher.    
-    if eVar.properties.KeepAllBOE then 
-        for link, value in pairs(eInstances.boe) do           
-            _, _, quality = GetItemInfo(link)         
-            if quality ~= nil and quality >= 2 then      
-                eVar.properties.keep[link] = true
-            end
-        end
-    end
-    SelectItems()
+local function ToggleOptionsFrame(self)
+    -- Hide everything but options when it is open. 	
+	self.open = not self.open;
+	if self.open then 
+        eSaithBagFilter_BottomTabs:Hide()
+		eSaithBagFilter_LootFrame:Hide()
+        eSaithBagFilter_SellButton:Hide()
+		eSaithBagFilter_LootFilterFrame:Hide()
+		eSaithBagFilter_OptionsFrame:Show()
+		eSaithBagFilter_DropDown:Hide()
+	else
+		eSaithBagFilter_LootFrame:Show()
+        eSaithBagFilter_BottomTabs:Show()        
+		eSaithBagFilter_DropDown:Show()
+        if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
+		if tab == 1 then eSaithBagFilter_LootFilterFrame:Show() end
+		eSaithBagFilter_OptionsFrame:Hide()
+	end
 end
-local function ToggleQuestComplete()
-    eVar.properties.QuestComplete = eSaithBagFilterOptionsFrameCheckButton_QuestComplete:GetChecked()
-end
-local function eSaithBagFilterCheckBox_Click(self, button, down)
-	local _type = string.match(self:GetName(), "eSaithBagFilterCheckButton(.*)")
-	if eVar[_type] ~= nil then
+local function eSaithBagFilter_RarityFilter_OnClick(self, button, down)
+	local _type = string.match(self:GetName(), "eSaithBagFilter_LootFilterFrame_(.*)_CheckButton")
+	if eVar[_type] then
 		eVar[_type].checked = self:GetChecked()
 	end
-	SelectItems()
+	SelectItemsToShow()
 end
+local function CreateLootFilterFrame()
+	-- create loot options frame to hold all the widgets below. Instead of having to hide all of them when switching tabs just hide this frame
+	local lootFilterFrame = CreateFrame("Frame", "$parent_LootFilterFrame", eSaithBagFilter)
+	lootFilterFrame:SetPoint("TOP", eSaithBagFilter, "TOP", 0, -50)
+	lootFilterFrame:SetSize(eSaithBagFilter:GetWidth() * .95, eSaithBagFilter:GetHeight() * .85)
+	lootFilterFrame:Show()
+	lootFilterFrame:SetFrameLevel(10)
+	lootFilterFrame.texture = lootFilterFrame:CreateTexture("$parentTexture", "BACKGROUND");
+	lootFilterFrame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+	lootFilterFrame.texture:SetAllPoints()
+	lootFilterFrame.texture:Show()	
 
-local function CreateLootFrameBackground(topleft, topright, bottomleft, bottomright)
-	local frame = eSaithBagFilterLootFrame
-	local bkAlpha = .7
-	
-	frame.texture = frame:CreateTexture("$parentTextureTOPLEFT", "ARTWORK")
-	frame.texture:SetTexture(topleft)
-	frame.texture:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 0, 0)
-	frame.texture:SetSize(frame:GetWidth()/2, frame:GetHeight()/2)
-	frame.texture:SetAlpha(bkAlpha)
-	frame.texture:Show()
-	
-	frame.texture = frame:CreateTexture("$parentTextureTOPRIGHT", "ARTWORK")
-	frame.texture:SetTexture(topright)
-	frame.texture:SetPoint("TOPRIGHT", "$parent", "TOPRIGHT", 0, 0)
-	frame.texture:SetSize(frame:GetWidth()/2, frame:GetHeight()/2)
-	frame.texture:SetAlpha(bkAlpha)
-	frame.texture:Show()
-	
-	frame.texture = frame:CreateTexture("$parentTextureBOTTOMLEFT", "ARTWORK")
-	frame.texture:SetTexture(bottomleft)
-	frame.texture:SetPoint("BOTTOMLEFT", "$parent", "BOTTOMLEFT", 0, 0)
-	frame.texture:SetSize(frame:GetWidth()/2, frame:GetHeight()/2)
-	frame.texture:SetAlpha(bkAlpha)
-	frame.texture:Show()
-	
-	frame.texture = frame:CreateTexture("$parentTextureBOTTOMRIGHT", "ARTWORK")
-	frame.texture:SetTexture(bottomright)
-	frame.texture:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", 0, 0)
-	frame.texture:SetSize(frame:GetWidth()/2, frame:GetHeight()/2)
-	frame.texture:SetAlpha(bkAlpha)
-	frame.texture:Show()
-
-	frame.texture = frame:CreateTexture("$parentTextureBackground", "BACKGROUND")
-	frame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")	
-	frame.texture:SetAllPoints()
-	frame.texture:Show()
-end
-
-local function CreateMainButtons()
-	local frame = CreateFrame("Frame", "$parentLootFrame", eSaithBagFilter)
-	frame:SetPoint("TOPLEFT", "$parent", "TOPRIGHT", 0, 0)
-	frame:SetSize(460, 375)
-	
-	local random = time() % 55 + 1									
-	CreateLootFrameBackground(LOOT_IMAGES[random][1], LOOT_IMAGES[random][2], LOOT_IMAGES[random][3], LOOT_IMAGES[random][4])	
-	frame:Show()
-
-	local width = eSaithBagFilter:GetWidth()
-	local fontstring, btn, min, max
-	local rarity_spacing = 30
-	local top_rarity_location = 80
-	local _index = 1
-	local prior_type = eSaithBagFilter
-	local main_prior_color_type = eSaithBagFilter
-	local loot_prior_color_type = eSaithBagFilterLootFrame
-        
-	-- Create main widgets on main page
-	for index, _type in ipairs(eVar.properties.types) do
-			-- Create Main checkboxes types
-		btn = CreateFrame("CheckButton", "$parentCheckButton".._type, eSaithBagFilter, "UICheckButtonTemplate")
-		btn:SetPoint("TOP", prior_type, "BOTTOM", 0, -rarity_spacing * 1.4)
-		btn:SetSize(20, 20)
-		btn:SetScript("OnClick", eSaithBagFilterCheckBox_Click)
-		fontstring = btn:CreateFontString("eSaithBagFilterCheckButton".._type.."FontString", "ARTWORK", "GameFontNormal")
-		fontstring:SetTextColor(eVar.properties.texture[3 * index], eVar.properties.texture[3 * index + 1], eVar.properties.texture[3 * index + 2])
-		fontstring:SetText("Filter ".._type.." Items")
-		fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
-        btn:SetFontString(fontstring)
-		btn:Show()
-		prior_type = "$parentCheckButton".._type
-		
-		-- Create sliders for min/max ilevels
-		max = CreateFrame("Frame", "$parentSliderMax".._type, eSaithBagFilter, "eSaithBagFilterSliderTemplate")
-		max:SetPoint("LEFT", "$parentCheckButton".._type, "RIGHT", 135, -11)		
-		_G[max:GetName()..'SliderTitle']:SetText("Max")
-		max:Show()
-		
-		min = CreateFrame("Frame", "$parentSliderMin".._type, eSaithBagFilter, "eSaithBagFilterSliderTemplate")
-		min:SetPoint("LEFT", "$parentCheckButton".._type, "RIGHT", 135, 19)		
-		_G[min:GetName()..'SliderTitle']:SetText("Min")
-		min:Show()
-		
-		--main frame types background colors
-		local frame = CreateFrame("Frame", "$parentTypeBackgroundColor".._type, eSaithBagFilter)
-		frame:SetPoint("LEFT", "$parent", "LEFT", 8, 0)
-		frame:SetPoint("RIGHT", "$parent", "RIGHT", -10, 0)
-		frame:SetPoint("TOP", main_prior_color_type, "BOTTOM", 0, -2)
-		frame:SetHeight(rarity_spacing * 2)
-		frame.texture = frame:CreateTexture("$parentTexture", "BACKGROUND")
-		frame.texture:SetColorTexture(eVar.properties.texture[3 * _index], eVar.properties.texture[3 * _index + 1], eVar.properties.texture[3 * _index + 2], ALPHA)
-		frame.texture:SetAllPoints()
-		frame.texture:Show()
-		frame:Show()
-		main_prior_color_type = "$parentTypeBackgroundColor".._type
-		
-		--loot frame types background colors
-		local texture = eSaithBagFilterLootFrame:CreateTexture("eSaithBagFilterLootTextureTypeBackgroundColor".._type, ARTWORK)
-		texture:SetPoint("LEFT", "$parent", "LEFT", 8, 0)
-		texture:SetPoint("RIGHT", "$parent", "RIGHT", -10, 0)
-		texture:SetPoint("TOP", loot_prior_color_type, "BOTTOM", 0, -2)
-		texture:SetHeight(rarity_spacing * 2)
-		texture:SetColorTexture(eVar.properties.texture[3 * _index], eVar.properties.texture[3 * _index + 1], eVar.properties.texture[3 * _index + 2], ALPHA)
-		texture:Hide()
-		loot_prior_color_type = "eSaithBagFilterLootTextureTypeBackgroundColor".._type
-		
-		_index = _index + 1
-		
+	local prior_type = eSaithBagFilter_LootFilterFrame
+		-- Create main widgets on main page
+	for index, _type in ipairs(ItemQualityString) do
+			-- Create CheckButtones for each of the rarity types. Used to show/hide their respective types
+		if index - 1 < itemQuality.Legendary then
+			local btn = CreateFrame("CheckButton", "$parent_"..tostring(_type).."_CheckButton", lootFilterFrame, "UICheckButtonTemplate")
+			btn:SetPoint("TOP", prior_type, "TOP", 0, -20)
+			btn:SetSize(20, 20)
+			btn.type = _type		
+			btn:SetScript("OnClick", eSaithBagFilter_RarityFilter_OnClick)
+			btn:SetScript("OnEnter", RarityType_OnEnter)
+			btn:SetScript("OnLeave", OnGameToolTipLeave)
+			local fontstring = btn:CreateFontString("$parent_".._type.."_FontString", "ARTWORK", "GameFontNormal")
+			fontstring:SetTextColor(itemTextureColors[3 * (index - 1) + 1], itemTextureColors[3 * (index - 1) + 2], itemTextureColors[3 * (index - 1) + 3])
+			fontstring:SetText("Filter ".._type.." Items")
+			fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
+			btn:SetFontString(fontstring)
+			btn:Show()
+			prior_type = btn:GetName()
+		end
 	end		
-	eSaithBagFilterCheckButtonPoor:ClearAllPoints()
-	eSaithBagFilterCheckButtonPoor:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 10, -top_rarity_location)
-	eSaithBagFilterTypeBackgroundColorPoor:SetPoint("TOP", "$parent", "TOP", 0, -top_rarity_location / 1.4)
-	eSaithBagFilterLootTextureTypeBackgroundColorPoor:SetPoint("TOP", "$parent", "TOP", 0, -3)
-	
+	eSaithBagFilter_LootFilterFrame_Poor_CheckButton:ClearAllPoints()
+	eSaithBagFilter_LootFilterFrame_Poor_CheckButton:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 10, -20)
+end
+local function CreateLootFrame() 
+	local lootFrame = CreateFrame("Frame", "$parent_LootFrame", eSaithBagFilter)
+	lootFrame:SetPoint("TOPLEFT", "$parent", "TOPRIGHT", 0, 0)
+	lootFrame:SetSize(460, 375)		
+	lootFrame:Show()
+
+	-- Create as many buttons for as many items that could possibly sell
+	for i = 1, MAX_BAG_SLOTS do
+		local btn = CreateFrame("Button", "$parent_Item" .. i, lootFrame, "eSaithBagFilterItemButtonTemplate")
+		btn:SetPoint("CENTER", "$parent", "CENTER", i, i)
+		btn:SetSize(35, 35)		
+		btn.texture = btn:CreateTexture("$parent_Texture", "OVERLAY");
+		btn.texture:SetTexture("Interface\ICONS\INV_Misc_QuestionMark");
+		btn.texture:SetSize(35, 35)
+		btn.texture:SetAllPoints();
+		btn.texture = btn:CreateTexture("$parent_TextureBorder", "ARTWORK");
+		btn.texture:SetColorTexture(1, 1, 1, 1)
+		btn.texture:SetSize(10, 10)
+		btn.texture:SetAllPoints()
+		btn:SetScript("OnClick", Item_OnPress)
+		btn:SetScript("OnEnter", Item_OnEnter)
+		btn:SetScript("OnLeave", OnGameToolTipLeave)
+		btn:Hide(); 
+	end
+    
+	 -- BOE font string
+	fontstring = lootFrame:CreateFontString("$parent_BOEFontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("|cff02DBDBBind On Equip Items:")	
+end
+local function CreateOptionsFrame()
 	-- Options Frame
-	local frame = CreateFrame("Frame", "$parentOptionsFrame", eSaithBagFilter)
-	frame:SetPoint("TOP", "$parent", "TOP", 0, -55)
-	frame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .83)
-	frame:SetFrameLevel(10)
-	frame.texture = frame:CreateTexture("$parentTexture", "BACKGROUND");
-	frame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
-	frame.texture:SetAllPoints()
-	frame.texture:Show()	
-	frame:Hide()
+	local optionsFrame = CreateFrame("Frame", "$parent_OptionsFrame", eSaithBagFilter)
+	optionsFrame:SetPoint("TOP", "$parent", "TOP", 0, -55)
+	optionsFrame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .83)
+	optionsFrame:SetFrameLevel(10)
+	optionsFrame.texture = optionsFrame:CreateTexture("$parentTexture", "BACKGROUND");
+	optionsFrame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+	optionsFrame.texture:SetAllPoints()
+	optionsFrame.texture:Show()	
+	optionsFrame:Hide()
 	
 	-- Options button
-	local btn = CreateFrame("Button", "$parentOptionsButton", eSaithBagFilter, "eSaithBagFilterItemButtonTemplate")
+	local btn = CreateFrame("Button", "$parent_OptionsButton", eSaithBagFilter, "eSaithBagFilterItemButtonTemplate")
 	btn:SetSize(25, 25)
+	btn.open = false
 	btn:SetPoint("TOPRIGHT", "$parent", "TOPRIGHT", -15, -30)
 	btn:SetScript("OnClick", ToggleOptionsFrame)
-	btn:SetScript("OnEnter", OptionsOnEnter)
+	btn:SetScript("OnEnter", Options_OnEnter)
 	btn:SetScript("OnLeave", OnGameToolTipLeave)
 	btn.texture = btn:CreateTexture("$parentTexture", "OVERLAY");
 	btn.texture:SetTexture("Interface\\HELPFRAME\\HelpIcon-CharacterStuck")
@@ -948,64 +608,23 @@ local function CreateMainButtons()
 	btn:Show()
 	
 	-- Reset button
-	local btn = CreateFrame("Button", "$parent_ResetButton", eSaithBagFilterOptionsFrame, "UIPanelButtonTemplate")
+	local btn = CreateFrame("Button", "$parent_OptionsFrame_Reset", optionsFrame, "UIPanelButtonTemplate")
 	btn:SetSize(100, 30)
 	btn:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -15, 15)
-	btn:SetScript("OnClick", eSaithBagFilterResetButton_Click)
-	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+	btn:SetScript("OnClick", eSaithBagFilter_ResetButton_OnClick)
+	local fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cffffffffReset Addon")
 	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
 	fontstring:Show()
 	btn:Show()
 
-	-- Create as many buttons for as many items that could possibly sell
-	for i = 1, MAX_BAG_SLOTS do
-		local btn = CreateFrame("Button", "$parentSellItem" .. i, eSaithBagFilterLootFrame, "eSaithBagFilterItemButtonTemplate")
-		btn:SetPoint("CENTER", "$parent", "CENTER", i, i)
-		btn:SetSize(35, 35)
-		btn.texture = btn:CreateTexture("$parentTexture", "OVERLAY");
-		btn.texture:SetTexture("Interface\ICONS\INV_Misc_QuestionMark");
-		btn.texture:SetSize(35, 35)
-		btn.texture:SetAllPoints();
-		btn.texture = btn:CreateTexture("$parentTextureBorder", "ARTWORK");
-		btn.texture:SetColorTexture(1, 1, 1, 1)
-		btn.texture:SetSize(10, 10)
-		btn.texture:SetAllPoints()
-		btn:SetScript("OnClick", ItemButton_OnPress)
-		btn:SetScript("OnEnter", ItemButton_OnEnter)
-		btn:SetScript("OnLeave", OnGameToolTipLeave)
-		btn:Hide(); 
-	end
-    
-	 -- BOE font string
-	fontstring = eSaithBagFilterLootFrame:CreateFontString("$parentBOEFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText("|cff02DBDBBind On Equip Items:")
-	
-	-- Just create the fontstring for now. They will be used later on when player views save dungeons/raid listing 
-	eSaithBagFilterLootFrame:CreateFontString("$parentInstanceInfoFontStringTitle", "ARTWORK", "GameFontNormal")
-	eSaithBagFilterLootFrame:CreateFontString("$parentInstanceInfoFontStringFreshTitle", "ARTWORK", "GameFontNormal")
-	eSaithBagFilterLootFrame:CreateFontString("$parentInstanceInfoFontStringFreshList", "ARTWORK", "GameFontNormal")
-	eSaithBagFilterLootFrame:CreateFontString("$parentInstanceInfoFontStringSavedTitle", "ARTWORK", "GameFontNormal")
-	eSaithBagFilterLootFrame:CreateFontString("$parentInstanceInfoFontStringSavedList", "ARTWORK", "GameFontNormal")
-	
-	-- Coordinates
-	frame = CreateFrame("Frame", "eSaithBagFilterCoordinates", UIParent)
-	frame:SetSize(100, 50)
-	frame:SetPoint("TOP", "Minimap", "BOTTOM", 5, -5)
-	frame:SetScript("OnUpdate", UpdateCoordinates)
-	fontstring = frame:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText("|cff33ff33")
-	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
-	fontstring:Show()
-end	
-local function CreateOptionButtons()
-    local OptionsColor = "|cff2bc3e2"
+	 local OptionsColor = "|cff2bc3e2"
 	-- Loot containers
-	local btn = CreateFrame("Button", "$parentLootButton", eSaithBagFilterOptionsFrame, "UIPanelButtonTemplate")
+	local btn = CreateFrame("Button", "$parent_Loot", eSaithBagFilter_OptionsFrame, "UIPanelButtonTemplate")
 	btn:SetSize(125, 30)
 	btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 14, 29)
 	btn:SetScript("OnClick", LootContainers)
-    btn:SetScript("OnEnter", LootContainersOnEnter)
+    btn:SetScript("OnEnter", LootContainers_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cffffffffLoot Containers")
@@ -1014,194 +633,280 @@ local function CreateOptionButtons()
 	btn:Show()
 	
 	 -- Coordinates
-	local btn = CreateFrame("CheckButton", "$parentOptions_Coordinates", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 10, -15)
+	local btn = CreateFrame("CheckButton", "$parent_Coordinates", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 2, -15)
 	btn:SetScript("OnClick", ToggleCoordinates)
-    btn:SetScript("OnEnter", CoordinatesOnEnter)
+    btn:SetScript("OnEnter", Coordinates_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText(OptionsColor.."Coordinates|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableCoordinates)
-	ToggleCoordinates()
+	btn:SetChecked(eVar.options.coordinatesEnabled)
+	ToggleCoordinates(btn)
 	btn:Show()
 	
-	-- Auto Sell Gray items checkbox
-	local btn = CreateFrame("CheckButton", "$parentOptions_AutoSellGray", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("LEFT", "$parentOptions_Coordinates", "RIGHT", 175, 0)
+	-- Auto Sell Gray items CheckButton
+	local btn = CreateFrame("CheckButton", "$parent_AutoSellGray", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("LEFT", "$parent_Coordinates", "RIGHT", 175, 0)
 	btn:SetScript("OnClick", ToggleAutoSellGray)
-    btn:SetScript("OnEnter", AutoSellGrayOnEnter)
+    btn:SetScript("OnEnter", AutoSellGray_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText(OptionsColor.."Auto-Sell Junk|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableAutoSellGrays)
+	btn:SetChecked(eVar.options.enableAutoSellGrays)
 	btn:Show()
-	ToggleAutoSellGray()
+	ToggleAutoSellGray(btn)
 	
-	-- BOE green items (Does user want to include these as well)
-	local btn = CreateFrame("CheckButton", "$parentOptions_BOEGreenItems", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentOptions_Coordinates", "TOP", 0, -25)
-	btn:SetScript("OnClick", ToggleGreenBOEItems)
-    btn:SetScript("OnEnter", GreenBOEItemsOnEnter)
+	-- Auto keep uncommon items
+	local btn = CreateFrame("CheckButton", "$parent_keepUncommonBOEItems", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent_Coordinates", "BOTTOM", 0, 5)
+	btn:SetScript("OnClick", ToggleKeepUncommonBOEItems)
+    btn:SetScript("OnEnter", KeepUncommonBOEItems_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText(OptionsColor.."Include green BOEs|r")
+	fontstring:SetText(OptionsColor.."Auto-keep Green BOE's|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableBOEGreen)	
+	btn:SetChecked(eVar.options.keepUncommonBOEItems)	
 	btn:Show()
-	ToggleGreenBOEItems()
+	ToggleKeepUncommonBOEItems(btn)
 
 	-- Auto greed on green items
-	btn = CreateFrame("CheckButton", "$parentOptions_AutoGreedGreen", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentOptions_AutoSellGray", "TOP", 0, -25)
+	btn = CreateFrame("CheckButton", "$parent_AutoGreedGreen", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent_AutoSellGray", "BOTTOM", 0, 5)
 	btn:SetScript("OnClick", ToggleAutoGreedGreenItems)
-    btn:SetScript("OnEnter", AutoGreedGreenItemsOnEnter)
+    btn:SetScript("OnEnter", AutoGreedGreenItems_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText(OptionsColor.."Auto Greed greens|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableAutoGreedGreenItems)
+	btn:SetChecked(eVar.options.enableAutoGreedGreenItems)
 	btn:Show()
-	ToggleAutoGreedGreenItems()
+	ToggleAutoGreedGreenItems(btn)
 	
-	-- Do not sell trade goods
-	btn = CreateFrame("CheckButton", "$parentCheckButton_TradeGoods", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-    btn:SetPoint("TOP", "$parentOptions_BOEGreenItems", "TOP", 0, -25)
-	btn:SetScript("OnClick", ToggleKeepTradeGoods)
-    btn:SetScript("OnEnter", KeepTradeGoodsOnEnter)
-    btn:SetScript("OnLeave", OnGameToolTipLeave)	
+	-- Keep rare BOE items
+	btn = CreateFrame("CheckButton", "$parent_KeepRareBOEItems", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent_keepUncommonBOEItems", "BOTTOM", 0, 5)
+	btn:SetScript("OnClick", ToggleKeepRareBOEItems)
+    btn:SetScript("OnEnter", KeepRareBOEItems_OnEnter)
+	btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText(OptionsColor.."Keep Trade Goods|r")
+	fontstring:SetText(OptionsColor.."Auto-keep Blue BOE's|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.KeepTradeGoods)
+    btn:SetChecked(eVar.options.keepRareBOEItems)
 	btn:Show()
-	ToggleKeepTradeGoods()
-	
+	ToggleKeepRareBOEItems(btn)
+		
 	-- Enable iLevel sliders
-	btn = CreateFrame("CheckButton", "$parentCheckButton_EnableiLevel", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentOptions_AutoGreedGreen", "TOP", 0, -25)
-	btn:SetScript("OnClick", ToggleiLevelSliders)
-    btn:SetScript("OnEnter", iLevelSlidersOnEnter)
+	btn = CreateFrame("CheckButton", "$parent_EnableiLevel", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent_AutoGreedGreen", "BOTTOM", 0, 5)
+	--btn:SetScript("OnClick", ToggleSliders)
+    btn:SetScript("OnEnter", iLevelSliders_OnEnter)
     btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText(OptionsColor.."Enable iLevel Sliders|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableiLevelSliders)
+	btn:SetChecked(eVar.options.enableiLevelSliders)
 	btn:Show()
-	ToggleiLevelSliders()
+	--ToggleSliders(btn)
 	
-	-- Disable loot frame background
-	btn = CreateFrame("CheckButton", "$parentCheckButton_EnableLootFrameBackground", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentCheckButton_TradeGoods", "TOP", 0, -25)
-	btn:SetScript("OnClick", ToggleFrameLootBackground)
-    btn:SetScript("OnEnter", FrameLootBackgroundOnEnter)
-    btn:SetScript("OnLeave", OnGameToolTipLeave)
-	btn:SetChecked(eVar.properties.EnableFrameLootBackground);
+    -- Do not sell trade goods
+	btn = CreateFrame("CheckButton", "$parent_TradeGoods", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+    btn:SetPoint("TOP", "$parent_KeepRareBOEItems", "BOTTOM", 0, 5)
+	btn:SetScript("OnClick", ToggleKeepTradeGoods)
+    btn:SetScript("OnEnter", KeepTradeGoods_OnEnter)
+    btn:SetScript("OnLeave", OnGameToolTipLeave)	
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText(OptionsColor.."Enable Loot Background|r")
+	fontstring:SetText(OptionsColor.."Keep Trade Goods|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.properties.EnableFrameLootBackground)
+	btn:SetChecked(eVar.options.keepTradeGoods)
 	btn:Show()
-	ToggleFrameLootBackground()
-    
-    -- Enable to keep all BOE regardless of quality. This auto defaults items to be in the players kept list
-	btn = CreateFrame("CheckButton", "$parentCheckButton_KeepAllBOE", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentCheckButton_EnableiLevel", "TOP", 0, -25)
-	btn:SetScript("OnClick", ToggleKeepAllBOE)
-    btn:SetScript("OnEnter", KeepAllBOEOnEnter)
-	btn:SetScript("OnLeave", OnGameToolTipLeave)
-	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText(OptionsColor.."Keep all BOE|r")
-	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
-	btn:SetFontString(fontstring)
-    btn:SetChecked(eVar.properties.KeepAllBOE)
-	btn:Show()
-	--ToggleKeepAllBOE()
+	ToggleKeepTradeGoods(btn)
     
     --Quick Quest complete
-	btn = CreateFrame("CheckButton", "$parentCheckButton_QuestComplete", eSaithBagFilterOptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parentCheckButton_EnableLootFrameBackground", "TOP", 0, -25)
+	btn = CreateFrame("CheckButton", "$parent_QuestComplete", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
+	btn:SetPoint("TOP", "$parent_EnableiLevel", "BOTTOM", 0, 5)
 	btn:SetScript("OnClick", ToggleQuestComplete)
-    btn:SetScript("OnEnter", QuestCompleteOnEnter)
+    btn:SetScript("OnEnter", QuestComplete_OnEnter)
 	btn:SetScript("OnLeave", OnGameToolTipLeave)
 	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText(OptionsColor.."Quick Quest Complete|r")
 	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
 	btn:SetFontString(fontstring)
-    btn:SetChecked(eVar.properties.QuestComplete)
+    btn:SetChecked(eVar.options.questComplete)
 	btn:Show()
-	ToggleQuestComplete()
+	ToggleQuestComplete(btn)
 end
-local function CreateRarityObjects()
-	eInstanceLoot = eInstanceLoot or { }
-        
-    eInstances = eSaithBagFilterInstances or {}   -- when adding more properties update AddOnUpdate() function
-    eInstances.players = eInstances.players or {}
-    eInstances.boe = eInstances.boe or {}
-	eSaithBagFilterInstances = eInstances
+local function CreateCoordinates()
+	-- Coordinates
+	frame = CreateFrame("Frame", "eSaithBagFilter_Coordinates", UIParent)
+	frame:SetSize(100, 50)
+	frame:SetPoint("TOP", "Minimap", "BOTTOM", 5, -5)
+	frame:SetScript("OnUpdate", UpdateCoordinates)
+	fontstring = frame:CreateFontString("$parent_FontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("|cff33ff33")
+	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+	fontstring:Show()
+end
+local function ToggleIncludeInstance(self) 
+	savedInstances.hiddenInstances = savedInstances.hiddenInstances or {}
+	savedInstances.hiddenInstances[self.instance] = self:GetChecked()
+	print(self.instance.." "..tostring(savedInstances.hiddenInstances[self.instance]))
+end
+local function isInstanceShown(instance)
+	savedInstances.hiddenInstances = savedInstances.hiddenInstances or {}
+	if savedInstances.hiddenInstances[instance] ~= null and savedInstances.hiddenInstances[instance] == false then
+		return false
+	else
+		return true
+	end	
+end
+local function scrollFrameValueChange(self, value)	
+	eSaithBagFilter_ScrollFrame:SetVerticalScroll(value)
+end
+local function scrollFrameMouseWheel(self, value)	
+	local scroll = 0
+	local range = eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() * .10
+	
+
+	if value > 0 then 		
+		local result = 0
+		if eSaithBagFilter_ScrollFrame:GetVerticalScroll() - range < 0 then 
+			result = 0
+		else 
+			result = eSaithBagFilter_ScrollFrame:GetVerticalScroll() - range
+		end	
+		scrollFrameValueChange(self, result)
+	else 
+		local result = 0
+		if eSaithBagFilter_ScrollFrame:GetVerticalScroll() + range > eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() then 
+			result = eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() 
+		else
+			result = eSaithBagFilter_ScrollFrame:GetVerticalScroll() + range
+		end
+		scrollFrameValueChange(self, result)
+	end
+end
+local function CreateSavedInstanceFrame()
+	local savedFrame = CreateFrame("Frame", "$parent_SavedInstanceFrame", eSaithBagFilter)
+	savedFrame:SetPoint("TOPLEFT", "$parent", "TOPRIGHT", 0, 0)
+	savedFrame:SetSize(460, 375)		
+	savedFrame:Show()
+
+	-- Just create the fontstring for now. They will be used later on when player views save dungeons/raid listing 
+	savedFrame:CreateFontString("$parent_InstanceInfo_Title", "ARTWORK", "GameFontNormal")
+	savedFrame:CreateFontString("$parent_InstanceInfo_FreshTitle", "ARTWORK", "GameFontNormal")
+	savedFrame:CreateFontString("$parent_InstanceInfo_FreshList", "ARTWORK", "GameFontNormal")
+	savedFrame:CreateFontString("$parent_InstanceInfo_SavedTitle", "ARTWORK", "GameFontNormal")
+	savedFrame:CreateFontString("$parent_InstanceInfo_SavedList", "ARTWORK", "GameFontNormal")
+
+	 -- Add scroll Frame
+	local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", eSaithBagFilter)
+	scrollFrame:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 10, -70)
+	scrollFrame:SetSize(eSaithBagFilter:GetWidth() - 20, eSaithBagFilter:GetHeight() - 90)
+	scrollFrame:Show()
+	
+	-- Add child frame
+	local childFrame = CreateFrame("Frame", "$parent_InstanceOption", eSaithBagFilter)
+	childFrame:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 30, -10)
+	childFrame:SetWidth(eSaithBagFilter:GetWidth() - 60)
+	childFrame:EnableMouseWheel(true)
+	childFrame:SetScript("OnMouseWheel", scrollFrameMouseWheel)
+	childFrame:Show()
+	scrollFrame:SetScrollChild(childFrame)
+	
+	local instances = {}
+	for key, value in pairs(savedInstances) do table.insert(instances, key)	end
+	table.sort(instances)
+	local OptionsColor = "|cff2bc3e2"
+	local previousItem = childFrame
+	local count = 0
+	for _, instance in pairs(instances) do        		
+		if instance ~= "boe" and instance ~= 'players' and instance ~= 'hiddenInstances' then
+			 -- Create button for each instance available			
+			local btn = CreateFrame("CheckButton", "$parent_"..instance, childFrame, "UICheckButtonTemplate")
+			btn:SetPoint("TOP", previousItem, "BOTTOM", 0, 0)
+			btn:SetSize(20, 20)
+			btn:SetScript("OnClick", ToggleIncludeInstance)
+			btn.instance = instance
+			fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+			fontstring:SetText(OptionsColor..instance.."|r")
+			fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
+			btn:SetFontString(fontstring)
+			btn:SetChecked(isInstanceShown(instance))
+			btn:Show()
+			count = count + 1
+			previousItem = btn
+		end
+	end
+
+	if _G[childFrame:GetName().."_"..instances[1]] ~= nil then
+		_G[childFrame:GetName().."_"..instances[1]]:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 10, -10)
+	end
+	childFrame:SetHeight(count * 20 + 30)
+
+	local sliderFrame = CreateFrame("Slider", "$parent_Slider", scrollFrame, UIPanelScrollBarButton)
+	sliderFrame:SetSize(30, scrollFrame:GetHeight())
+	sliderFrame:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 0, 0)
+	sliderFrame:SetThumbTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
+	sliderFrame.texture = sliderFrame:GetThumbTexture()
+	sliderFrame:SetOrientation("Vertical")
+	sliderFrame:EnableMouseWheel(true)
+
+	local height = 0
+	if childFrame:GetHeight() - scrollFrame:GetHeight() > 0 then
+		height = childFrame:GetHeight() - scrollFrame:GetHeight()
+	end
+
+	sliderFrame:SetMinMaxValues(0, height)
+	sliderFrame:SetValue(0)
+	sliderFrame:SetValueStep(5)
+	sliderFrame:SetScript("OnValueChanged", scrollFrameValueChange)
+	sliderFrame:Show()
+end
+local function CreateWidgets()
+	CreateCoordinates()	
+	CreateLootFrame()
+	CreateLootFilterFrame()
+	CreateOptionsFrame()
+	CreateSavedInstanceFrame()
+end	
+local function InitializeVariables()
+	instanceLoot = instanceLoot or { }
+	items = items or {}
+    savedInstances = eSaithBagFilterInstances or {} 
+    savedInstances.players = savedInstances.players or {}
     
-    eVar = eVar or {}
+    eVar = eSaithBagFilterVar or {}
     eVar.properties = eVar.properties or {}
-    
-    -- statics
-    eVar.properties.version = 1.36
-    eVar.properties.MAX_ITEMS_PER_ROW = 14
+    eVar.items = eVar.items or {}
+	eVar.options = eVar.options or {}
+	tab = tab or 1
+	
+    eVar.properties.version = 1.36 -- todo, need to increment
     eVar.properties.SetSizeX = 400
     eVar.properties.SetSizeY = 375
-    eVar.properties.types =
-    {
-        "Poor","Common","Uncommon","Rare","Epic"-- , "Legendary", "Artifact", "Heirloom", "WoW Token" },
-    }
-    eVar.properties.colors =
-    {
-        "Gray","White","Green","Blue","Purple"-- , "Orange" , "Gold", "LightBlue", "Cyan"
-    }
-    eVar.properties.texture = { 0, 0, .6, .6, .6, 1, 1, 1, 0, 1, 0, .2, .2, 1, 1, 0, 1, .8, .8, 0 }
     
-    -- Dynamic
-    eVar.properties.BottomTab = eVar.properties.BottomTab or 1
-    eVar.properties.zone = eVar.properties.zone or nil
-    eVar.properties.IsSelling = eVar.properties.IsSelling or false
-    eVar.properties.IsSellingGrays = eVar.properties.IsSellingGrays or false
-    eVar.properties.IsTradeGoodKept = eVar.properties.IsTradeGoodKept or false
-    eVar.properties.updateCount = eVar.properties.updateCount or 0
-    eVar.properties.itemUpdateCount = eVar.properties.itemUpdateCount or 0
-    eVar.properties.updateInterval = eVar.properties.updateInterval or 0.5
-    eVar.properties.maxTime = eVar.properties.maxTime or 0
-    eVar.properties.keep = eVar.properties.keep or { }
-    eVar.properties.sell = eVar.properties.sell or { }
-    eVar.properties.SellTypeList = eVar.properties.SellTypeList or {}
-    eVar.properties.keepTradeGoods = eVar.properties.keepTradeGoods or { }
-    eVar.properties.EnableCoordinates = eVar.properties.EnableCoordinates or false
-    eVar.properties.EnableAutoLoot = eVar.properties.EnableAutoLoot or false
-    eVar.properties.EnableAutoSellGrays = eVar.properties.EnableAutoSellGrays or false
-    eVar.properties.EnableBOEGreen = eVar.properties.EnableBOEGreen or false
-    eVar.properties.EnableAutoGreedGreenItems = eVar.properties.EnableAutoGreedGreenItems or false
-    eVar.properties.EnableiLevelSliders = eVar.properties.EnableiLevelSliders or false				
-    eVar.properties.EnableFrameLootBackground = eVar.properties.EnableFrameLootBackground or true		
-    eVar.properties.KeepAllBOE = eVar.properties.KeepAllBOE or false
-    eVar.properties.QuestComplete = eVar.properties.QuestComplete or false
-			
-		
-    for index, _type in pairs(eVar.properties.types) do
-        if _type ~= properties then 
-            eVar[_type] = { 
-                checked = false,
-                min = 0,
-                max = 0,
-                minChecked = false,
-                maxChecked = false
-            }
-        end
-    end
+    eVar.items.kept = eVar.items.keep or eVar.properties.keep or { }    -- todo, convert properties.keep in update and never deal with it again
+	sellList = sellList or { }
+    sellListTypeList = sellListTypeList or {}
+	eVar.options.keepTradeGoods = eVar.options.keepTradeGoods or false
+    eVar.options.coordinatesEnabled = eVar.options.coordinatesEnabled or false
+    eVar.options.enableAutoLoot = eVar.options.enableAutoLoot or false
+    eVar.options.enableAutoSellGrays = eVar.options.enableAutoSellGrays or false
+    eVar.options.keepUncommonBOEItems = eVar.options.keepUncommonBOEItems or false
+    eVar.options.keepRareBOEItems = eVar.options.keepRareBOEItems or false
+    eVar.options.enableAutoGreedGreenItems = eVar.options.enableAutoGreedGreenItems or false
+    eVar.options.enableSliders = eVar.options.enableSliders or false				
+    eVar.options.questComplete = eVar.options.questComplete or false
+	
 	eSaithBagFilterVar = eVar
     
 	eSaithBagFilter:SetSize(eVar.properties.SetSizeX, eVar.properties.SetSizeY)
@@ -1222,25 +927,28 @@ local function CreateRarityObjects()
 	    --    end
         --    
 	    --end
-
 end
-
 local function ZoneMenuItemFunction(self, arg1, arg2, checked)
-	eVar.properties.zone = self.arg1
-	for index, _type in ipairs(eVar.properties.types) do
-		local btn = _G["eSaithBagFilterCheckButton".._type]
-		btn:SetChecked(true)
+	selectedZone = self.arg1
+	for index, _type in ipairs(ItemQualityString) do
+		if index - 1 < itemQuality.Legendary then
+			local btn = _G["eSaithBagFilter_LootFilterFrame_".._type.."_CheckButton"]
+			btn:SetChecked(true)
+		end
 	end
-	SelectItems()	
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, selectedZone);
+	SelectItemsToShow()	
 end
-local function CreateZoneDropDownList()
-	if eInstanceLoot["ALL"] == nil then eInstanceLoot["ALL"] = {} end			
+local function CreateZoneLootDropDownList()
+	instanceLoot["All"] = instanceLoot["All"] or {}
 	local i = 1
-	for v, k in pairs(eInstanceLoot) do
+	local info
+
+	for instanceName, k in pairs(instanceLoot) do
 		if k ~= nil then
 			info = UIDropDownMenu_CreateInfo()
-			info.text = tostring(v)
-			info.arg1 = tostring(v)
+			info.text, info.checked = tostring(instanceName), false
+			info.arg1 = tostring(instanceName)
 			info.value = i
 			info.func = ZoneMenuItemFunction
 			UIDropDownMenu_AddButton(info)
@@ -1248,137 +956,112 @@ local function CreateZoneDropDownList()
 		end
 	end
 end
-
-local function GetRarity(ilevel)
-	return eVar.properties.types[ilevel]
-end  
-local function ParseRaidInfo() 
-	-- Don't save any character lower than level 70. No need to fill a list of level 1's that haven't run ICC
-	if UnitLevel("player") < 70 then return end
-	
-	local iName, iReset, iDifficulty, iDifficultyName, instance
-
-	-- Current Player Info
-	local NumOfInstances = GetNumSavedInstances()
-	local PlayerIndex = UnitName("player").." ("..GetRealmName()..")"
-	
-
-	if eInstances.players == nil then eInstances.players = {} end
-	if eInstances.players[PlayerIndex] == nil then 
-		eInstances.players[PlayerIndex] = { name = UnitName("player"), server = GetRealmName() }
-	end    
-	
-	for i = 1, NumOfInstances do
-		iName, _, iReset, iDifficulty, _, _, _, _, _, iDifficultyName = GetSavedInstanceInfo(i)
-		-- Remove 'the' from "The ..." in dungeon/raid name, if applicable        
-		if string.find(iName, 'The ') == 1 then 
-			iName = string.sub(iName, 5)
-		end        
-		instance = iName..' - '..iDifficultyName
-		
-		if eInstances[instance] == nil then eInstances[instance] = { } end
-		if eInstances[instance][PlayerIndex] == nil then eInstances[instance][PlayerIndex] = { time = 0 } end
-				
-		if iReset > 0 then
-			eInstances[instance][PlayerIndex].time = time() + iReset
-		end        
-	end
-end
 local function UpdateAddon()
-	local keep = {}
-	if eVar ~= nil and eVar.properties ~= nil and eVar.properties.keep ~= nil then
-		keep = eVar.properties.keep    
+	local kept = {}
+	if eVar ~= nil and eVar.items ~= nil and eVar.items.kept ~= nil then
+		kept = eVar.items.kept
 	end
     
     -- Try to save BOE's and player instance info
     local BOE = {}
     local PLAYERS = {}
-    if eInstances ~= nil then
-        BOE = eInstances.boe or {}
-        PLAYERS = eInstances.players or {}
+    if savedInstances ~= nil then
+        PLAYERS = savedInstances.players or {}
     end
         
-	eSaithBagFilterResetButton_Click()   
+	eSaithBagFilter_ResetButton_OnClick()   
     
     eSaithBagFilterInstances.players = eSaithBagFilterInstances.players or PLAYERS
-    eSaithBagFilterInstances.boe = eSaithBagFilterInstances.boe or BOE   
-    eInstances = eSaithBagFilterInstances
+    savedInstances = eSaithBagFilterInstances
     
-    eVar.properties.keep = keep
-    print(STRINGS.ADDON_UPDATED..tostring(eVar.properties.version))
-    print("Thank you for sticking around and may you have luck in all of your endeavours")
+    eVar.items.kept = kept
+    print("Addon updated")
 end
+local function ParseRaidInfo() 
+	-- Don't save any character lower than level 60. No need to fill a list of level 1's that haven't run ICC
+	if UnitLevel("player") < 60 then return end
+	
+	-- Current Player Info
+	local num = GetNumSavedInstances()
+	local player = UnitName("player").." ("..GetRealmName()..')'
+	
+	savedInstances.players = savedInstances.players or {}
+	if savedInstances.players[player] == nil then 
+		savedInstances.players[player] = { name = UnitName("player"), server = GetRealmName() }
+	end    
 
-local function UpdateMinAndMax(self, value)
-	if self == nil or value == nil or eVar == nil then return end
-	local _type = self:GetName():match(".*FilterSlider...(.*)Slider.*") or self:GetName():match(".*FilterSlider...(.*)Down.*") or self:GetName():match(".*FilterSlider...(.*)Up.*")
-	if self:GetName():find("Min") ~= nil then
-		eVar[_type].min = value
-	elseif self:GetName():find("Max") ~= nil then
-		eVar[_type].max = value
+	local instance, reset, difficulty
+	for i = 1, num do
+		instance, _, reset, _, _, _, _, _, _, difficulty = GetSavedInstanceInfo(i)
+		-- Remove 'the' from "The ..." in dungeon/raid name, if applicable to sort dungeons or raids in alphabetical order      
+		if string.find(instance, 'The ') == 1 then 
+			instance = string.sub(instance, 5)
+		end        
+
+		instance = instance..' - '..difficulty		
+		savedInstances[instance] = savedInstances[instance] or { }
+		savedInstances[instance][player] = savedInstances[instance][player] or { time = 0 }
+				
+		if reset > 0 then
+			savedInstances[instance][player].time = time() + reset
+		end        
 	end
-	SelectItems()
 end
 function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
 		self:UnregisterEvent("ADDON_LOADED")
 		eVar = eSaithBagFilterVar or nil
-        eInstances = eSaithBagFilterInstances
+        savedInstances = eSaithBagFilterInstances
 		-- Check if an older version. If so do a soft reset
 		local version = GetAddOnMetadata("eSaithBagFilter", "Version")    
 		if eVar ~= nil and tostring(eVar.properties.version) ~= tostring(version) then             
 			UpdateAddon() -- Creates Rarity Objects and then resaves the players kept list
 		else         
-			CreateRarityObjects() -- no need to call it twice
+			InitializeVariables() -- no need to call it twice
 		end
 		
-		CreateMainButtons()
-		CreateOptionButtons()		
+		CreateWidgets()	
 		tinsert(UISpecialFrames, eSaithBagFilter:GetName())
-		OriginalToolTip = GameTooltip:GetScript("OnTooltipSetItem")
+		ORIGINALTOOLTIP = GameTooltip:GetScript("OnTooltipSetItem")
 		GameTooltip:SetScript("OnTooltipSetItem", ReadToolTip)
 	elseif event == "CHAT_MSG_LOOT" and arg1 ~= nil then
 		if string.find(arg1, "You receive item: ") ~= nil or
 			string.find(arg1, "You receive loot: ") ~= nil or
 			string.find(arg1, "Received item: ") ~= nil then
 
-			local bulk = string.match(arg1, ".*: (.+)%.")
-			local dItemID = (string.find(bulk, "%]x(%d+)") ~= nil and string.match(bulk, "(.*)x(%d+)")) or bulk			
-			local _, dItemLink, quality, _, _, _, _, _, _, _, vendorPrice = GetItemInfo(dItemID)
-			
-			if vendorPrice ~= nil and vendorPrice > 0 then
-				AddLoot(dItemLink, quality)
-			end
+			-- skip everything before and after the [], but include the [] for the item
+			local link = string.match(arg1, ".*(|c.*|r).*")		
+			AddLoot(link)
 		end
 	elseif event == "MERCHANT_SHOW" then
-		if eVar.properties.EnableAutoSellGrays then SellByQuality("Poor") end
-		if eVar.properties.BottomTab == 1 then eSaithBagFilterSellButton:Show() end
+		if eVar.options.autoSellGrayItems then SellByQuality("Poor") end
+		if tab == 1 and not eSaithBagFilter_OptionsButton:IsShown() then eSaithBagFilter_SellButton:Show() end
 	elseif event == "MERCHANT_CLOSED" then
-		eSaithBagFilterSellButton:Hide()
+		eSaithBagFilter_SellButton:Hide()
 	elseif event == "UPDATE_INSTANCE_INFO" then
 		ParseRaidInfo()
 	elseif event == "PLAYER_LOGOUT" then
 		eSaithBagFilterVar = eVar  
-		eSaithBagFilterInstances = eInstances
+		eSaithBagFilterInstances = savedInstances
 	elseif event == "START_LOOT_ROLL" then
 		StartLootRollID = arg1
 	elseif event == "LOOT_ITEM_AVAILABLE" and StartLootRollID ~= nil then
 		local item = arg1       
 		local _, _, quality = GetItemInfo(item)
-		if quality + 1 == 3 and eVar.properties.EnableAutoGreedGreenItems then   -- Quality 3 is Uncommon (green items) 
+		if quality + 1 == 3 and eVar.options.enableAutoGreedGreenItems then   -- Quality 3 is Uncommon (green items) 
 			if GroupLootContainer:IsShown() then
 				RollOnLoot(StartLootRollID , 2);
 			end
 		end
 		StartLootRollID = nil
-     elseif (event == "QUEST_ACCEPTED" or event ==  "QUEST_DETAIL") and eVar.properties.QuestComplete then
+     elseif (event == "QUEST_ACCEPTED" or event ==  "QUEST_DETAIL") and eVar.options.questComplete then
         AcceptQuest()
     elseif event == "QUEST_PROGRESS" then       
-        if eVar.properties.QuestComplete then
+        if eVar.options.questComplete then
             CompleteQuest()
         end
     elseif event == "QUEST_COMPLETE" then
-        if eVar.properties.QuestComplete then
+        if eVar.options.questComplete then
             local reward
 			local num = GetNumQuestRewards()
 			if num <= 1 then reward = 1 else reward = math.random(num) end
@@ -1386,7 +1069,6 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
         end
 	end
 end
-
 function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton")
 	self:RegisterEvent("ADDON_LOADED")
@@ -1403,277 +1085,168 @@ function eSaithBagFilter_OnLoad(self, event, ...)
     self:RegisterEvent("QUEST_COMPLETE")
 end
 function eSaithBagFilter_OnShow()
-    PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, eVar.properties.BottomTab)	
-	if eVar.properties.BottomTab == 1 then SelectItems() end
+    PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, tab)	
 end
 function eSaithBagFilter_OnStopDrag(self, event, ...)
 	self:StopMovingOrSizing()
 end
-
-function eSaithBagFilter_SellButton_Click(self, event, ...)
-	if eVar.properties.sell == nil then return end
-	eVar.properties.IsSelling = true;
-	SellListedItems(eVar.properties.sell)
+function eSaithBagFilter_SellButton_OnClick(self, event, ...)
+	if sellList == nil then return end
+	isSelling = true;
+	maxTime = 0
+	SellListedItems(sellList)
 end
 function eSaithBagFilter_SellButton_OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
 
-	-- Update for mass auto selling
-	if (eVar.properties.IsSelling or eVar.properties.IsSellingGrays) and self.TimeSinceLastUpdate > eVar.properties.updateInterval then
+	if isSelling and self.TimeSinceLastUpdate > updateInterval then
 		self.TimeSinceLastUpdate = 0
-		eVar.properties.maxTime = eVar.properties.maxTime + 1
+		maxTime = maxTime + 1
 
-		if eVar.properties.IsSelling then
-			if SellListedItems(eVar.properties.sell) == 0 or eVar.properties.maxTime > 60 then
-				eVar.properties.IsSelling = false
-				eVar.properties.sell = { }
-				eVar.properties.maxTime = 0
-				SelectItems()
-			end		
-		elseif eVar.properties.IsSellingGrays then
-			if SellListedItems(eVar.properties.SellTypeList) == 0 or eVar.properties.maxTime > 60 then
-				eVar.properties.IsSellingGrays = false
-				eVar.properties.maxTime = 0
-				eVar.properties.SellTypeList = { }
-			end
-		end
+		if SellListedItems(sellList) == 0 or maxTime > 60 then
+			print('max time '..maxTime)
+			isSelling = false
+			sellList = { }
+			maxTime = 0
+			SelectItemsToShow(sellList)
+		end		
 	end
 	
-	
-
-	-- Update for auto gray loot selling
-	if eVar.properties.EnableAutoLoot and self.TimeSinceLastUpdate > eVar.properties.updateInterval + 3 then
+	-- Timer for auto loot items (lockboxes, etc)
+	if eVar.options.enableAutoLoot and self.TimeSinceLastUpdate > updateInterval + 3 then
 		self.TimeSinceLastUpdate = 0
 		LootContainers();
 	end
-
 end
 function eSaithBagFilter_SellButton_OnHide(self, event, ...)
-	eVar.properties.IsSelling = false
+	isSelling = false
 end
-
-function eSaithBagFilterResetButton_Click(self, event)    
+function eSaithBagFilter_ResetButton_OnClick(self, event)    
 	eVar = nil
-	eInstanceLoot = nil	
-	CreateRarityObjects()       
+	instanceLoot = nil	
+	InitializeVariables()       
 end
-function eSaithBagFilterSlider_CheckBoxClick(self, button, down)
-	local _type = self:GetName():match(".*FilterSlider...(.*)Check")	
-	if string.find(self:GetName(), "Min") ~= nil then
-		eVar[_type].minChecked = self:GetChecked()
-	elseif string.find(self:GetName(), "Max") ~= nil then
-		eVar[_type].maxChecked = self:GetChecked()
-	end
-	SelectItems()
-end
-function eSaithBagFilterSlider_DownButton(self, event, ...)
-	local parent = self:GetParent()
-	local value = _G[parent:GetName() .. "Slider"]:GetValue() - _G[parent:GetName() .. "Slider"]:GetValueStep()
-	_G[parent:GetName() .. "Slider"]:SetValue(math.floor(value))
-	UpdateMinAndMax(self, math.floor(value))
-end
-function eSaithBagFilterSlider_OnLoad(self, event, ...)
-	local minSize, maxSize = self:GetMinMaxValues()
-	_G[self:GetName() .. 'Low']:SetText(minSize)
-	_G[self:GetName() .. 'High']:SetText(maxSize)
-end
-function eSaithBagFilterSlider_SliderValueChanged(self, value)
-	local parent = self:GetParent()
-	_G[parent:GetName() .. "SliderValue"]:SetText(math.floor(value))
-	UpdateMinAndMax(self, math.floor(value))	
-end
-function eSaithBagFilterSlider_UpButton(self, event, ...)
-	local parent = self:GetParent()
-	local value = _G[parent:GetName() .. "Slider"]:GetValue() + _G[parent:GetName() .. "Slider"]:GetValueStep()
-	_G[parent:GetName() .. "Slider"]:SetValue(math.floor(value))
-	UpdateMinAndMax(self, math.floor(value))
-end
-
 function PrepareTab()
-	-- HIDE Tab 1
-	for index, _type in ipairs(eVar.properties.types) do
-		frame = _G["eSaithBagFilterCheckButton".._type]:Hide()
-		frame = _G["eSaithBagFilterTypeBackgroundColor".._type]:Hide()
-		frame = _G["eSaithBagFilterLootTextureTypeBackgroundColor".._type]:Hide()
+	if eSaithBagFilter_LootFilterFrame:IsShown() then
+		eSaithBagFilter_LootFilterFrame:Hide()
+	end
 
-		if eVar.properties.EnableiLevelSliders then
-			frame = _G["eSaithBagFilterSliderMin".._type]:Hide()
-			frame = _G["eSaithBagFilterSliderMax".._type]:Hide()
-		end			
+	if eSaithBagFilter_LootFrame:IsShown() then
+		eSaithBagFilter_LootFrame:Hide()
 	end
-	
-	-- If BOE Loot string is shown, hide it
-	eSaithBagFilterLootFrameBOEFontString:Hide() 
-	
-	-- Hide all loot
-	for i = 1, MAX_ITEM_COUNT do
-		_G["eSaithBagFilterLootFrameSellItem" .. i]:Hide()
+
+	if eSaithBagFilter_OptionsFrame:IsShown() then
+		eSaithBagFilter_OptionsFrame:Hide()
 	end
-    
-    -- Hide Options button
-    eSaithBagFilterOptionsButton:Hide()
-	
-	eSaithBagFilterSellButton:Hide()
-	
-	eVar.properties.EnableFrameLootBackground = eSaithBagFilterOptionsFrameCheckButton_EnableLootFrameBackground:GetChecked()
-	local corners ={"TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT"}	
-	for i = 1, 4 do
-		local corner =  _G["eSaithBagFilterLootFrameTexture"..corners[i]]
-		corner:Hide()		
+
+	if eSaithBagFilter_SavedInstanceFrame:IsShown() then
+		eSaithBagFilter_SavedInstanceFrame:Hide()
 	end
-	
-	-- Hide Tab 2
-	eSaithBagFilterLootFrameInstanceInfoFontStringTitle:Hide()
-	eSaithBagFilterLootFrameInstanceInfoFontStringFreshTitle:Hide()
-	eSaithBagFilterLootFrameInstanceInfoFontStringFreshList:Hide()
-	eSaithBagFilterLootFrameInstanceInfoFontStringSavedTitle:Hide()
-	eSaithBagFilterLootFrameInstanceInfoFontStringSavedList:Hide()
-	
+
+	eSaithBagFilter_SellButton:Hide()
+	eSaithBagFilter_OptionsButton:Hide()
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, "");
 end
-function eSaithBagFilter_BottomTab_Click(self, event, ... )
-	local frame
+function eSaithBagFilter_BottomTab_OnClick(self, event, ... )
 	PrepareTab()
-	eVar.properties.BottomTab = self:GetID()
+	tab = self:GetID()
 	
-	if self:GetID() == 1 then 		
-		-- Show Tab 1
-		for index, _type in ipairs(eVar.properties.types) do
-			frame = _G["eSaithBagFilterCheckButton".._type]:Show()
-			frame = _G["eSaithBagFilterTypeBackgroundColor".._type]:Show()			
-			if eVar.properties.EnableiLevelSliders then
-				frame = _G["eSaithBagFilterSliderMin".._type]:Show()
-				frame = _G["eSaithBagFilterSliderMax".._type]:Show()
-			end
-		end
-		SelectItems()	
-		ToggleFrameLootBackground()
-		if MerchantFrame:IsShown() then eSaithBagFilterSellButton:Show() end
-		eSaithBagFilterOptionsButton:Show()
-        
+	if self:GetID() == 1 then 
+		eSaithBagFilter_LootFilterFrame:Show();	
+		SelectItemsToShow()	
+		if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
+		eSaithBagFilter_OptionsButton:Show()        
 	elseif self:GetID() == 2 then
 		RequestRaidInfo()	
-		eSaithBagFilterLootFrameInstanceInfoFontStringTitle:Show()
-		eSaithBagFilterLootFrameInstanceInfoFontStringFreshTitle:Show()
-		eSaithBagFilterLootFrameInstanceInfoFontStringFreshList:Show()
-		eSaithBagFilterLootFrameInstanceInfoFontStringSavedTitle:Show()
-		eSaithBagFilterLootFrameInstanceInfoFontStringSavedList:Show()
 	end
 end
-function eSaithBagFilter_ShowCharacterInfo(self, event)
-	if eVar.properties.LeftTab ~= 4 then
-		RequestRaidInfo()
-		
-		eSaithBagFilterSellButton:Hide()
-	end
-
-	eVar.properties.LeftTab = 4
-	eSaithBagFilterDropDown:Show()
-	eSaithBagFilterSellButton:Hide()
-end
-function eSaithBagFilter_ShowOptions(self, event)
-	
-	eSaithBagFilterSellButton:Hide()
-	
-	eSaithBagFilterOptions_Coordinates:Show()
-	eSaithBagFilterOptions_AutoSellGray:Show()
-	eSaithBagFilterOptions_BOEGreenItems:Show()
-	eSaithBagFilterOptions_AutoGreedGreen:Show()
-	eSaithBagFilterCheckButton_TradeGoods:Show()
-
-	eSaithBagFilterResetButton:Show()
-	eSaithBagFilterLootButton:Show()
-end
-
 local function PlayerInfoItemFunction(self, arg1, arg2, checked)
 	local time = time()
 	local realm = GetRealmName()
-	local CurrentPlayersName = UnitName("player")
-	local SavedText = ""
-	local CleanText = ""
-	local instance = eInstances[self.arg1]
-	local count = 0
+	local player = UnitName("player")
+	local savedTo = ""
+	local freshRun = ""
+	local instance = savedInstances[self.arg1]
+	local charName, nextPlayer
+	local players = {}
+	for key, value in pairs(savedInstances.players) do table.insert(players, key)	end
+	table.sort(players)
 
-	local SortedPlayers = {}
-	for key, value in pairs(eInstances.players) do table.insert(SortedPlayers, key)	end
-	table.sort(SortedPlayers)
-	
-	for _, PlayerServerName in pairs(SortedPlayers) do
-		local playerInfo = eInstances.players[PlayerServerName]
+	for _, playerServer in ipairs(players) do
+		nextPlayer = instance[playerServer]
+				
+		if (nextPlayer == nil and (player.." ("..realm..')') == playerServer) 
+		or (nextPlayer and player == nextPlayer.name and realm == nextPlayer.realm) then
+			charName = player
+		else			
+			charName = playerServer			 
+		end
+
+		if nextPlayer ~= nil and nextPlayer.time > time then
+			if charName == player then
+				savedTo = savedTo .. "\n|cffFFAA33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
+			else
+				savedTo = savedTo .. "\n|cff96bdc4" .. charName
+			end
+		else
+			if charName == player then
+				freshRun = freshRun .. "\n|cffFAAE33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
+			else
+				freshRun = freshRun .. "\n|cffffffff" .. charName
+			end
+		end
 		
-		local charName
-		if CurrentPlayersName == playerInfo.name and realm == playerInfo.server then 
-			charName = playerInfo.name 
-		else
-			charName = PlayerServerName
-		end
-
-		if instance[PlayerServerName] ~= nil and instance[PlayerServerName].time > time then
-			if charName == CurrentPlayersName then
-				SavedText = SavedText .. "\n|cffFFAA33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
-			else
-				SavedText = SavedText .. "\n|cff96bdc4" .. charName
-			end
-		else
-			if charName == CurrentPlayersName then
-				CleanText = CleanText .. "\n|cffFAAE33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
-			else
-				CleanText = CleanText .. "\n|cffffffff" .. charName
-			end
-		end
-		count = count + 1
 	end
 
 	-- Font strings for character instance info
-	local fontstring = eSaithBagFilterLootFrameInstanceInfoFontStringTitle
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 28, "OUTLINE, THICKOUTLINE")
+	local fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_Title
+	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE, THICKOUTLINE")
 	fontstring:SetPoint("TOP", "$parent", "TOP", 0, -5)    
 	fontstring:SetText("|cffbdf3ff".. self.arg1)
 	fontstring:SetWidth(400)    
 	fontstring:Show()
 	
-	fontstring = eSaithBagFilterLootFrameInstanceInfoFontStringFreshTitle
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 25, "OUTLINE, THICKOUTLINE")
-	fontstring:SetPoint("TOP", eSaithBagFilterLootFrameInstanceInfoFontStringTitle, "BOTTOM", 0, -20)    
+	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshTitle
+	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE, THICKOUTLINE")
+	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_Title, "BOTTOM", 0, -20)    
 	fontstring:SetText("|cffbdf3ff Fresh Instance")
 	fontstring:SetWidth(250)    
 	fontstring:Show()
 
-	fontstring = eSaithBagFilterLootFrameInstanceInfoFontStringFreshList
-	fontstring:SetPoint("TOP", eSaithBagFilterLootFrameInstanceInfoFontStringFreshTitle, "BOTTOM", 0, 7)
+	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshList
+	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshTitle, "BOTTOM", 0, 7)
 	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
-	fontstring:SetText(CleanText)
+	fontstring:SetText(freshRun)
 	fontstring:SetWidth(250)    
 	fontstring:Show()
 
-	fontstring = eSaithBagFilterLootFrameInstanceInfoFontStringSavedTitle
-	fontstring:SetPoint("TOP", eSaithBagFilterLootFrameInstanceInfoFontStringFreshList, "BOTTOM", 0, -34)
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 23, "OUTLINE, THICKOUTLINE")
+	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedTitle
+	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshList, "BOTTOM", 0, -34)
+	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE, THICKOUTLINE")
 	fontstring:SetText("|cff719096 Saved Instance")
 	fontstring:SetWidth(250)
 	fontstring:Show()
 
-	fontstring = eSaithBagFilterLootFrameInstanceInfoFontStringSavedList
-	fontstring:SetPoint("TOP", eSaithBagFilterLootFrameInstanceInfoFontStringSavedTitle, "BOTTOM", 0, 7)
+	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedList
+	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedTitle, "BOTTOM", 0, 7)
 	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
-	fontstring:SetText(SavedText)    
+	fontstring:SetText(savedTo)    
 	fontstring:SetWidth(250)
 	fontstring:Show()    
 
-	if count > 15 then
-		local extend = ((count - 15) / 100) * 5 + 1.0
-		eSaithBagFilter:SetHeight(eSaithBagFilter:GetHeight() * extend + 300)
-	end
+	eSaithBagFilter_SavedInstanceFrame:Show()
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, self.arg1);
 end
 function CreatePlayerInfoDropDownList()
 	local i = 1;
 	
-	local SortedInstances = {}
-	for key, value in pairs(eInstances) do table.insert(SortedInstances, key)	end
-	table.sort(SortedInstances)
+	local instances = {}
+	for key, value in pairs(savedInstances) do table.insert(instances, key)	end
+	table.sort(instances)
 	
-	for _, instance in pairs(SortedInstances) do        
-		local TableOfNames = eInstances[instance]
-		if TableOfNames ~= nil and instance ~= "boe" and instance ~= 'players' then
+	for _, instance in pairs(instances) do        
+		local TableOfNames = savedInstances[instance]
+		if TableOfNames ~= nil and instance ~= "boe" and instance ~= 'players' and instance ~= 'hiddenInstances' and isInstanceShown(instance) then
 			info = UIDropDownMenu_CreateInfo();
 			info.text = tostring(instance)
 			info.arg1 = tostring(instance)
@@ -1684,11 +1257,11 @@ function CreatePlayerInfoDropDownList()
 		end
 	end
 end
-function eSaithBagFilter_CreateDropDownList()
+function eSaithBagFilter_CreateDropDownList(self)
 	if eVar == nil then return end
-	if eVar.properties.BottomTab == 1 then
-		CreateZoneDropDownList()
-	elseif eVar.properties.BottomTab == 2 then
+	if tab == 1 then
+		CreateZoneLootDropDownList()
+	elseif tab == 2 then
 		CreatePlayerInfoDropDownList()
 	end
 end
@@ -1707,7 +1280,7 @@ function SlashCmdList.ESAITHBAGFILTER(msg, editbox)
 	end
 
 	if command == "reset" then
-		eSaithBagFilterResetButton_Click()
+		eSaithBagFilter_ResetButton_OnClick()
 		eSaithBagFilter:ClearAllPoints()
 		eSaithBagFilter:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 		eSaithBagFilter:Show()
@@ -1716,30 +1289,16 @@ end
 
 --[[ Notes:
 
--- ReOrg Saved Instances 
-	-- Allow player to add/remove desired saved instances
-	-- Allow option to choose miniumum required raid level (ie, no need to show lvl 80s when you only want to show level 100s)
+-- Allow player to add/remove desired saved instances. Done, but maybe a better/cleaner setup?
+-- Allow add/removal of characters instead of level requirement
 
--- Replace strings with local global string
--- consider making all loot item buttons local globals
+-- consider making all loot item buttons local globals - question this
 -- Instead of showing multiples of the same loot, count and condense with # showing how many
 -- Consider adding transparency button if mouse is not over AddOn
--- consider sorting by ilevel
 -- Add a "Never sell list" so that items never show up on list. Allow the list to be modified
 
--- Change from using "checkbuttons" for item buttons but rather regular buttons
+-- Auto loot multiple items even if there is a cast timer. Possibly check out how TSM does it with auto auction and clicking 100x
+-- Open immediately to the last zone that player looted from. If last zone has already been sold then open from the zone prior to that one
+-- Add BOE section back in
+-- Add background color, or distinction 
 --]]
-
---[[
-    Fixed issue with variables from v1.32 to v1.36
-        This fixed the issue where selecting "Keep all BOE" option would cause LUA error
-    Fixed issue when Updating Addon to a higher version that it kept character instance/raid information and BOE items
-        This fixed the issue when loading a new character for the first time that all saved raid/instance info is reset
-    Fixed issue where hovering over non-link item (e.g. profession enchant that is not an item) and error would occur.
-    
-]]--
-
---[[
-
-
-]]--
