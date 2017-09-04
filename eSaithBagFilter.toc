@@ -22,15 +22,18 @@ eSaithBagFilter.xml
  -- 1.37
 	--Update for 7.3. 
 	--Significant code update.
-		--Changed saving items from link to Hitem
-	--Saving prior to changing from saving items by link to saving by Hitem
-	
-	--Added Features
+		--Changed saving items from 'link' to 'Hitem'
+		
+
+	--Added/Updated Features
 		--After user selects an option from a drop down, the selected item is now saved as the new drop down title 
-		--Raid Info tab now lists all recent lock out instances. 
-			--User may now filter this list to view which characters are saved to which instance
 		--All gear currently worn is automatically added to the players kept list. This should provide additional security that items should not be sold. 
-	
+		
+		--Raid Info
+			--User may now filter this list to view which characters are saved to which instance. This is provided in the options panel
+			--Saved instances are now in a tabular format instead of string based.
+			--If no instances are chosen then a info message lets the user know where to update this list.
+
 	--Removed Items
 		--iLevel fitler
 		--Removed artwork background. Images are cool but deters from actual use of Addon
@@ -39,8 +42,8 @@ eSaithBagFilter.xml
 	
 	--Known Issues
 		--Scrolling on Raid Info raw list with middle mouse does not update scroll position
-		--Some green items are not able to be distinguished well enough to show up for icons to sell due to link string variations between looting and final link string value. 
-	
+		--Occasionally items are not shown properly per zone.
+		--After closing the options the bottom tab defaults to the Raid Info tab.
 -- 1.36
 	  --Fixed issue with variables from v1.32 to v1.36 This fixed the issue when selecting "Keep all BOE" option would cause LUA error
     --Fixed issue when updating the AddOn to a higher version all instance and raid info would be erased.

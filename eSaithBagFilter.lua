@@ -1,4 +1,10 @@
 ﻿SLASH_ESAITHBAGFILTER1 = '/efilter'
+
+if not LibStub then
+	print("Saith Bag Filter requires LibStub.")
+	return
+end
+
 local MAX_ITEM_COUNT = -1
 local ORIGINALTOOLTIP  -- used to save original functionality to the tooltip. Used for hooking a function
 local MAX_BAG_SLOTS = 175    
@@ -9,11 +15,13 @@ local instanceLoot -- short for eSaithBagFilterInstanceLoot. Loot from each zone
 local ALPHA = .4
 local StartLootRollID = nil
 local zone -- todo, verify this is set when zone is changed
-local items -- list of all items that player has ever dealt with regardless of quality|rarity
+local items = {} -- list of all items that player has ever dealt with regardless of quality|rarity
 local tab = 1
 local isSelling = isSelling or false
 local updateInterval = updateInterval or 0.5
 local maxTime = maxTime or 0
+local SavedInstancesTable
+local InstanceTable
  
 local itemTextureColors = {  
 	.6, .6, .6, --Gray
@@ -97,7 +105,7 @@ local function AddItemToItemList(link, isBOE)
 
 	local Hitem = getHitem(link)
 
-	if items[Hitem] == nil then
+	if items[Hitem] == nil and Hitem ~= nil then
 		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
 		items[Hitem] = {
 			name = name,
@@ -452,7 +460,9 @@ local function SellListedItems(list)
 					(eVar.options.keepRareBOEItems and items[Hitem].isBOE and items[Hitem].quality ==  itemQuality.Rare) 
 				) then 
 					UseContainerItem(bag, slot) 	
-					total = total + 1				
+					total = total + 1
+				elseif locked then		-- if locked then continual selling process. Even if locked it doesnt mean item will sell or the rest will sell due to 
+					total = total + 1
 				end
 			end
 		end
@@ -492,7 +502,7 @@ local function ToggleOptionsFrame(self)
         eSaithBagFilter_BottomTabs:Show()        
 		eSaithBagFilter_DropDown:Show()
         if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
-		if tab == 1 then eSaithBagFilter_LootFilterFrame:Show() end
+		eSaithBagFilter_LootFilterFrame:Show()
 		eSaithBagFilter_OptionsFrame:Hide()
 	end
 end
@@ -507,11 +517,10 @@ local function CreateLootFilterFrame()
 	-- create loot options frame to hold all the widgets below. Instead of having to hide all of them when switching tabs just hide this frame
 	local lootFilterFrame = CreateFrame("Frame", "$parent_LootFilterFrame", eSaithBagFilter)
 	lootFilterFrame:SetPoint("TOP", eSaithBagFilter, "TOP", 0, -50)
-	lootFilterFrame:SetSize(eSaithBagFilter:GetWidth() * .95, eSaithBagFilter:GetHeight() * .85)
+	lootFilterFrame:SetSize(eSaithBagFilter:GetWidth() * .85, eSaithBagFilter:GetHeight() * .85)
 	lootFilterFrame:Show()
 	lootFilterFrame:SetFrameLevel(10)
 	lootFilterFrame.texture = lootFilterFrame:CreateTexture("$parentTexture", "BACKGROUND");
-	lootFilterFrame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
 	lootFilterFrame.texture:SetAllPoints()
 	lootFilterFrame.texture:Show()	
 
@@ -555,7 +564,6 @@ local function CreateLootFrame()
 		btn.texture:SetSize(35, 35)
 		btn.texture:SetAllPoints();
 		btn.texture = btn:CreateTexture("$parent_TextureBorder", "ARTWORK");
-		btn.texture:SetColorTexture(1, 1, 1, 1)
 		btn.texture:SetSize(10, 10)
 		btn.texture:SetAllPoints()
 		btn:SetScript("OnClick", Item_OnPress)
@@ -572,10 +580,9 @@ local function CreateOptionsFrame()
 	-- Options Frame
 	local optionsFrame = CreateFrame("Frame", "$parent_OptionsFrame", eSaithBagFilter)
 	optionsFrame:SetPoint("TOP", "$parent", "TOP", 0, -55)
-	optionsFrame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .83)
+	optionsFrame:SetSize(eSaithBagFilter:GetWidth() *.90, eSaithBagFilter:GetHeight() * .83)
 	optionsFrame:SetFrameLevel(10)
 	optionsFrame.texture = optionsFrame:CreateTexture("$parentTexture", "BACKGROUND");
-	optionsFrame.texture:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
 	optionsFrame.texture:SetAllPoints()
 	optionsFrame.texture:Show()	
 	optionsFrame:Hide()
@@ -598,7 +605,7 @@ local function CreateOptionsFrame()
 	-- Reset button
 	local btn = CreateFrame("Button", "$parent_OptionsFrame_Reset", optionsFrame, "UIPanelButtonTemplate")
 	btn:SetSize(100, 30)
-	btn:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -15, 15)
+	btn:SetPoint("BOTTOMLEFT", "$parent", "BOTTOMLEFT", 15, 15)
 	btn:SetScript("OnClick", eSaithBagFilter_ResetButton_OnClick)
 	local fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cffffffffReset Addon")
@@ -689,20 +696,6 @@ local function CreateOptionsFrame()
     btn:SetChecked(eVar.options.keepRareBOEItems)
 	btn:Show()
 	ToggleKeepRareBOEItems(btn)
-		
-	-- Enable iLevel sliders
-	btn = CreateFrame("CheckButton", "$parent_EnableiLevel", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parent_AutoGreedGreen", "BOTTOM", 0, 5)
-	--btn:SetScript("OnClick", ToggleSliders)
-    btn:SetScript("OnEnter", iLevelSliders_OnEnter)
-    btn:SetScript("OnLeave", OnGameToolTipLeave)
-	fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
-	fontstring:SetText(OptionsColor.."Enable iLevel Sliders|r")
-	fontstring:SetPoint("LEFT", "$parent", "RIGHT", 0, 0)
-	btn:SetFontString(fontstring)
-	btn:SetChecked(eVar.options.enableiLevelSliders)
-	btn:Show()
-	--ToggleSliders(btn)
 	
     -- Do not sell trade goods
 	btn = CreateFrame("CheckButton", "$parent_TradeGoods", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
@@ -720,7 +713,7 @@ local function CreateOptionsFrame()
     
     --Quick Quest complete
 	btn = CreateFrame("CheckButton", "$parent_QuestComplete", eSaithBagFilter_OptionsFrame, "UICheckButtonTemplate")
-	btn:SetPoint("TOP", "$parent_EnableiLevel", "BOTTOM", 0, 5)
+	btn:SetPoint("TOP", "$parent_AutoGreedGreen", "BOTTOM", 0, 5)
 	btn:SetScript("OnClick", ToggleQuestComplete)
     btn:SetScript("OnEnter", QuestComplete_OnEnter)
 	btn:SetScript("OnLeave", OnGameToolTipLeave)
@@ -749,61 +742,56 @@ local function ToggleIncludeInstance(self)
 end
 local function isInstanceShown(instance)
 	savedInstances.hiddenInstances = savedInstances.hiddenInstances or {}
-	if savedInstances.hiddenInstances[instance] ~= null and savedInstances.hiddenInstances[instance] == false then
-		return false
-	else
+	if savedInstances.hiddenInstances[instance] ~= null and savedInstances.hiddenInstances[instance] == true then
 		return true
+	else
+		return false
 	end	
 end
 local function scrollFrameValueChange(self, value)	
-	eSaithBagFilter_ScrollFrame:SetVerticalScroll(value)
+	eSaithBagFilter_OptionsFrame_ScrollFrame:SetVerticalScroll(value)
 end
 local function scrollFrameMouseWheel(self, value)	
 	local scroll = 0
-	local range = eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() * .10
+	local range = eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScrollRange() * .10
 	
 
 	if value > 0 then 		
 		local result = 0
-		if eSaithBagFilter_ScrollFrame:GetVerticalScroll() - range < 0 then 
+		if eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScroll() - range < 0 then 
 			result = 0
 		else 
-			result = eSaithBagFilter_ScrollFrame:GetVerticalScroll() - range
+			result = eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScroll() - range
 		end	
 		scrollFrameValueChange(self, result)
 	else 
 		local result = 0
-		if eSaithBagFilter_ScrollFrame:GetVerticalScroll() + range > eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() then 
-			result = eSaithBagFilter_ScrollFrame:GetVerticalScrollRange() 
+		if eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScroll() + range > eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScrollRange() then 
+			result = eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScrollRange() 
 		else
-			result = eSaithBagFilter_ScrollFrame:GetVerticalScroll() + range
+			result = eSaithBagFilter_OptionsFrame_ScrollFrame:GetVerticalScroll() + range
 		end
 		scrollFrameValueChange(self, result)
 	end
 end
 local function CreateSavedInstanceFrame()
-	local savedFrame = CreateFrame("Frame", "$parent_SavedInstanceFrame", eSaithBagFilter)
-	savedFrame:SetPoint("TOPLEFT", "$parent", "TOPRIGHT", 0, 0)
-	savedFrame:SetSize(460, 375)		
+	local savedFrame = CreateFrame("Frame", "$parent_SavedInstanceFrame", eSaithBagFilter_OptionsFrame)
+	savedFrame:SetPoint("TOPRIGHT", "$parent", "TOPRIGHT", 0, 0)
+	savedFrame:SetSize(350, eSaithBagFilter_OptionsFrame:GetHeight())	
+	savedFrame.texture = savedFrame:CreateTexture("$parentTexture", "BACKGROUND")
+	savedFrame.texture:SetColorTexture(1, 1, 1)
 	savedFrame:Show()
 
-	-- Just create the fontstring for now. They will be used later on when player views save dungeons/raid listing 
-	savedFrame:CreateFontString("$parent_InstanceInfo_Title", "ARTWORK", "GameFontNormal")
-	savedFrame:CreateFontString("$parent_InstanceInfo_FreshTitle", "ARTWORK", "GameFontNormal")
-	savedFrame:CreateFontString("$parent_InstanceInfo_FreshList", "ARTWORK", "GameFontNormal")
-	savedFrame:CreateFontString("$parent_InstanceInfo_SavedTitle", "ARTWORK", "GameFontNormal")
-	savedFrame:CreateFontString("$parent_InstanceInfo_SavedList", "ARTWORK", "GameFontNormal")
-
 	 -- Add scroll Frame
-	local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", eSaithBagFilter)
-	scrollFrame:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 10, -70)
-	scrollFrame:SetSize(eSaithBagFilter:GetWidth() - 20, eSaithBagFilter:GetHeight() - 90)
+	local scrollFrame = CreateFrame("ScrollFrame", "$parent_ScrollFrame", eSaithBagFilter_OptionsFrame)
+	scrollFrame:SetPoint("TOPRIGHT", "$parent", "TOPRIGHT", 10, 0)
+	scrollFrame:SetSize(savedFrame:GetWidth() - 20, savedFrame:GetHeight() - 10)
 	scrollFrame:Show()
 	
 	-- Add child frame
-	local childFrame = CreateFrame("Frame", "$parent_InstanceOption", eSaithBagFilter)
-	childFrame:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 30, -10)
-	childFrame:SetWidth(eSaithBagFilter:GetWidth() - 60)
+	local childFrame = CreateFrame("Frame", "$parent_InstanceOption", eSaithBagFilter_OptionsFrame)
+	childFrame:SetPoint("TOPRIGHT", "$parent", "TOPRIGHT", 30, 0)
+	childFrame:SetWidth(savedFrame:GetWidth() - 60)
 	childFrame:EnableMouseWheel(true)
 	childFrame:SetScript("OnMouseWheel", scrollFrameMouseWheel)
 	childFrame:Show()
@@ -858,12 +846,131 @@ local function CreateSavedInstanceFrame()
 	sliderFrame:SetScript("OnValueChanged", scrollFrameValueChange)
 	sliderFrame:Show()
 end
+local function UpdateTable()
+	local rowValue, row, rows, rowColor, cols, t, addText, players, instances
+
+	if savedInstances.players ~= nil and savedInstances.hiddenInstances ~= nil then
+		rowColor = { r = 1, g = 1, b = 1, a = 1}
+		rows = {}
+		t = time()
+		players = {}
+		for key, value in pairs(savedInstances.players) do table.insert(players, key) end
+		table.sort(players)
+
+		instances = {}
+		for key, value in pairs(savedInstances.hiddenInstances) do table.insert(instances, key)	end
+		table.sort(instances)
+		
+		for index, instance in pairs(instances) do
+			if isInstanceShown(instance) then
+				cols = {
+					{["value"] = instance }
+				}
+				
+				for index, player in ipairs(players) do
+					local val = ""
+					if savedInstances[instance] ~= nil and savedInstances[instance][player] ~= nil and savedInstances[instance][player].time > t then
+						val = 'X'
+					end
+
+					table.insert(cols, { ["value"] = val , ["color"] = rowColor})
+				end
+
+				row = { ["cols"] = cols }            
+				table.insert(rows, row) 
+			end
+		end
+
+		if #rows > 0 then
+			eSaithBagFilter_RaidFrame_NoRaidFontString:Hide()
+			InstanceTable:Show()
+			InstanceTable:SetData(rows)
+		else 
+			InstanceTable:Hide()
+			eSaithBagFilter_RaidFrame_NoRaidFontString:Show()
+		end
+	end
+end
+local function CreateTable()
+    local evenColor = { r = 0.94, g = 0.98, b = 1.0, a = 1.0 }    
+    local evenBgColor = { r = 0.11, g = 0.16, b = 0.18, a = 1.0 }
+    local oddColor = { r = 0.94, g = 0.98, b = 1.0, a = 1.0 }       -- #2C3E45 
+    local oddBgColor = { r = 0.17, g = 0.24, b = 0.27, a = 1.0 }  
+    local isEven = false
+
+    local headers = 
+    {            
+        {
+            ["name"] = "Raid",
+            ["width"] = 250,
+            ["align"] = "CENTER",
+            ["color"] = evenColor,
+            ["colorargs"] = nil,
+            ["bgcolor"] = evenBgColor
+        }    
+    }
+
+    local playerInfo, players
+	players = {}
+	for key, value in pairs(savedInstances.players) do table.insert(players, key) end
+	table.sort(players)
+	
+    for index, player in ipairs(players) do
+		-- Format player with server
+		local name = savedInstances.players[player].name..'\n'..savedInstances.players[player].server
+
+		--savedInstances.players[player].server:match(%s)
+
+		playerInfo = 
+		{
+		    ["name"] = name,
+		    ["width"] = 75,
+		    ["align"] = "CENTER",
+		    ["color"] = oddColor,
+		    ["colorargs"] = nil,
+		    ["bgcolor"] = oddBgColor
+		}
+		
+		if isEven then 
+			    playerInfo["color"] = evenColor
+			    playerInfo["bgcolor"] = evenBgColor
+		end
+					
+		isEven = not isEven
+		table.insert(headers, playerInfo)
+    end
+    local rowHighlight = {r = .93, g = .90, b = .74, a = .5}
+	local raidFrame = CreateFrame("Frame", "$parent_RaidFrame", eSaithBagFilter)
+	raidFrame:SetPoint("TOP", eSaithBagFilter, "TOP", 0, -50)
+	raidFrame:SetSize(eSaithBagFilter:GetWidth() * .85, eSaithBagFilter:GetHeight() * .85)
+	raidFrame:Show()
+
+    InstanceTable = SavedInstancesTable:CreateST(headers, 10, 30, rowHighlight, raidFrame);
+	raidFrame:Hide()
+	InstanceTable:Show()
+
+	-- Need to get actual child of eSaithBagFilter_RaidFrame, scrollframe. Cannot just assume its the only one (ie, other addons may use this same library)
+	-- Need to position
+	local children = raidFrame:GetChildren()
+
+
+
+	local fontstring = eSaithBagFilter_RaidFrame:CreateFontString("$parent_NoRaidFontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("|cff02DBDBPlease check the options tab to include any instances you'd like to view.")
+	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+end
+local function CreateSavedInstanceTable()
+	SavedInstancesTable = LibStub("ScrollingTable");
+	CreateTable()
+	UpdateTable()
+end
 local function CreateWidgets()
 	CreateCoordinates()	
 	CreateLootFrame()
 	CreateLootFilterFrame()
 	CreateOptionsFrame()
 	CreateSavedInstanceFrame()
+	CreateSavedInstanceTable()
 end	
 local function InitializeVariables()
 	instanceLoot = instanceLoot or { }
@@ -877,9 +984,9 @@ local function InitializeVariables()
 	eVar.options = eVar.options or {}
 	tab = tab or 1
 	
-    eVar.properties.version = 1.36 -- todo, need to increment
-    eVar.properties.SetSizeX = 400
-    eVar.properties.SetSizeY = 375
+    eVar.properties.version = 1.37 
+    eVar.properties.SetSizeX = 900
+    eVar.properties.SetSizeY = 450
     
     eVar.items.kept = eVar.items.keep or eVar.properties.keep or { }    -- todo, convert properties.keep in update and never deal with it again
 	sellList = sellList or { } 
@@ -924,6 +1031,7 @@ local function ZoneMenuItemFunction(self, arg1, arg2, checked)
 	SelectItemsToShow()	
 end
 local function CreateZoneLootDropDownList()
+	instanceLoot = instanceLoot or {}
 	instanceLoot["All"] = instanceLoot["All"] or {}
 	local i = 1
 	local info
@@ -940,6 +1048,12 @@ local function CreateZoneLootDropDownList()
 		end
 	end
 end
+function AdjustParentFrames()
+	-- If eSaithBagFilter frame is adjusted the parent frames should readjust to the new size
+	eSaithBagFilter_OptionsFrame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .85)
+	eSaithBagFilter_LootFrame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .85)
+	eSaithBagFilter_LootFilterFrame:SetSize(eSaithBagFilter:GetWidth() *.965, eSaithBagFilter:GetHeight() * .85)
+end
 local function UpdateAddon()
 	local kept = {}
 	if eVar ~= nil and eVar.items ~= nil and eVar.items.kept ~= nil then
@@ -953,8 +1067,6 @@ local function UpdateAddon()
         PLAYERS = savedInstances.players or {}
     end
         
-	eSaithBagFilter_ResetButton_OnClick()   
-    
     eSaithBagFilterInstances.players = eSaithBagFilterInstances.players or PLAYERS
     savedInstances = eSaithBagFilterInstances
     
@@ -964,7 +1076,6 @@ end
 local function ParseRaidInfo() 
 	-- Don't save any character lower than level 60. No need to fill a list of level 1's that haven't run ICC
 	if UnitLevel("player") < 60 then return end
-	
 	-- Current Player Info
 	local num = GetNumSavedInstances()
 	local player = UnitName("player").." ("..GetRealmName()..')'
@@ -990,13 +1101,16 @@ local function ParseRaidInfo()
 			savedInstances[instance][player].time = time() + reset
 		end        
 	end
+
+	UpdateTable()
 end
 function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
 		self:UnregisterEvent("ADDON_LOADED")
 		eVar = eSaithBagFilterVar or nil
         savedInstances = eSaithBagFilterInstances
-		-- Check if an older version. If so do a soft reset
+
+		-- Check if an older version. If so, do a soft reset
 		local version = GetAddOnMetadata("eSaithBagFilter", "Version")    
 		if eVar ~= nil and tostring(eVar.properties.version) ~= tostring(version) then             
 			UpdateAddon() -- Creates Rarity Objects and then resaves the players kept list
@@ -1105,8 +1219,11 @@ function eSaithBagFilter_SellButton_OnHide(self, event, ...)
 	isSelling = false
 end
 function eSaithBagFilter_ResetButton_OnClick(self, event)    
-	eVar = nil
-	instanceLoot = nil	
+	eVar = {}
+	eSaithBagFilterVar = {}
+	eSaithBagFilterInstances = {}
+	savedInstances = {}
+	instanceLoot = {}	
 	InitializeVariables()       
 end
 function PrepareTab()
@@ -1122,13 +1239,13 @@ function PrepareTab()
 		eSaithBagFilter_OptionsFrame:Hide()
 	end
 
-	if eSaithBagFilter_SavedInstanceFrame:IsShown() then
-		eSaithBagFilter_SavedInstanceFrame:Hide()
-	end
+	eSaithBagFilter_RaidFrame:Hide()
+
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, "");
+	eSaithBagFilter_DropDown:Hide()
 
 	eSaithBagFilter_SellButton:Hide()
 	eSaithBagFilter_OptionsButton:Hide()
-	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, "");
 end
 function eSaithBagFilter_BottomTab_OnClick(self, event, ... )
 	PrepareTab()
@@ -1138,115 +1255,25 @@ function eSaithBagFilter_BottomTab_OnClick(self, event, ... )
 		eSaithBagFilter_LootFilterFrame:Show();	
 		SelectItemsToShow()	
 		if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
-		eSaithBagFilter_OptionsButton:Show()        
+		eSaithBagFilter_OptionsButton:Show()
+		eSaithBagFilter_DropDown:Show()
 	elseif self:GetID() == 2 then
 		RequestRaidInfo()	
-	end
-end
-local function PlayerInfoItemFunction(self, arg1, arg2, checked)
-	local time = time()
-	local realm = GetRealmName()
-	local player = UnitName("player")
-	local savedTo = ""
-	local freshRun = ""
-	local instance = savedInstances[self.arg1]
-	local charName, nextPlayer
-	local players = {}
-	for key, value in pairs(savedInstances.players) do table.insert(players, key)	end
-	table.sort(players)
+		eSaithBagFilter_RaidFrame:Show()
 
-	for _, playerServer in ipairs(players) do
-		nextPlayer = instance[playerServer]
-				
-		if (nextPlayer == nil and (player.." ("..realm..')') == playerServer) 
-		or (nextPlayer and player == nextPlayer.name and realm == nextPlayer.realm) then
-			charName = player
-		else			
-			charName = playerServer			 
+		if eSaithBagFilter:GetWidth() < ScrollTable1:GetWidth() then
+			eSaithBagFilter:SetWidth(ScrollTable1:GetWidth() + 20)
 		end
 
-		if nextPlayer ~= nil and nextPlayer.time > time then
-			if charName == player then
-				savedTo = savedTo .. "\n|cffFFAA33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
-			else
-				savedTo = savedTo .. "\n|cff96bdc4" .. charName
-			end
-		else
-			if charName == player then
-				freshRun = freshRun .. "\n|cffFAAE33---> |cff96bdc4" .. charName .. "|cffFAAE33 <---"
-			else
-				freshRun = freshRun .. "\n|cffffffff" .. charName
-			end
+		if eSaithBagFilter:GetHeight() < ScrollTable1:GetHeight() then
+			eSaithBagFilter:SetHeight(ScrollTable1:GetHeight() + 125)
 		end
-		
-	end
 
-	-- Font strings for character instance info
-	local fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_Title
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE, THICKOUTLINE")
-	fontstring:SetPoint("TOP", "$parent", "TOP", 0, -5)    
-	fontstring:SetText("|cffbdf3ff".. self.arg1)
-	fontstring:SetWidth(400)    
-	fontstring:Show()
-	
-	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshTitle
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE, THICKOUTLINE")
-	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_Title, "BOTTOM", 0, -20)    
-	fontstring:SetText("|cffbdf3ff Fresh Instance")
-	fontstring:SetWidth(250)    
-	fontstring:Show()
-
-	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshList
-	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshTitle, "BOTTOM", 0, 7)
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
-	fontstring:SetText(freshRun)
-	fontstring:SetWidth(250)    
-	fontstring:Show()
-
-	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedTitle
-	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_FreshList, "BOTTOM", 0, -34)
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE, THICKOUTLINE")
-	fontstring:SetText("|cff719096 Saved Instance")
-	fontstring:SetWidth(250)
-	fontstring:Show()
-
-	fontstring = eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedList
-	fontstring:SetPoint("TOP", eSaithBagFilter_SavedInstanceFrame_InstanceInfo_SavedTitle, "BOTTOM", 0, 7)
-	fontstring:SetFont("Fonts\\FRIZQT__.TTF", 13)
-	fontstring:SetText(savedTo)    
-	fontstring:SetWidth(250)
-	fontstring:Show()    
-
-	eSaithBagFilter_SavedInstanceFrame:Show()
-	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, self.arg1);
-end
-function CreatePlayerInfoDropDownList()
-	local i = 1;
-	
-	local instances = {}
-	for key, value in pairs(savedInstances) do table.insert(instances, key)	end
-	table.sort(instances)
-	
-	for _, instance in pairs(instances) do        
-		local TableOfNames = savedInstances[instance]
-		if TableOfNames ~= nil and instance ~= "boe" and instance ~= 'players' and instance ~= 'hiddenInstances' and isInstanceShown(instance) then
-			info = UIDropDownMenu_CreateInfo();
-			info.text = tostring(instance)
-			info.arg1 = tostring(instance)
-			info.value = i;
-			info.func = PlayerInfoItemFunction;
-			UIDropDownMenu_AddButton(info);
-			i = i + 1;
-		end
+		AdjustParentFrames()
 	end
 end
 function eSaithBagFilter_CreateDropDownList(self)
-	if eVar == nil then return end
-	if tab == 1 then
-		CreateZoneLootDropDownList()
-	elseif tab == 2 then
-		CreatePlayerInfoDropDownList()
-	end
+	CreateZoneLootDropDownList()	
 end
 function SlashCmdList.ESAITHBAGFILTER(msg, editbox)
 	if eSaithBagFilter:IsShown() then
@@ -1284,4 +1311,5 @@ end
 -- Open immediately to the last zone that player looted from. If last zone has already been sold then open from the zone prior to that one
 -- Add BOE section back in
 -- Add background color, or distinction 
+
 --]]

@@ -3,6 +3,14 @@
                    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ 
                    ..\..\FrameXML\UI.xsd">
   <Script File="eSaithBagFilter.lua"/>
+  <Script file="Libs\LibStub\LibStub.lua"/>
+  <Script file="Libs\CallbackHandler-1.0.lua"/>
+
+  <!--@no-lib-strip@-->
+  <Include file="Libs\lib-st.xml"/>
+  <!--@end-no-lib-strip@-->
+
+  
   <Frame name="eSaithBagFilter_Slider_Template" virtual="true">
     <Size x="300" y="50" />
     <Frames>
@@ -83,7 +91,7 @@
     <Layers>
       <Layer level="BACKGROUND" setAllPoints="true">
         <Texture name="$parentBackground">
-          <Color r=".7" g=".7" b=".8" a=".8" />o
+          <Color r=".11" g=".16" b=".18" a="1" />
         </Texture>
       </Layer>
     </Layers>
@@ -97,9 +105,9 @@
   </Frame>
 
   <Frame name="$parent_BottomTabs" parent="eSaithBagFilter">
-    <Size x="400" y="40" />
+    <Size x="10" y="40" />
     <Anchors>
-      <Anchor point="TOP" relativeTo="eSaithBagFilter" relativePoint="BOTTOM" />
+      <Anchor point="TOPLEFT" relativeTo="eSaithBagFilter" relativePoint="BOTTOMLEFT" />
     </Anchors>
     <Frames>
       <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Loot">
