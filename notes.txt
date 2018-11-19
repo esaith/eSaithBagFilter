@@ -1,0 +1,22 @@
+
+eSaithBagFilter_Item..index
+
+locla function CreateItemButton -- Need to verify all properties of parameter 'item' are correct 
+
+
+eVar = {
+	options = {
+		keepUncommonBOEItems: boolean,  -- Green items
+		keepRareBOEItems: boolean,
+		keepTradeGoods: boolean
+		coordinatesEnabled: boolean,
+		enableAutoLoot: boolean,
+		questComplete: boolean 
+	}
+
+	items = {
+		boe: {},  -- location of all BOE items. Not if the BOE item is saved
+		
+	}
+
+}

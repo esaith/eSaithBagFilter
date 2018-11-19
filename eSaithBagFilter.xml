@@ -98,7 +98,8 @@
     <Scripts>
       <OnLoad function="eSaithBagFilter_OnLoad"/>
       <OnEvent function="eSaithBagFilter_OnEvent" />
-      <OnDragStart>self:StartMoving();</OnDragStart>
+      <OnMouseDown function="eSaithBagFilter_OnMouseDown"/>
+      <OnMouseUp function="eSaithBagFilter_OnMouseUp"/>
       <OnDragStop function="eSaithBagFilter_OnStopDrag" />
       <OnShow function="eSaithBagFilter_OnShow" />
     </Scripts>
@@ -168,7 +169,6 @@
       <OnClick  function="eSaithBagFilter_SellButton_OnClick" />
       <OnMouseDown> self:SetAlpha(.6) </OnMouseDown>
       <OnMouseUp> self:SetAlpha(1) </OnMouseUp>
-      <OnUpdate function="eSaithBagFilter_SellButton_OnUpdate" />
       <OnEnter  function="eSaithBagFilter_SellButton_OnEnter" />
       <OnLeave>GameTooltip:Hide()</OnLeave>
       <OnHide   function="eSaithBagFilter_SellButton_OnHide" />
@@ -191,7 +191,7 @@
       <Anchor point="CENTER"/>
     </Anchors>
   </Button>
-  <Button name="$parentEsaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
+  <Button name="$parent_eSaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
     <Anchors>
       <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-38" y="-35"/>
     </Anchors>
@@ -208,7 +208,8 @@
     <Scripts>
       <OnClick function="eSaithBagFilter_OnClick" />
       <OnEnter function="eSaithBagFilter_OnEnter" />
-      <OnLeave function="OnGameToolTipLeave" />
+      <OnLeave function="eSaithBagFilter_OnGameToolTipLeave" />
+      <OnUpdate function="eSaithButton_MerchantFrame_OnUpdate" />
     </Scripts>
   </Button>
 </Ui>
