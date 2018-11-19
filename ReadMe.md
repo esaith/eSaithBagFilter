@@ -5,12 +5,23 @@
   Guild Master - Feedback on overall product
   _Max_Cavalera_ - For the suggestion to adding an option to keep all BOE when picking up. This is the "Keep All BOE" option on the Options page
  
+  1.38
+	Update for BFA 8.0
+	Reverted Hitem to link
+
+	Added Features
+		Added character list on options panel to toggle which characters to view when viewing saved dungeons.
+		When 'Do not sell Uncommon or Trade Goods', the alpha should be apparent as if the user manually click the item. The item is not included on the kept list, though
+
+	Fixed Issues
+		Fixed scrolling on Raid Info list. When scrolling with the mouse wheel, the scroll nob scrolls as well
+		After closing the options tab, the bottom tab now shows the items tab correctly instead of defaulting to Raid Info tab
+
   1.37
 	Update for 7.3. 
 	Significant code update.
 		Changed saving items from 'link' to 'Hitem'
-		
-
+	
 	Added/Updated Features
 		After user selects an option from a drop down, the selected item is now saved as the new drop down title 
 		All gear currently worn is automatically added to the players kept list. This should provide additional security that items should not be sold. 
