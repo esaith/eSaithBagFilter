@@ -348,9 +348,7 @@ local function CreateSellList(selectedZone)
 
 	local list = { }
 	local loot = instanceLoot[selectedZone]
-	if loot == nil then 
-		return
-	 end
+	if loot == nil then return end
 
 	local sellTypeAllowed = {}
 	local rarityCheckButton
@@ -385,13 +383,8 @@ local function SelectItemsToShow(selectedZone)
 	SetAlphaOnItems()
 end
 local function SellListedItems(list)
-	print("My list to sell")
-	printTable(list)
-
 	if list == nil then return end
-
-	print("My list to sell")
-	printTable(list)
+		
 	local total = 0
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
