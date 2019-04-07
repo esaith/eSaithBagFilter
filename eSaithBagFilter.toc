@@ -1,10 +1,12 @@
-﻿## Interface: 80000
+﻿## Interface: 80100
 ## Title: eSaith Bag Filter
 ## Version: 1.37
 ## Notes: Allows mass selling of bag items to vendor by rarity, instance, and zones.
 ## Author: eSaith
-## SavedVariables: eSaithBagFilterInstances
-## SavedVariablesPerCharacter: eSaithBagFilterVar
+## SavedVariables: eSaithBagFilterInstances, eSaithBagFilterVar
 
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0.lua
+Libs\lib-st.xml
 eSaithBagFilter.lua
 eSaithBagFilter.xml

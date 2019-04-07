@@ -191,7 +191,7 @@
       <Anchor point="CENTER"/>
     </Anchors>
   </Button>
-  <Button name="$parent_eSaithButton" parent="MerchantFrame" inherits="ItemButtonTemplate">
+  <ItemButton name="$parent_eSaithButton" parent="MerchantFrame">
     <Anchors>
       <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-38" y="-35"/>
     </Anchors>
@@ -211,5 +211,5 @@
       <OnLeave function="eSaithBagFilter_OnGameToolTipLeave" />
       <OnUpdate function="eSaithButton_MerchantFrame_OnUpdate" />
     </Scripts>
-  </Button>
+  </ItemButton>
 </Ui>
