@@ -96,9 +96,11 @@ local function PrepreToolTip(self)
 	end
 end
 local function AddItemToItemList(link, isBOE)	
+	print('Adding item to item link')
 	if not link or type(link) ~= 'string' then 
 		return 
 	end
+	print('item added to item link')
 	
 	if items[link] == nil then
 		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
@@ -129,15 +131,29 @@ local function AddItemToItemList(link, isBOE)
 	end	
 end
 local function ReadToolTip(self, ...)
-	local boundText =  tostring(GameTooltipTextLeft2:GetText()) .. 
-						tostring(GameTooltipTextLeft3:GetText()) .. 
-						tostring(GameTooltipTextLeft4:GetText()) .. 
-						tostring(GameTooltipTextLeft5:GetText())	
+	local boundText = '';
 
+	if GameTooltipTextLeft1:GetText() ~= null then
+		boundText = boundText .. tostring(GameTooltipTextLeft1:GetText())
+		if GameTooltipTextLeft2:GetText() ~= null then
+			boundText = boundText .. tostring(GameTooltipTextLeft2:GetText())
+			if GameTooltipTextLeft3:GetText() ~= null then
+				boundText = boundText .. tostring(GameTooltipTextLeft3:GetText())
+				if GameTooltipTextLeft4:GetText() ~= null then
+					boundText = boundText .. tostring(GameTooltipTextLeft4:GetText())
+					if GameTooltipTextLeft5:GetText() ~= null then
+						boundText = boundText .. tostring(GameTooltipTextLeft5:GetText())
+					end
+				end
+			end
+		end
+	end
+	
 	local link = select(2, GameTooltip:GetItem())
     
 	-- Link items can only be items. If scrolling over professions button in professions tab or similar action then link is nil    
-	if link and type(link) == 'string' then            
+	if link and type(link) == 'string' then
+		print('link '..link)            
 		local isBOE = false
 		if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or 
 		not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
@@ -693,7 +709,7 @@ local function CreateCoordinates()
 	-- Coordinates
 	local frame = CreateFrame("Frame", "eSaithBagFilter_Coordinates", UIParent)
 	frame:SetSize(100, 50)
-	frame:SetPoint("TOP", "Minimap", "BOTTOM", 5, -5)
+	frame:SetPoint("TOP", "Minimap", "BOTTOM", 5, -25)
 	frame:SetScript("OnUpdate", UpdateCoordinates)
 	fontstring = frame:CreateFontString("$parent_FontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cff33ff33")
@@ -1012,13 +1028,7 @@ local function CreateTable()
     InstanceTable = SavedInstancesTable:CreateST(headers, 10, 30, rowHighlight, raidFrame);
 	raidFrame:Hide()
 	InstanceTable:Show()
-
-	-- Need to get actual child of eSaithBagFilter_RaidFrame, scrollframe. Cannot just assume its the only one (ie, other addons may use this same library)
-	-- Need to position
-	local children = raidFrame:GetChildren()
-
-
-
+	
 	local fontstring = eSaithBagFilter_RaidFrame:CreateFontString("$parent_NoRaidFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cff02DBDBPlease check the options tab to include any instances you'd like to view.")
 	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
@@ -1050,7 +1060,7 @@ local function InitializeVariables()
 
 	eVar = eSaithBagFilterVar
 	
-	if eVar == nil then
+	if eVar == nil or eVar.properties == nil then
 		eVar = {
 			properties = {
 				version = 1.37,
@@ -1157,7 +1167,7 @@ local function AddToolTipHandler()
 end
 local function SetAddonDimensions()
 	eSaithBagFilter:SetResizable(true);
-	eSaithBagFilter:SetMinResize(900, 300)
+	--eSaithBagFilter:SetMinResize(900, 300)
 	eSaithBagFilter:IsClampedToScreen(true)
 end
 function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
@@ -1331,7 +1341,7 @@ function eSaithBagFilter_ResetButton_OnClick(self, event)
 	instanceLoot = {}	
 	InitializeVariables()       
 end
-function eSaithBagFilter_BottomTab_OnClick(self, event, ... )
+function eSaithBagFilter_BottomTabs_OnClick(self, event, ... )
 	PrepareTab()
 	tab = self:GetID()
 	

@@ -29,7 +29,7 @@
           <Anchor point="LEFT" relativeTo="$parent_CheckButton" relativePoint="RIGHT" x="1" />
         </Anchors>
         <Layers>
-          <Layer level="LAYOUT" setAllPoints="true">
+          <Layer level="LAYOUT">
             <Texture name="$parentBackground" file="Interface\BUTTONS\UI-MinusButton-Up" />
           </Layer>
         </Layers>
@@ -70,7 +70,7 @@
           <Anchor point="LEFT" relativeTo="$parent_Slider" relativePoint="RIGHT" x="5"/>
         </Anchors>
         <Layers>
-          <Layer level="LAYOUT" setAllPoints="true">
+          <Layer level="LAYOUT">
             <Texture name="$parent_ButtonRest" file="Interface\BUTTONS\UI-PlusButton-Up" />
           </Layer>
         </Layers>
@@ -89,7 +89,7 @@
       <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER" />
     </Anchors>
     <Layers>
-      <Layer level="BACKGROUND" setAllPoints="true">
+      <Layer level="BACKGROUND">
         <Texture name="$parentBackground">
           <Color r=".11" g=".16" b=".18" a="1" />
         </Texture>
@@ -106,14 +106,14 @@
   </Frame>
 
   <Frame name="$parent_BottomTabs" parent="eSaithBagFilter">
-    <Size x="10" y="40" />
+    <Size x="20" y="40" />
     <Anchors>
       <Anchor point="TOPLEFT" relativeTo="eSaithBagFilter" relativePoint="BOTTOMLEFT" />
     </Anchors>
     <Frames>
-      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Loot">
+      <Button name="$parentTab1" inherits="PanelTabButtonTemplate" id="1" text="Loot">
         <Anchors>
-          <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="-10"/>
+          <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="10"/>
         </Anchors>
         <Scripts>
           <OnShow>
@@ -121,14 +121,14 @@
             PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
           </OnShow>
           <OnClick>
-            eSaithBagFilter_BottomTab_OnClick(self, "OnClick" )
+            eSaithBagFilter_BottomTabs_OnClick(self, "OnClick" )
             PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
           </OnClick>
         </Scripts>
       </Button>
-      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Raid Info">
+      <Button name="$parentTab2" inherits="PanelTabButtonTemplate" id="2" text="Raid Info">
         <Anchors>
-          <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="-15"/>
+          <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="15"/>
         </Anchors>
         <Scripts>
           <OnShow>
@@ -136,7 +136,7 @@
             PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
           </OnShow>
           <OnClick>
-            eSaithBagFilter_BottomTab_OnClick(self, "OnClick" )
+            eSaithBagFilter_BottomTabs_OnClick(self, "OnClick" )
             PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
           </OnClick>
         </Scripts>
@@ -196,7 +196,7 @@
       <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" relativeTo="$parent" x="-38" y="-35"/>
     </Anchors>
     <Layers>
-      <Layer level="OVERLAY" setAllPoints="true">
+      <Layer level="OVERLAY">
         <Texture name="$parentTexture" file="Interface\ICONS\Ability_BossFelOrcs_Necromancer_Orange" >
           <Size x="35" y="35"/>
           <Anchors>
