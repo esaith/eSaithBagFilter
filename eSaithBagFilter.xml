@@ -115,14 +115,9 @@
         <Anchors>
           <Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent" x="10"/>
         </Anchors>
-        <Scripts>
-          <OnShow>
-            PanelTemplates_TabResize(self, 0)
-            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-          </OnShow>
+        <Scripts>         
           <OnClick>
-            eSaithBagFilter_BottomTabs_OnClick(self, "OnClick" )
-            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
+            eSaithBagFilter_BottomTabs_OnClick(self, "OnClick" )            
           </OnClick>
         </Scripts>
       </Button>
@@ -131,22 +126,14 @@
           <Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentTab1" x="15"/>
         </Anchors>
         <Scripts>
-          <OnShow>
-            PanelTemplates_TabResize(self, 0)
-            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
-          </OnShow>
           <OnClick>
             eSaithBagFilter_BottomTabs_OnClick(self, "OnClick" )
-            PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID());
           </OnClick>
         </Scripts>
       </Button>
     </Frames>
     <Scripts>
-      <OnLoad>
-        PanelTemplates_SetNumTabs(self, 2)
-        PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, 1)
-      </OnLoad>
+      <OnLoad  inherit="prepend" function="eSaithBagFilter_BottomTabs_OnLoad" />        
     </Scripts>
   </Frame>
   <Button name="$parent_SellButton" parent="eSaithBagFilter" enableMouse="true" hidden="true" frameStrata="HIGH" topLevel="true">

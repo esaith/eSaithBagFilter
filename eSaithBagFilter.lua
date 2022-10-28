@@ -14,7 +14,6 @@ local instanceLoot = nil -- short for eSaithBagFilterInstanceLoot. Loot from eac
 	-- eVar.instance[instanceName][item]
 local StartLootRollID = nil
 local items = {} -- list of all items that player has ever dealt with regardless of quality|rarity
-local tab = 1
 local isSelling = isSelling or false
 local SavedInstancesTable
 local InstanceTable
@@ -96,11 +95,9 @@ local function PrepreToolTip(self)
 	end
 end
 local function AddItemToItemList(link, isBOE)	
-	print('Adding item to item link')
 	if not link or type(link) ~= 'string' then 
 		return 
 	end
-	print('item added to item link')
 	
 	if items[link] == nil then
 		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
@@ -225,7 +222,7 @@ function eSaithBagFilter_OnClick(self, event, ...)
 		eSaithBagFilter:Hide()
 	else
 		eSaithBagFilter:Show()
-		if tab == 1 then
+		if PanelTemplates_GetSelectedTab(eSaithBagFilter_BottomTabs) == 1 then
 			eSaithBagFilter_SellButton:Show()
 		end
 	end
@@ -474,26 +471,35 @@ local function LootContainers()
 		eVar.options.enableAutoLoot = false
 	end
 end
-local function ToggleOptionsFrame(self)
+
+local function showOptionsFrame()
+	eSaithBagFilter_BottomTabs:Hide()
+	eSaithBagFilter_LootFrame:Hide()
+	eSaithBagFilter_SellButton:Hide()
+	eSaithBagFilter_LootFilterFrame:Hide()
+	eSaithBagFilter_OptionsFrame:Show()
+	eSaithBagFilter_DropDown:Hide()
+end
+
+local function hideOptionsFrame()
+	if eSaithBagFilter_LootFrame then eSaithBagFilter_LootFrame:Show() end
+	if eSaithBagFilter_BottomTabs then eSaithBagFilter_BottomTabs:Show() end
+	if eSaithBagFilter_DropDown then eSaithBagFilter_DropDown:Show() end
+	if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
+	if eSaithBagFilter_LootFilterFrame then eSaithBagFilter_LootFilterFrame:Show() end
+	if eSaithBagFilter_OptionsFrame then eSaithBagFilter_OptionsFrame:Hide() end	
+end
+
+local function ToggleOptionsFrame(self)	
     -- Hide everything but options when it is open. 	
 	self.open = not self.open;
 	if self.open then 
-        eSaithBagFilter_BottomTabs:Hide()
-		eSaithBagFilter_LootFrame:Hide()
-        eSaithBagFilter_SellButton:Hide()
-		eSaithBagFilter_LootFilterFrame:Hide()
-		eSaithBagFilter_OptionsFrame:Show()
-		eSaithBagFilter_DropDown:Hide()
+        showOptionsFrame()
 	else
-		eSaithBagFilter_LootFrame:Show()
-        eSaithBagFilter_BottomTabs:Show()        
-		eSaithBagFilter_DropDown:Show()
-        if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
-		eSaithBagFilter_LootFilterFrame:Show()
-		eSaithBagFilter_OptionsFrame:Hide()
-		PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, tab)
+		hideOptionsFrame()
 	end
 end
+
 local function eSaithBagFilter_RarityFilter_OnClick(self, button, down)
 	SelectItemsToShow(eSaithBagFilter_DropDown.Title)
 end
@@ -1085,7 +1091,6 @@ local function InitializeVariables()
 		}
 	end
 
-	tab = tab or 1	 
 	sellList = { }
 	
 	eSaithBagFilter:SetSize(eVar.properties.SetSizeX, eVar.properties.SetSizeY)
@@ -1167,7 +1172,6 @@ local function AddToolTipHandler()
 end
 local function SetAddonDimensions()
 	eSaithBagFilter:SetResizable(true);
-	--eSaithBagFilter:SetMinResize(900, 300)
 	eSaithBagFilter:IsClampedToScreen(true)
 end
 function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
@@ -1188,8 +1192,13 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 			AddLoot(link)
 		end
 	elseif event == "MERCHANT_SHOW" then
-		if eVar.options.enableAutoSellGrays then SellByQuality("Poor") end
-		if tab == 1 and not eSaithBagFilter_OptionsButton:IsShown() then eSaithBagFilter_SellButton:Show() end
+		if eVar.options.enableAutoSellGrays then 
+			SellByQuality("Poor") 
+		end
+		
+		if PanelTemplates_GetSelectedTab(eSaithBagFilter_BottomTabs) then 
+			eSaithBagFilter_SellButton:Show() 
+		end
 	elseif event == "MERCHANT_CLOSED" then
 		eSaithBagFilter_SellButton:Hide()
 	elseif event == "UPDATE_INSTANCE_INFO" then
@@ -1273,8 +1282,11 @@ local function PrepareTab()
 end
 function eSaithBagFilter_OnShow()	
 	PrepareTab()
+	StageLootTab()
+	hideOptionsFrame()	
+	
+	eSaithBagFilter_BottomTabs.selectedTab = 1
 	PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, 1)
-	StageLootTab()	
 end
 local function ResizeFrames()
 	SetLootFilterFrameSize()
@@ -1343,11 +1355,11 @@ function eSaithBagFilter_ResetButton_OnClick(self, event)
 end
 function eSaithBagFilter_BottomTabs_OnClick(self, event, ... )
 	PrepareTab()
-	tab = self:GetID()
-	
-	if tab == 1 then 
+	PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, self:GetID())
+
+	if self:GetID() == 1 then 
 		StageLootTab()
-	elseif tab == 2 then
+	else -- self:GetID() == 2 then
 		RequestRaidInfo()	
 		eSaithBagFilter_RaidFrame:Show()
 
@@ -1359,8 +1371,13 @@ function eSaithBagFilter_BottomTabs_OnClick(self, event, ... )
 			eSaithBagFilter:SetHeight(ScrollTable1:GetHeight() + 100)
 		end
 
-		UpdateSavedInstanceFrameHeight()
+		UpdateSavedInstanceFrameHeight()		
 	end
+end
+function eSaithBagFilter_BottomTabs_OnLoad(self)
+	PanelTemplates_SetNumTabs(self, 2)
+	self.selectedTab = 1;
+	PanelTemplates_UpdateTabs(self)
 end
 function eSaithBagFilter_CreateDropDownList(self)
 	CreateZoneLootDropDownList()	
