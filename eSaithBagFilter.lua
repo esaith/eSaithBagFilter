@@ -94,14 +94,26 @@ local function PrepreToolTip(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	end
 end
+local function formatLink(link)
+	local formattedLink = string.match(link, ".*Hitem:(%d+).*")
+	if formattedLink == nil or formattedLink == nil then return nil end
+
+	return string.gsub(formattedLink, ':', '')
+end
 local function AddItemToItemList(link, isBOE)	
 	if not link or type(link) ~= 'string' then 
 		return 
 	end
-	
-	if items[link] == nil then
-		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link) 
-		items[link] = {
+
+	local formattedLink = formatLink(link)
+	if formattedLink == nil then
+		return
+	end
+
+	if items[formattedLink] == nil then
+		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice = GetItemInfo(link)
+
+		items[formattedLink] = {
 			name = name,
 			quality = quality,
 			rarity = convertIntToString_ItemQuality(quality),
@@ -114,7 +126,8 @@ local function AddItemToItemList(link, isBOE)
 			texture = texture, 
 			vendorPrice = vendorPrice or 0,
 			isBOE = isBOE,
-			link = link
+			link = link,
+			formattedLink = formattedLink
 		}
 
 		if isBOE == nil then
@@ -122,45 +135,52 @@ local function AddItemToItemList(link, isBOE)
 			GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 			GameTooltip:SetHyperlink(link)    
 			GameTooltip:Show()   
-			GameTooltip:Hide() 	
-			return
+			GameTooltip:Hide()
 		end
-	end	
+	end
+
+	return formattedLink
 end
 local function ReadToolTip(self, ...)
 	local boundText = '';
 
-	if GameTooltipTextLeft1:GetText() ~= null then
+	if GameTooltipTextLeft1:GetText() ~= nil then
 		boundText = boundText .. tostring(GameTooltipTextLeft1:GetText())
-		if GameTooltipTextLeft2:GetText() ~= null then
-			boundText = boundText .. tostring(GameTooltipTextLeft2:GetText())
-			if GameTooltipTextLeft3:GetText() ~= null then
-				boundText = boundText .. tostring(GameTooltipTextLeft3:GetText())
-				if GameTooltipTextLeft4:GetText() ~= null then
-					boundText = boundText .. tostring(GameTooltipTextLeft4:GetText())
-					if GameTooltipTextLeft5:GetText() ~= null then
-						boundText = boundText .. tostring(GameTooltipTextLeft5:GetText())
-					end
-				end
-			end
-		end
+	end	
+	if GameTooltipTextLeft2:GetText() ~= nil then
+		boundText = boundText .. tostring(GameTooltipTextLeft2:GetText())
 	end
+	if GameTooltipTextLeft3:GetText() ~= nil then
+		boundText = boundText .. tostring(GameTooltipTextLeft3:GetText())
+	end
+	if GameTooltipTextLeft4:GetText() ~= nil then
+		boundText = boundText .. tostring(GameTooltipTextLeft4:GetText())
+	end
+	if GameTooltipTextLeft5:GetText() ~= nil then
+		boundText = boundText .. tostring(GameTooltipTextLeft5:GetText())
+	end			
 	
 	local link = select(2, GameTooltip:GetItem())
     
 	-- Link items can only be items. If scrolling over professions button in professions tab or similar action then link is nil    
 	if link and type(link) == 'string' then
-		print('link '..link)            
 		local isBOE = false
 		if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or 
 		not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
 			isBOE = true
 		end
 		
-		if items[link] then
-			items[link].isBOE = isBOE
-		else
+		local formattedLink = formatLink(link)
+		if formattedLink == nil then
+			return
+		end
+
+		if items[formattedLink] == nil then
 			AddItemToItemList(link, isBOE)
+		end
+
+		if isBoE then
+			items[formattedLink].isBOE = isBOE
 		end
 	end
 	return ORIGINALTOOLTIP(self, ...)
@@ -170,7 +190,7 @@ local function SetAlphaOnItems()
 	for index = 1, MAX_BAG_SLOTS do
 		itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 		if itemBtn and itemBtn:IsShown() then
-			if eVar.items.kept[itemBtn.link] == true
+			if eVar.items.kept[itemBtn.formattedLink] == true
 			or itemBtn.class == 'Trade Goods' and  eVar.options.keepTradeGoods == true
 			or itemBtn.class == 'Tradeskill' and  eVar.options.keepTradeGoods == true
 			or itemBtn.qualtiy == itemQuality.Uncommon and  eVar.options.keepUncommonBOEItems == true
@@ -185,24 +205,30 @@ local function SetAlphaOnItems()
 end
 local function AddLoot(link)
 	AddItemToItemList(link)	
-	if link then 
+
+	local formattedLink = formatLink(link)
+	
+	if formattedLink ~= nil then 
 		local zone = GetRealZoneText()
+		
 		if zone ~= nil then 
 			instanceLoot[zone] = instanceLoot[zone] or {}
-			instanceLoot[zone][link] = true
+			instanceLoot[zone][formattedLink] = true
 		end 
 		
-		instanceLoot['All'][link] = true
+		instanceLoot['All'][formattedLink] = true		
 	end
 end	
 local function Item_OnPress(self)  
-	eVar.items.kept[self.link] = not eVar.items.kept[self.link]
+	eVar.items.kept[self.formattedLink] = not eVar.items.kept[self.formattedLink]
 	SetAlphaOnItems()
 end
 local function Item_OnEnter(self, motion)
-	PrepreToolTip(self)
-	GameTooltip:SetHyperlink(self.link) 
-	GameTooltip:Show()
+	if self.link ~= nil then
+		PrepreToolTip(self)
+		GameTooltip:SetHyperlink(self.link) 
+		GameTooltip:Show()	
+	end
 end
 local function Option_OnEnter(self, motion)
     PrepreToolTip(self)
@@ -269,8 +295,8 @@ end
 local function ToggleOption(self)
 	eVar.options[self.OptionName] = self:GetChecked();
 end
-local function StageAndShowItem(link, index, linkTo, nextLine)
-	if link == nil then return end
+local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
+	if formattedLink == nil then return end
 	
 	local itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 	itemBtn:ClearAllPoints()
@@ -288,12 +314,13 @@ local function StageAndShowItem(link, index, linkTo, nextLine)
 	
 	itemBtn.texture = _G[itemBtn:GetName() .. "_Texture"] 
 	itemBtn.texture:Show()
-	itemBtn.texture:SetTexture(items[link].texture)
+	itemBtn.texture:SetTexture(items[formattedLink].texture)
 	itemBtn.texture = _G[itemBtn:GetName() .. "_TextureBorder"]
 	itemBtn.texture:Show()
-	itemBtn.texture:SetColorTexture(itemTextureColors[3 * items[link].quality + 1], itemTextureColors[3 * items[link].quality + 2], itemTextureColors[3 * items[link].quality + 3])
+	itemBtn.texture:SetColorTexture(itemTextureColors[3 * items[formattedLink].quality + 1], itemTextureColors[3 * items[formattedLink].quality + 2], itemTextureColors[3 * items[formattedLink].quality + 3])
 	itemBtn:Show()
 	itemBtn.link = link
+	itemBtn.formattedLink = formattedLink
 end
 local function GetItemsPerRow()
 	local btnWidth = _G["eSaithBagFilter_LootFrame_Item1"]:GetWidth() + 5
@@ -310,9 +337,9 @@ end
 local function FilterItemsByRarity(list, quality)
 	local i = {};
 	if list then 
-		for link, val in pairs(list) do
-			if (items[link].rarity == convertIntToString_ItemQuality(quality)) then
-				i[link] = true
+		for formattedLink, val in pairs(list) do
+			if (items[formattedLink].rarity == convertIntToString_ItemQuality(quality)) then
+				i[formattedLink] = true				
 			end
 		end
 	end
@@ -322,12 +349,12 @@ end
 local function ShowByQuality(index, anchor, itemsPerRow, qualityItems)
 	local qualityCount = 0
 	
-	for link, v in pairs(qualityItems) do			
+	for formattedLink, v in pairs(qualityItems) do			
 		if (qualityCount % itemsPerRow == 0) then
-			StageAndShowItem(link, index, anchor, true)
+			StageAndShowItem(formattedLink, index, anchor, true)
 			anchor = index
 		else 
-			StageAndShowItem(link, index, index - 1, false)
+			StageAndShowItem(formattedLink, index, index - 1, false)
 		end
 		
 		index = index + 1
@@ -360,6 +387,7 @@ local function CreateSellList(selectedZone)
 	end
 
 	local list = { }
+	
 	local loot = instanceLoot[selectedZone]
 	if loot == nil then return end
 
@@ -370,18 +398,20 @@ local function CreateSellList(selectedZone)
 		sellTypeAllowed[rarity] =  rarityCheckButton ~= nil and rarityCheckButton:IsShown() and rarityCheckButton:GetChecked()
 	end
 	
-	local texture, locked, lootable, link  -- todo, add options to sell locked boxes and lootable items
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
-			texture, _, locked, _, _, lootable, link = GetContainerItemInfo(bag, slot)
-			if texture then
-				-- If not already in the list then not an item to sell. Add item to list and move on
-				if items[link] == nil then 
-					AddItemToItemList(link) 
-				end 
-				-- Skip all items that cannot be sold to vendors. Do not sell lockboxes				
-				if loot[link] and items[link].vendorPrice > 0 and sellTypeAllowed[items[link].rarity] and not locked and not lootable then					
-					list[link] = true;
+			local texture, _, locked, _, _, lootable, link = GetContainerItemInfo(bag, slot)
+			if texture and not lootable and not locked then
+				local formattedLink = formatLink(link)
+				if formattedLink ~= nil then
+					-- If not already in the list then not an item to sell. Add item to list and move on
+					if items[formattedLink] == nil then 
+						AddItemToItemList(link)
+					end 
+
+					if loot[formattedLink] ~= nil then					
+						list[formattedLink] = true;
+					end
 				end
 			end
 		end
@@ -402,25 +432,29 @@ local function SellListedItems(list)
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, _, locked, quality, _, lootable, link, _ = GetContainerItemInfo(bag, slot)					
-			if texture then 				
-				-- If attempting to sell Junk items that have NOT been added to the items array then do so now before attempting to sell otherwise an error will be thrown 
-				-- when comparing against type.
-				if items[link] == null then 
-					AddItemToItemList(link)
-				end
+			if texture then 	
+				local formattedLink = formatLink(link);
 
-				local item = items[link]
-				if list[link] and not locked and not lootable and not (
-					eVar.items.kept[link] or 
-					(eVar.options.keepTradeGoods and item.class == 'Trade Goods') or
-					(eVar.options.keepTradeGoods and item.class == 'Tradeskill') or
-					(eVar.options.keepUncommonBOEItems and item.isBOE and item.quality == itemQuality.Uncommon) or 
-					(eVar.options.keepRareBOEItems and item.isBOE and item.quality ==  itemQuality.Rare) 
-				) then 
-					UseContainerItem(bag, slot) 	
-					total = total + 1
-				elseif locked then
-					total = total + 1
+				if formattedLink ~= nil then
+					-- If attempting to sell Junk items that have NOT been added to the items array then do so now before attempting to sell otherwise an error will be thrown 
+					-- when comparing against type.
+					if items[formattedLink] == nil then 
+						AddItemToItemList(link)
+					end
+
+					local item = items[formattedLink]
+					if list[formattedLink] and not locked and not lootable and not (
+						eVar.items.kept[formattedLink] or 
+						(eVar.options.keepTradeGoods and item.class == 'Trade Goods') or
+						(eVar.options.keepTradeGoods and item.class == 'Tradeskill') or
+						(eVar.options.keepUncommonBOEItems and item.isBOE and item.quality == itemQuality.Uncommon) or 
+						(eVar.options.keepRareBOEItems and item.isBOE and item.quality ==  itemQuality.Rare) 
+					) then 
+						UseContainerItem(bag, slot) 	
+						total = total + 1
+					elseif locked then
+						total = total + 1
+					end
 				end
 			end
 		end
@@ -435,7 +469,10 @@ local function SellByQuality(_type)
 		for slot = 1, GetContainerNumSlots(bag) do
 			local texture, _, _, quality, _, _, link = GetContainerItemInfo(bag, slot)
 			if texture and quality == itemQuality[_type] then
-				sellList[link] = true
+				local formattedLink = formatLink(link);
+				if formattedLink ~= nil then
+					sellList[formattedLink] = true
+				end
 			end
 		end
 	end
@@ -1066,18 +1103,25 @@ local function InitializeVariables()
 
 	eVar = eSaithBagFilterVar
 	
-	if eVar == nil or eVar.properties == nil then
-		eVar = {
-			properties = {
-				version = 1.37,
+	if eVar == nil then eVar = {} end
+	if eVar.properties == nil then
+		eVar.properties = {
+				version = 1.38,
 				SetSizeX = 900,
 				SetSizeY = 450
-			},
-			items = {
-				kept = {}
-			},
-			options = {},
-			options = {
+			}
+	end
+
+	if eVar.items == nil then
+		eVar.items = {}
+	end
+
+	if eVar.items.kept == nil then
+		eVar.items.kept = {}
+	end
+
+	if eVar.options == nil then
+		eVar.options = {
 				keepTradeGoods = false,
 				coordinatesEnabled = false,
 				enableAutoLoot = false,
@@ -1087,7 +1131,6 @@ local function InitializeVariables()
 				enableAutoGreedGreenItems = false,
 				enableSliders = false,
 				questComplete = false
-			}
 		}
 	end
 
@@ -1102,8 +1145,11 @@ local function InitializeVariables()
     
 	for _index, item in pairs(slots) do
 		local link = GetInventoryItemLink("player",GetInventorySlotInfo(item))
-	    if link then	            
-            eVar.items.kept[link] = true
+	    if link then
+			local formattedLink = formatLink(link)
+			if formattedLink ~= nil then	            
+            	eVar.items.kept[formattedLink] = true
+	    	end            
 	    end            
 	end
 
