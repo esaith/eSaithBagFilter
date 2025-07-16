@@ -462,12 +462,6 @@ local function SelectItemsToShow()
 	SetAlphaOnItems()
 end
 local function SellListedItems(list)
-	if selectedZone == 'All' then
-		instanceLoot = nil
-	elseif selectedZone ~= nil then
-		instanceLoot[selectedZone] = nil
-	end
-
 	if list == nil then return end
 
 	local total = 0
@@ -501,6 +495,12 @@ local function SellListedItems(list)
 				end
 			end
 		end
+	end
+
+	if selectedZone == 'All' then
+		instanceLoot = nil
+	elseif selectedZone ~= nil then
+		instanceLoot[selectedZone] = nil
 	end
 
 	UIErrorsFrame:Clear()
@@ -1429,7 +1429,7 @@ local function PrepareTab()
 end
 function eSaithBagFilter_OnShow()
 	PrepareTab()
-	StageLootTab()
+	HideItems()
 	hideOptionsFrame()
 
 	eSaithBagFilter_BottomTabs.selectedTab = 1
