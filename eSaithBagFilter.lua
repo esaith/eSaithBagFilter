@@ -194,7 +194,7 @@ local function ReadToolTip(self, ...)
 			AddItemToItemList(link, isBOE)
 		end
 
-		if isBoE then
+		if isBOE then
 			items[formattedLink].isBOE = isBOE
 		end
 	end
@@ -337,6 +337,8 @@ local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
 		end
 	end
 
+	local item = items[formattedLink]
+
 	itemBtn.texture = _G[itemBtn:GetName() .. "_Texture"]
 	itemBtn.texture:Show()
 	itemBtn.texture:SetTexture(items[formattedLink].texture)
@@ -345,7 +347,10 @@ local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
 	itemBtn.texture:SetColorTexture(itemTextureColors[3 * items[formattedLink].quality + 1],
 		itemTextureColors[3 * items[formattedLink].quality + 2], itemTextureColors[3 * items[formattedLink].quality + 3])
 	itemBtn:Show()
-	itemBtn.link = link
+
+	if item ~= nil and item.link ~= nil then
+		itemBtn.link = item.link
+	end
 	itemBtn.formattedLink = formattedLink
 end
 local function GetItemsPerRow()
@@ -458,13 +463,9 @@ local function SelectItemsToShow()
 end
 local function SellListedItems(list)
 	if selectedZone == 'All' then
-		print('Selected zone ALL has been cleared')
 		instanceLoot = nil
 	elseif selectedZone ~= nil then
-		print('Selected zone has been cleared')
 		instanceLoot[selectedZone] = nil
-	else
-		print('No zone has been cleared' .. tostring(selectedZone))
 	end
 
 	if list == nil then return end
@@ -1207,7 +1208,7 @@ local function InitializeVariables()
 			enableAutoGreedGreenItems = false,
 			enableSliders = false,
 			questComplete = false,
-			saveLootBetweenSessions = false
+			saveLootBetweenSessions = true
 		}
 	end
 

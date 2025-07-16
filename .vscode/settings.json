@@ -64,6 +64,16 @@
         "GameTooltipTextLeft4",
         "GameTooltipTextLeft5",
         "GetRealZoneText",
-        "eSaithBagFilter_Coordinates"
+        "eSaithBagFilter_Coordinates",
+        "GetNumQuestRewards",
+        "GetQuestReward",
+        "AcceptQuest",
+        "CompleteQuest",
+        "RollOnLoot",
+        "C_Map",
+        "eSaithBagFilter_OnEnter",
+        "eSaithBagFilter_OnClick",
+        "eSaithBagFilter_OnGameToolTipLeave",
+        "eSaithBagFilter_SellButton_OnEnter"
     ]
 }
