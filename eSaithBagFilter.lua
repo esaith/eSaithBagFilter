@@ -350,7 +350,7 @@ local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
 end
 local function GetItemsPerRow()
 	local btnWidth = _G["eSaithBagFilter_LootFrame_Item1"]:GetWidth() + 5
-	local result = math.floor((eSaithBagFilter_LootFrame:GetWidth() - 20) / btnWidth)
+	local result = math.floor((eSaithBagFilter_LootFrame:GetWidth() - 35) / btnWidth)
 	return result
 end
 local function HideItems()
@@ -407,7 +407,7 @@ local function ShowSelectedItems(list)
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, rareItems)
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, epicItems)
 end
-local function CreateSellList(selectedZone)
+local function CreateSellList()
 	if selectedZone == nil then
 		selectedZone = "All"
 	end
@@ -450,13 +450,23 @@ local function CreateSellList(selectedZone)
 
 	return sellList
 end
-local function SelectItemsToShow(selectedZone)
-	sellList = CreateSellList(selectedZone)
+local function SelectItemsToShow()
+	sellList = CreateSellList()
 	HideItems()
 	ShowSelectedItems(sellList)
 	SetAlphaOnItems()
 end
 local function SellListedItems(list)
+	if selectedZone == 'All' then
+		print('Selected zone ALL has been cleared')
+		instanceLoot = nil
+	elseif selectedZone ~= nil then
+		print('Selected zone has been cleared')
+		instanceLoot[selectedZone] = nil
+	else
+		print('No zone has been cleared' .. tostring(selectedZone))
+	end
+
 	if list == nil then return end
 
 	local total = 0
@@ -573,7 +583,8 @@ local function ToggleOptionsFrame(self)
 end
 
 local function eSaithBagFilter_RarityFilter_OnClick(self, button, down)
-	SelectItemsToShow(eSaithBagFilter_DropDown.Title)
+	selectedZone = eSaithBagFilter_DropDown.Title
+	SelectItemsToShow()
 end
 local function SetLootFilterFrameSize()
 	local lootFilterFrame = eSaithBagFilter_LootFilterFrame
@@ -705,6 +716,7 @@ local function CreateOptionsFrame()
 	btn.texture:Show()
 	btn:Show()
 
+
 	-- Reset button
 	btn = CreateFrame("Button", "$parent_OptionsFrame_Reset", optionsFrame, "UIPanelButtonTemplate")
 	btn:SetSize(100, 30)
@@ -712,6 +724,20 @@ local function CreateOptionsFrame()
 	btn:SetScript("OnClick", eSaithBagFilter_ResetButton_OnClick)
 	local fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
 	fontstring:SetText("|cffffffffReset Addon")
+	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
+	fontstring:Show()
+	btn:Show()
+
+	-- Clear InstanceLoot button
+	btn = CreateFrame("Button", "$parent_OptionsFrame_InstanceLoot", optionsFrame, "UIPanelButtonTemplate")
+	btn:SetSize(150, 30)
+	btn:SetPoint("BOTTOM", "$parent_OptionsFrame_Reset", "TOP", 25, 10)
+	btn:SetScript("OnClick", eSaithBagFilter_ClearInstanceLoot_OnClick)
+	btn.HoverText =
+	"After successfully selling everything it's safe to clear this dungeon history.\nThis will NOT affect your kept item list.\nThis only resets the dungeon drop down selection"
+	btn:SetScript("OnEnter", Option_OnEnter)
+	local fontstring = btn:CreateFontString("$parentFontString", "ARTWORK", "GameFontNormal")
+	fontstring:SetText("|cffffffffClear Dungeon list")
 	fontstring:SetPoint("CENTER", "$parent", "CENTER", 0, 0)
 	fontstring:Show()
 	btn:Show()
@@ -786,6 +812,13 @@ local function CreateOptionsFrame()
 		"Quickly obtains and complete quests.\nQuest rewards are chosen at random.",
 		"questComplete",
 		"keepTradeGoods"
+	)
+
+	CreateOption(
+		"Save Loot Between Sessions",
+		"This feature preserves your loot drop-down selection and item information from your previous session.\nThis is useful in case you forget to sell your items before logging out.",
+		"saveLootBetweenSessions",
+		"questComplete"
 	)
 end
 local function CreateCoordinates()
@@ -1173,8 +1206,13 @@ local function InitializeVariables()
 			keepRareBOEItems = false,
 			enableAutoGreedGreenItems = false,
 			enableSliders = false,
-			questComplete = false
+			questComplete = false,
+			saveLootBetweenSessions = false
 		}
+	end
+
+	if eVar.options.saveLootBetweenSessions then
+		instanceLoot = eSaithBagFilterInstanceLoot
 	end
 
 	sellList = {}
@@ -1201,7 +1239,7 @@ local function InitializeVariables()
 	eSaithBagFilterVar = eVar
 	eSaithBagFilterInstances = savedInstances
 end
-local function ZoneMenuItemFunction(self, selectedZone)
+local function ZoneMenuItemFunction(self, _selectedZone)
 	for index, _type in ipairs(ItemQualityString) do
 		if index - 1 < itemQuality.Legendary then
 			local btn = _G["eSaithBagFilter_LootFilterFrame_" .. _type .. "_CheckButton"]
@@ -1209,8 +1247,9 @@ local function ZoneMenuItemFunction(self, selectedZone)
 		end
 	end
 
-	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, selectedZone);
-	SelectItemsToShow(selectedZone)
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, _selectedZone);
+	selectedZone = _selectedZone
+	SelectItemsToShow()
 end
 local function CreateZoneLootDropDownList()
 	if instanceLoot == nil then instanceLoot = {} end
@@ -1309,6 +1348,7 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	elseif event == "PLAYER_LOGOUT" then
 		eSaithBagFilterVar = eVar
 		eSaithBagFilterInstances = savedInstances
+		eSaithBagFilterInstanceLoot = instanceLoot
 	elseif event == "START_LOOT_ROLL" then
 		StartLootRollID = arg1
 	elseif event == "LOOT_ITEM_AVAILABLE" and StartLootRollID ~= nil then
@@ -1356,7 +1396,8 @@ end
 
 local function StageLootTab()
 	eSaithBagFilter_LootFilterFrame:Show()
-	SelectItemsToShow(eSaithBagFilter_DropDown.Title)
+	selectedZone = eSaithBagFilter_DropDown.Title
+	SelectItemsToShow()
 	if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
 	eSaithBagFilter_OptionsButton:Show()
 	eSaithBagFilter_DropDown:Show()
@@ -1398,7 +1439,9 @@ local function ResizeFrames()
 	SetLootFilterFrameSize()
 	SetLootFrameSize()
 	SetOptionsFrameSize()
-	SelectItemsToShow(eSaithBagFilter_DropDown.Title)
+
+	selectedZone = eSaithBagFilter_DropDown.Title
+	SelectItemsToShow()
 	UpdateSavedInstanceFrameHeight()
 end
 function eSaithBagFilter_OnMouseDown(self, event, ...)
@@ -1464,6 +1507,11 @@ function eSaithBagFilter_ResetButton_OnClick(self, event)
 	savedInstances = {}
 	instanceLoot = {}
 	InitializeVariables()
+end
+
+function eSaithBagFilter_ClearInstanceLoot_OnClick(self, event)
+	eSaithBagFilterInstanceLoot = {}
+	instanceLoot = {}
 end
 
 function eSaithBagFilter_BottomTabs_OnClick(self, event, ...)

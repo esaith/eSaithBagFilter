@@ -3,7 +3,7 @@
 ## Version: 1.38
 ## Notes: Allows mass selling of bag items to vendor by rarity, instance, and zones.
 ## Author: eSaith
-## SavedVariables: eSaithBagFilterInstances, eSaithBagFilterVar
+## SavedVariables: eSaithBagFilterInstances, eSaithBagFilterVar, eSaithBagFilterInstanceLoot
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0.lua
