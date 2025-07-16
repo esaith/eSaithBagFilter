@@ -1,6 +1,6 @@
 ﻿## Interface: 110107
 ## Title: eSaith Bag Filter
-## Version: 1.38
+## Version: 1.39
 ## Notes: Allows mass selling of bag items to vendor by rarity, instance, and zones.
 ## Author: eSaith
 ## SavedVariables: eSaithBagFilterInstances, eSaithBagFilterVar, eSaithBagFilterInstanceLoot
