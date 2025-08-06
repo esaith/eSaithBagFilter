@@ -229,6 +229,10 @@ local function AddLoot(link)
 			instanceLoot = {}
 		end
 
+		if instanceLoot['All'] == nil then
+			instanceLoot['All'] = {}
+		end
+
 		if zone ~= nil then
 			if instanceLoot[zone] == nil then
 				instanceLoot[zone] = {}
