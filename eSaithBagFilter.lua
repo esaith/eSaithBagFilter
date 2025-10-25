@@ -5,10 +5,10 @@ if not LibStub then
 	return
 end
 
-local MAX_ITEM_COUNT = -1
 local MAX_BAG_SLOTS = 175
 local eVar               -- Short for eSaithBagFilter
 local savedInstances     -- short for eSaithBagFilterInstances. For saving instances on all characters on all realms
+
 local instanceLoot = nil -- short for eSaithBagFilterInstanceLoot. Loot from each zone, dungeon, raid, etc.
 -- eVar.instance[instanceName][item]
 local StartLootRollID = nil
@@ -16,9 +16,10 @@ local items = {} -- list of all items that player has ever dealt with regardless
 local isSelling = false
 local SavedInstancesTable
 local InstanceTable
+local dropDownMenuButtons
 
 local itemTextureColors = {
-	.6, .6, .6, --Gray
+	.6, .6, .6, --GrayW
 	1, 1, 1,    --White
 	0, 1, 0,    --Green
 	.2, .2, 1,  --Blue
@@ -96,15 +97,15 @@ local function PrepreToolTip(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	end
 end
-local function formatLink(link)
+local function getItemIdFromLink(link)
 	if link == nil then
 		return nil
 	end
 
-	local formattedLink = string.match(link, ".*Hitem:(%d+).*")
-	if formattedLink == nil or formattedLink == nil then return nil end
+	local itemId = string.match(link, ".*Hitem:(%d+).*")
+	if itemId == nil then return nil end
 
-	local result = string.gsub(formattedLink, ':', '')
+	local result = string.gsub(itemId, ':', '')
 
 	if result == nil then
 		return nil
@@ -112,25 +113,26 @@ local function formatLink(link)
 		return tonumber(result)
 	end
 end
-local function AddItemToItemList(link, isBOE)
+local function AddItemToItemList(link)
 	if not link or type(link) ~= 'string' then
 		return
 	end
 
-	local formattedLink = formatLink(link)
-	if formattedLink == nil then
+	local itemId = getItemIdFromLink(link)
+
+
+	if itemId == nil then
 		return
 	end
 
-	if items[formattedLink] == nil then
-		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice =
-			GetItemInfo(link)
+	if items[itemId] == nil then
+		local name, _, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, vendorPrice, classID,
+		subclassID, bindType = C_Item.GetItemInfo(link)
 
-		items[formattedLink] = {
+		items[itemId] = {
 			name = name,
 			quality = quality,
 			rarity = convertIntToString_ItemQuality(quality),
-			iLevel,
 			iLevel,
 			reqLevel = reqLevel,
 			class = class,
@@ -139,63 +141,27 @@ local function AddItemToItemList(link, isBOE)
 			equipSlot = equipSlot,
 			texture = texture,
 			vendorPrice = vendorPrice or 0,
-			isBOE = isBOE,
+			isBOE = bindType == 0 or bindType == 2, -- https://warcraft.wiki.gg/wiki/Enum.ItemBind
 			link = link,
-			formattedLink = formattedLink
+			itemId = itemId
 		}
-
-		if isBOE == nil then
-			-- item has not been seen before. Show the tooltip to get isBOE value prior to adding to items list
-			GameTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
-			GameTooltip:SetHyperlink(link)
-			GameTooltip:Show()
-			GameTooltip:Hide()
-		end
 	end
 
-	return formattedLink
+	return itemId
 end
 local function ReadToolTip(self, ...)
-	local boundText = '';
-
-	if GameTooltipTextLeft1:GetText() ~= nil then
-		boundText = boundText .. tostring(GameTooltipTextLeft1:GetText())
-	end
-	if GameTooltipTextLeft2:GetText() ~= nil then
-		boundText = boundText .. tostring(GameTooltipTextLeft2:GetText())
-	end
-	if GameTooltipTextLeft3:GetText() ~= nil then
-		boundText = boundText .. tostring(GameTooltipTextLeft3:GetText())
-	end
-	if GameTooltipTextLeft4:GetText() ~= nil then
-		boundText = boundText .. tostring(GameTooltipTextLeft4:GetText())
-	end
-	if GameTooltipTextLeft5:GetText() ~= nil then
-		boundText = boundText .. tostring(GameTooltipTextLeft5:GetText())
-	end
-
 	local link = select(2, GameTooltip:GetItem())
 
 	-- Link items can only be items. If scrolling over professions button in professions tab or similar action then link is nil
 	if link and type(link) == 'string' then
-		local isBOE = false
+		local itemId = getItemIdFromLink(link)
 
-		if boundText:find(".* when equip.*") or boundText:find(".*on equip*") or boundText:find(".* account.*") or
-			not (boundText:find(".* picked.*") or boundText:find(".* pick up.*") or boundText:find(".*Soulbound.*")) then
-			isBOE = true
-		end
-
-		local formattedLink = formatLink(link)
-		if formattedLink == nil then
+		if itemId == nil then
 			return
 		end
 
-		if items[formattedLink] == nil then
-			AddItemToItemList(link, isBOE)
-		end
-
-		if isBOE then
-			items[formattedLink].isBOE = isBOE
+		if items[itemId] == nil then
+			AddItemToItemList(link)
 		end
 	end
 end
@@ -204,11 +170,11 @@ local function SetAlphaOnItems()
 	for index = 1, MAX_BAG_SLOTS do
 		itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 		if itemBtn and itemBtn:IsShown() then
-			if eVar.items.kept[itemBtn.formattedLink] == true
-				or itemBtn.class == 'Trade Goods' and eVar.options.keepTradeGoods == true
-				or itemBtn.class == 'Tradeskill' and eVar.options.keepTradeGoods == true
-				or itemBtn.qualtiy == itemQuality.Uncommon and eVar.options.keepUncommonBOEItems == true
-				or itemBtn.qualtiy == itemQuality.Rare and eVar.options.keepRareBOEItems == true
+			if eVar.items.kept[itemBtn.itemId]
+				or itemBtn.class == 'Trade Goods' and eVar.options.keepTradeGoods
+				or itemBtn.class == 'Tradeskill' and eVar.options.keepTradeGoods
+				or itemBtn.quality == itemQuality.Uncommon and eVar.options.keepUncommonBOEItems and itemBtn.isBOE
+				or itemBtn.quality == itemQuality.Rare and eVar.options.keepRareBOEItems and itemBtn.isBOE
 			then
 				itemBtn:SetAlpha(.4)
 			else
@@ -217,35 +183,64 @@ local function SetAlphaOnItems()
 		end
 	end
 end
+local function getInstanceLootCount(instance)
+	local count = 0
+
+	for k, v in pairs(instance) do
+		count = count + 1
+	end
+
+	return count
+end
 local function AddLoot(link)
 	AddItemToItemList(link)
 
-	local formattedLink = formatLink(link)
+	local itemId = getItemIdFromLink(link)
 
-	if formattedLink ~= nil then
+	if instanceLoot == nil then
+		instanceLoot = {}
+	end
+
+	if instanceLoot['All'] == nil then
+		instanceLoot['All'] = {}
+	end
+
+	if itemId ~= nil then
 		local zone = GetRealZoneText()
-
-		if instanceLoot == nil then
-			instanceLoot = {}
-		end
-
-		if instanceLoot['All'] == nil then
-			instanceLoot['All'] = {}
-		end
 
 		if zone ~= nil then
 			if instanceLoot[zone] == nil then
 				instanceLoot[zone] = {}
 			end
 
-			instanceLoot[zone][formattedLink] = true
+			instanceLoot[zone][itemId] = true
 		end
 
-		instanceLoot['All'][formattedLink] = true
+		instanceLoot['All'][itemId] = true
 	end
 end
+
+local function CleanUpInstanceLootTable()
+	if instanceLoot == nil then
+		instanceLoot = {}
+	end
+
+	for k, v in pairs(instanceLoot) do
+		local count = getInstanceLootCount(instanceLoot[k])
+
+		if count == 0 then
+			if k == 'All' then
+				instanceLoot = {}
+				break
+			end
+
+			instanceLoot[k] = nil
+		end
+	end
+end
+
 local function Item_OnPress(self)
-	eVar.items.kept[self.formattedLink] = not eVar.items.kept[self.formattedLink]
+	eVar.items.kept[self.itemId] = not eVar.items.kept[self.itemId]
 	SetAlphaOnItems()
 end
 local function Item_OnEnter(self, motion)
@@ -268,17 +263,6 @@ end
 
 function eSaithBagFilter_OnGameToolTipLeave(self, motion)
 	GameTooltip:Hide()
-end
-
-function eSaithBagFilter_OnClick(self, event, ...)
-	if eSaithBagFilter:IsShown() then
-		eSaithBagFilter:Hide()
-	else
-		eSaithBagFilter:Show()
-		if PanelTemplates_GetSelectedTab(eSaithBagFilter_BottomTabs) == 1 then
-			eSaithBagFilter_SellButton:Show()
-		end
-	end
 end
 
 function eSaithBagFilter_OnEnter(self, motion)
@@ -324,8 +308,8 @@ end
 local function ToggleOption(self)
 	eVar.options[self.OptionName] = self:GetChecked();
 end
-local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
-	if formattedLink == nil then return end
+local function StageAndShowItem(itemId, index, linkTo, nextLine)
+	if itemId == nil then return end
 
 	local itemBtn = _G["eSaithBagFilter_LootFrame_Item" .. index]
 	itemBtn:ClearAllPoints()
@@ -341,21 +325,24 @@ local function StageAndShowItem(formattedLink, index, linkTo, nextLine)
 		end
 	end
 
-	local item = items[formattedLink]
+	local item = items[itemId]
 
 	itemBtn.texture = _G[itemBtn:GetName() .. "_Texture"]
 	itemBtn.texture:Show()
-	itemBtn.texture:SetTexture(items[formattedLink].texture)
+	itemBtn.texture:SetTexture(items[itemId].texture)
 	itemBtn.texture = _G[itemBtn:GetName() .. "_TextureBorder"]
 	itemBtn.texture:Show()
-	itemBtn.texture:SetColorTexture(itemTextureColors[3 * items[formattedLink].quality + 1],
-		itemTextureColors[3 * items[formattedLink].quality + 2], itemTextureColors[3 * items[formattedLink].quality + 3])
+	itemBtn.quality = items[itemId].quality
+	itemBtn.texture:SetColorTexture(itemTextureColors[3 * items[itemId].quality + 1],
+		itemTextureColors[3 * items[itemId].quality + 2], itemTextureColors[3 * items[itemId].quality + 3])
 	itemBtn:Show()
 
+	itemBtn.isBOE = item.isBOE
 	if item ~= nil and item.link ~= nil then
 		itemBtn.link = item.link
 	end
-	itemBtn.formattedLink = formattedLink
+
+	itemBtn.itemId = itemId
 end
 local function GetItemsPerRow()
 	local btnWidth = _G["eSaithBagFilter_LootFrame_Item1"]:GetWidth() + 5
@@ -372,9 +359,9 @@ end
 local function FilterItemsByRarity(list, quality)
 	local i = {};
 	if list then
-		for formattedLink, val in pairs(list) do
-			if (items[formattedLink].rarity == convertIntToString_ItemQuality(quality)) then
-				i[formattedLink] = true
+		for itemId, val in pairs(list) do
+			if (items[itemId].rarity == convertIntToString_ItemQuality(quality)) then
+				i[itemId] = true
 			end
 		end
 	end
@@ -384,12 +371,12 @@ end
 local function ShowByQuality(index, anchor, itemsPerRow, qualityItems)
 	local qualityCount = 0
 
-	for formattedLink, v in pairs(qualityItems) do
+	for itemId, v in pairs(qualityItems) do
 		if (qualityCount % itemsPerRow == 0) then
-			StageAndShowItem(formattedLink, index, anchor, true)
+			StageAndShowItem(itemId, index, anchor, true)
 			anchor = index
 		else
-			StageAndShowItem(formattedLink, index, index - 1, false)
+			StageAndShowItem(itemId, index, index - 1, false)
 		end
 
 		index = index + 1
@@ -398,17 +385,19 @@ local function ShowByQuality(index, anchor, itemsPerRow, qualityItems)
 
 	return index, anchor
 end
-local function ShowSelectedItems(list)
+local function ShowSelectedItems()
+	HideItems()
+
 	local anchor = 1
 	local index = 1
 
 	local itemsPerRow = GetItemsPerRow()
 
-	local poorItems = FilterItemsByRarity(list, itemQuality.Poor);
-	local commonItems = FilterItemsByRarity(list, itemQuality.Common);
-	local uncommonItems = FilterItemsByRarity(list, itemQuality.Uncommon);
-	local rareItems = FilterItemsByRarity(list, itemQuality.Rare);
-	local epicItems = FilterItemsByRarity(list, itemQuality.Epic);
+	local poorItems = FilterItemsByRarity(sellList, itemQuality.Poor);
+	local commonItems = FilterItemsByRarity(sellList, itemQuality.Common);
+	local uncommonItems = FilterItemsByRarity(sellList, itemQuality.Uncommon);
+	local rareItems = FilterItemsByRarity(sellList, itemQuality.Rare);
+	local epicItems = FilterItemsByRarity(sellList, itemQuality.Epic);
 
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, poorItems)
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, commonItems)
@@ -416,12 +405,22 @@ local function ShowSelectedItems(list)
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, rareItems)
 	index, anchor = ShowByQuality(index, anchor, itemsPerRow, epicItems)
 end
+
+local function CanSellItem(itemInfoTable, instanceLootTable)
+	local itemId = tonumber(itemInfoTable.itemID)
+
+	return itemId ~= nil and
+		not itemInfoTable.hasLoot and
+		not itemInfoTable.isLocked and
+		instanceLootTable[itemId] ~= nil
+end
+
 local function CreateSellList()
 	if selectedZone == nil then
 		selectedZone = "All"
 	end
 
-	local sellList = {}
+	sellList = {}
 
 	if instanceLoot == nil then
 		instanceLoot = {}
@@ -444,68 +443,111 @@ local function CreateSellList()
 		for slot = 1, C_Container.GetContainerNumSlots(bag) do
 			local itemInfoTable = C_Container.GetContainerItemInfo(bag, slot)
 
-			if itemInfoTable ~= nil and not itemInfoTable.hasLoot and not itemInfoTable.isLocked then
-				if items[itemInfoTable.itemID] == nil then
-					AddItemToItemList(itemInfoTable.hyperlink)
-				end
+			if itemInfoTable ~= nil then
+				local itemId = tonumber(itemInfoTable.itemID)
 
-				local quality = convertIntToString_ItemQuality(itemInfoTable.quality)
-				if loot[tonumber(itemInfoTable.itemID)] ~= nil and not itemInfoTable.hasNoValue and sellTypeAllowed[quality] then
-					sellList[itemInfoTable.itemID] = true;
+				if CanSellItem(itemInfoTable, loot) and itemId ~= nil then
+					if items[itemId] == nil then
+						AddItemToItemList(itemInfoTable.hyperlink)
+					end
+
+					local quality = convertIntToString_ItemQuality(itemInfoTable.quality)
+
+					if loot[itemId] ~= nil
+						and not itemInfoTable.hasNoValue
+						and sellTypeAllowed[quality]
+					then
+						sellList[itemId] = true;
+					end
 				end
 			end
 		end
 	end
-
-	return sellList
 end
 local function SelectItemsToShow()
-	sellList = CreateSellList()
-	HideItems()
-	ShowSelectedItems(sellList)
+	CreateSellList()
+	ShowSelectedItems()
 	SetAlphaOnItems()
 end
-local function SellListedItems(list)
-	if list == nil then return end
+local function SellListedItems()
+	if sellList == nil then return end
+
+	if instanceLoot == nil then
+		instanceLoot = {}
+	end
+
+	if instanceLoot.All == nil then
+		instanceLoot.All = {}
+	end
 
 	local total = 0
+	local itemsCompared = {}
+
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, C_Container.GetContainerNumSlots(bag) do
 			local itemInfoTable = C_Container.GetContainerItemInfo(bag, slot)
 
 			if itemInfoTable ~= nil then
-				local formattedLink = formatLink(itemInfoTable.hyperlink);
+				local itemId = tonumber(itemInfoTable.itemID)
 
-				if formattedLink ~= nil then
-					-- If attempting to sell Junk items that have NOT been added to the items array then do so now before attempting to sell otherwise an error will be thrown
+				if itemId ~= nil then
+					-- If attempting to sell Junk items that have NOT been added to the items array then
+					-- do so now before attempting to sell otherwise an error will be thrown
 					-- when comparing against type.
-					if items[formattedLink] == nil then
+
+					itemsCompared[itemId] = true
+
+					if items[itemId] == nil then
 						AddItemToItemList(itemInfoTable.hyperlink)
 					end
 
-					local item = items[formattedLink]
-					if list[formattedLink] and not itemInfoTable.isLocked and not itemInfoTable.hasLoot and not (
-							eVar.items.kept[formattedLink] or
+					local item = items[itemId]
+
+					if itemInfoTable.hasLoot or itemInfoTable.hasNoValue then
+						for k, v in pairs(instanceLoot) do
+							if instanceLoot[k][itemId] ~= nil then
+								instanceLoot[k][itemId] = nil
+							end
+						end
+					end
+
+					if sellList[itemId] and not itemInfoTable.isLocked and not itemInfoTable.hasLoot and not (
+							eVar.items.kept[itemId] or
 							(eVar.options.keepTradeGoods and item.class == 'Trade Goods') or
 							(eVar.options.keepTradeGoods and item.class == 'Tradeskill') or
-							(eVar.options.keepUncommonBOEItems and item.isBOE and item.quality == itemQuality.Uncommon) or
-							(eVar.options.keepRareBOEItems and item.isBOE and item.quality == itemQuality.Rare)
+							(eVar.options.keepUncommonBOEItems and item.isBOE and itemInfoTable.quality == itemQuality.Uncommon) or
+							(eVar.options.keepRareBOEItems and item.isBOE and itemInfoTable.quality == itemQuality.Rare)
 						) then
 						C_Container.UseContainerItem(bag, slot)
+
+						for k, v in pairs(instanceLoot) do
+							if instanceLoot[k][itemId] ~= nil then
+								instanceLoot[k][itemId] = nil
+							end
+						end
+
 						total = total + 1
 					elseif itemInfoTable.isLocked then
 						total = total + 1
+						instanceLoot.All[itemId] = nil
 					end
 				end
 			end
 		end
 	end
 
-	if selectedZone == 'All' then
-		instanceLoot = nil
-	elseif selectedZone ~= nil then
-		instanceLoot[selectedZone] = nil
+
+	for k, v in pairs(instanceLoot) do
+		for itemId, val in pairs(v) do
+			-- If item was no longer found in the bag, remove it from instance loot
+			if itemsCompared[itemId] == nil then
+				v[itemId] = nil
+			end
+		end
 	end
+
+	CleanUpInstanceLootTable()
+	C_Timer.NewTimer(0.3, SelectItemsToShow)
 
 	UIErrorsFrame:Clear()
 	return total
@@ -517,16 +559,17 @@ local function SellByQuality(_type)
 			local itemInfoTable = C_Container.GetContainerItemInfo(bag, slot)
 
 			if itemInfoTable ~= nil and itemInfoTable.quality == itemQuality[_type] then
-				local formattedLink = formatLink(itemInfoTable.hyperlink);
-				if formattedLink ~= nil then
-					sellList[formattedLink] = true
+				local itemId = tonumber(itemInfoTable.itemID)
+
+				if itemId ~= nil then
+					sellList[itemId] = true
 				end
 			end
 		end
 	end
 
 	isSelling = true
-	SellListedItems(sellList)
+	SellListedItems()
 end
 local function LootContainers()
 	eVar.options.enableAutoLoot = true
@@ -575,6 +618,8 @@ local function hideOptionsFrame()
 	if MerchantFrame:IsShown() then eSaithBagFilter_SellButton:Show() end
 	if eSaithBagFilter_LootFilterFrame then eSaithBagFilter_LootFilterFrame:Show() end
 	if eSaithBagFilter_OptionsFrame then eSaithBagFilter_OptionsFrame:Hide() end
+	if eSaithBagFilter_OptionsButton then eSaithBagFilter_OptionsButton:Show() end
+	SetAlphaOnItems()
 end
 
 local function ToggleOptionsFrame(self)
@@ -825,6 +870,13 @@ local function CreateOptionsFrame()
 		"saveLootBetweenSessions",
 		"questComplete"
 	)
+
+	CreateOption(
+		"Quick loot",
+		"Improve loot speed",
+		"quickLoot",
+		"saveLootBetweenSessions"
+	)
 end
 local function CreateCoordinates()
 	-- Coordinates
@@ -1041,7 +1093,7 @@ local function CreateCharacterListFrame()
 	sliderFrame:Show()
 end
 local function UpdateTable()
-	local rowValue, row, rows, rowColor, cols, t, addText, players, instances
+	local row, rows, rowColor, cols, t, addText, players, instances
 
 	if savedInstances.players ~= nil and savedInstances.instances ~= nil then
 		rowColor = { r = 1, g = 1, b = 1, a = 1 }
@@ -1175,6 +1227,8 @@ local function InitializeVariables()
 	instanceLoot = {}
 	instanceLoot["All"] = {}
 	if items == nil then items = {} end
+	CleanUpInstanceLootTable()
+
 	savedInstances = eSaithBagFilterInstances
 
 	if savedInstances == nil then
@@ -1212,7 +1266,8 @@ local function InitializeVariables()
 			enableAutoGreedGreenItems = false,
 			enableSliders = false,
 			questComplete = false,
-			saveLootBetweenSessions = true
+			saveLootBetweenSessions = true,
+			quickLoot = true
 		}
 	end
 
@@ -1234,9 +1289,9 @@ local function InitializeVariables()
 	for _index, item in pairs(slots) do
 		local link = GetInventoryItemLink("player", GetInventorySlotInfo(item))
 		if link then
-			local formattedLink = formatLink(link)
-			if formattedLink ~= nil then
-				eVar.items.kept[formattedLink] = true
+			local itemId = getItemIdFromLink(link)
+			if itemId ~= nil then
+				eVar.items.kept[itemId] = true
 			end
 		end
 	end
@@ -1256,20 +1311,7 @@ local function ZoneMenuItemFunction(self, _selectedZone)
 	selectedZone = _selectedZone
 	SelectItemsToShow()
 end
-local function CreateZoneLootDropDownList()
-	if instanceLoot == nil then instanceLoot = {} end
-	if instanceLoot['All'] == nil then instanceLoot['All'] = {} end
 
-	for instanceName, k in pairs(instanceLoot) do
-		if k ~= nil then
-			local info = UIDropDownMenu_CreateInfo()
-			info.text, info.checked = tostring(instanceName), false
-			info.arg1 = tostring(instanceName)
-			info.func = ZoneMenuItemFunction
-			UIDropDownMenu_AddButton(info)
-		end
-	end
-end
 local function ParseRaidInfo()
 	-- Don't save any character lower than level 60. No need to fill a list of level 1's that haven't run ICC
 	if UnitLevel("player") < 60 then return end
@@ -1302,34 +1344,30 @@ local function ParseRaidInfo()
 	UpdateTable()
 end
 local function AddToolTipHandler()
-	TooltipDataProcessor.AddTooltipPostCall(TooltipDataProcessor.CallType.SetItem, ReadToolTip)
+	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, ReadToolTip)
 end
 local function SetAddonDimensions()
 	eSaithBagFilter:SetResizable(true);
 	eSaithBagFilter:IsClampedToScreen(true)
 end
+local function LootItems()
+	if eVar.options.quickLoot then
+		for i = 1, GetNumLootItems() + 1, 1 do
+			LootSlot(i)
+		end
+	end
+end
 
-local allAddonsLoaded = false
 function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	if event == "ADDON_LOADED" and arg1 == "eSaithBagFilter" then
-		if allAddonsLoaded then
-			self:UnregisterEvent("ADDON_LOADED")
-		end
-
-		allAddonsLoaded = true
 		InitializeVariables()
 		CreateWidgets()
 
 		SetAddonDimensions()
 		tinsert(UISpecialFrames, eSaithBagFilter:GetName())
-	elseif event == "ADDON_LOADED" and arg1 == "Blizzard_TooltipDataProcessor" then
+		self:UnregisterEvent("ADDON_LOADED")
+	elseif event == "PLAYER_LOGIN" then
 		AddToolTipHandler()
-
-		if allAddonsLoaded then
-			self:UnregisterEvent("ADDON_LOADED")
-		end
-
-		allAddonsLoaded = true
 	elseif event == "CHAT_MSG_LOOT" and arg1 ~= nil then
 		if string.find(arg1, "You receive item: ") ~= nil or
 			string.find(arg1, "You receive loot: ") ~= nil or
@@ -1341,6 +1379,8 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 	elseif event == "MERCHANT_SHOW" then
 		if eVar.options.enableAutoSellGrays then
 			SellByQuality("Poor")
+			HideItems()
+			sellList = {}
 		end
 
 		if PanelTemplates_GetSelectedTab(eSaithBagFilter_BottomTabs) then
@@ -1358,7 +1398,7 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 		StartLootRollID = arg1
 	elseif event == "LOOT_ITEM_AVAILABLE" and StartLootRollID ~= nil then
 		local item = arg1
-		local _, _, quality = GetItemInfo(item)
+		local _, _, quality = C_Item.GetItemInfo(item)
 		if quality + 1 == 3 and eVar.options.enableAutoGreedGreenItems then -- Quality 3 is Uncommon (green items)
 			if GroupLootContainer:IsShown() then
 				RollOnLoot(StartLootRollID, 2);
@@ -1380,12 +1420,15 @@ function eSaithBagFilter_OnEvent(self, event, arg1, arg2)
 				GetQuestReward(reward)
 			end
 		end
+	elseif event == "LOOT_READY" then
+		C_Timer.NewTimer(0.3, LootItems)
 	end
 end
 
 function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterForDrag("LeftButton", "RightButton")
 	self:RegisterEvent("ADDON_LOADED")
+	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("CHAT_MSG_LOOT")
 	self:RegisterEvent("MERCHANT_SHOW")
 	self:RegisterEvent("MERCHANT_CLOSED")
@@ -1397,6 +1440,7 @@ function eSaithBagFilter_OnLoad(self, event, ...)
 	self:RegisterEvent("QUEST_ACCEPTED")
 	self:RegisterEvent("QUEST_PROGRESS")
 	self:RegisterEvent("QUEST_COMPLETE")
+	self:RegisterEvent("LOOT_READY")
 end
 
 local function StageLootTab()
@@ -1432,12 +1476,19 @@ local function PrepareTab()
 	eSaithBagFilter_OptionsButton:Hide()
 end
 function eSaithBagFilter_OnShow()
+	eSaithBagFilter_SellButton:Show()
+
 	PrepareTab()
 	HideItems()
 	hideOptionsFrame()
 
 	eSaithBagFilter_BottomTabs.selectedTab = 1
 	PanelTemplates_SetTab(eSaithBagFilter_BottomTabs, 1)
+
+	selectedZone = 'All'
+	dropDownMenuButtons[selectedZone].func()
+	UIDropDownMenu_SetSelectedName(eSaithBagFilter_DropDown, selectedZone)
+	UIDropDownMenu_SetText(eSaithBagFilter_DropDown, "All");
 end
 
 local function ResizeFrames()
@@ -1474,7 +1525,7 @@ end
 
 function eSaithBagFilter_SellButton_OnClick(self, event, ...)
 	isSelling = true;
-	SellListedItems(sellList)
+	SellListedItems()
 end
 
 function eSaithButton_MerchantFrame_OnUpdate(self, elapsed)
@@ -1484,7 +1535,7 @@ function eSaithButton_MerchantFrame_OnUpdate(self, elapsed)
 	if isSelling and self.TimeSinceLastUpdate > .5 then
 		self.TimeSinceLastUpdate = 0
 
-		if SellListedItems(sellList) == 0 then
+		if SellListedItems() == 0 then
 			isSelling = false
 			sellList = {}
 			HideItems()
@@ -1545,6 +1596,43 @@ function eSaithBagFilter_BottomTabs_OnLoad(self)
 	PanelTemplates_SetNumTabs(self, 2)
 	self.selectedTab = 1;
 	PanelTemplates_UpdateTabs(self)
+end
+
+function eSaithBagFilter_OnClick(self, event, ...)
+	if eSaithBagFilter:IsShown() then
+		eSaithBagFilter:Hide()
+	else
+		eSaithBagFilter:Show()
+		if PanelTemplates_GetSelectedTab(eSaithBagFilter_BottomTabs) == 1 then
+			eSaithBagFilter_OnShow()
+		end
+	end
+end
+
+local function CreateZoneLootDropDownList()
+	if instanceLoot == nil then instanceLoot = {} end
+	if instanceLoot['All'] == nil then instanceLoot['All'] = {} end
+
+	dropDownMenuButtons = {}
+	local instantNames = {}
+
+	for instanceName, k in pairs(instanceLoot) do
+		table.insert(instantNames, instanceName)
+	end
+
+	table.sort(instantNames)
+
+	for index, instanceName in ipairs(instantNames) do
+		if instanceLoot[instanceName] ~= nil then
+			local info = UIDropDownMenu_CreateInfo()
+			info.text = tostring(instanceName)
+			info.checked = false
+			info.arg1 = tostring(instanceName)
+			info.func = ZoneMenuItemFunction
+			dropDownMenuButtons[instanceName] = info;
+			UIDropDownMenu_AddButton(info)
+		end
+	end
 end
 
 function eSaithBagFilter_CreateDropDownList(self)

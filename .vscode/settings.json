@@ -74,6 +74,22 @@
         "eSaithBagFilter_OnEnter",
         "eSaithBagFilter_OnClick",
         "eSaithBagFilter_OnGameToolTipLeave",
-        "eSaithBagFilter_SellButton_OnEnter"
+        "eSaithBagFilter_SellButton_OnEnter",
+        "C_Item",
+        "Enum",
+        "GroupLootContainer",
+        "eSaithBagFilterInstanceLoot",
+        "PanelTemplates_UpdateTabs",
+        "eSaithBagFilter_CreateDropDownList",
+        "eSaithBagFilter_BottomTabs_OnLoad",
+        "eSaithBagFilter_Coordinates_FontString",
+        "eSaithBagFilter_ResetButton_OnClick",
+        "eSaithBagFilterItems",
+        "eSaithBagFilter_ClearInstanceLoot_OnClick",
+        "eSaithBagFilter_BottomTabs_OnClick",
+        "C_Timer",
+        "GetNumLootItems",
+        "LootSlot",
+        "UIDropDownMenu_SetSelectedName"
     ]
 }
