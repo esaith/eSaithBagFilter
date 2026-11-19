@@ -1,21 +1,28 @@
 ## Interface: 120105
 ## Title: eSaith Bag Filter
-## Notes: Sell your loot by zone and quality, keep what matters, and track raid & dungeon lockouts across characters.
+## Notes: Sell your loot by zone and quality, keep what matters, and track lockouts, keystones and the Great Vault across characters.
 ## Author: eSaith
-## Version: 2.0.0
+## Version: 2.2.0
 ## Category: Inventory
 ## IconTexture: Interface\Icons\Ability_BossFelOrcs_Necromancer_Orange
 ## AddonCompartmentFunc: eSaithBagFilter_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: eSaithBagFilter_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: eSaithBagFilter_OnAddonCompartmentLeave
 ## SavedVariables: eSaithBagFilterVar, eSaithBagFilterInstances, eSaithBagFilterInstanceLoot
+## SavedVariablesPerCharacter: eSaithBagFilterCharVar
 
+Locales.lua
 Core.lua
+Prices.lua
 Items.lua
+Runs.lua
 Lockouts.lua
 Automation.lua
+Debug.lua
 
 UI\Window.lua
+UI\MinimapButton.lua
+UI\BagMarkers.lua
 UI\LootTab.lua
 UI\LockoutsTab.lua
 UI\SettingsTab.lua

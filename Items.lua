@@ -2,6 +2,7 @@
 -- Items: item info, loot history, keep rules and the vendor sell engine.
 
 local _, ns = ...
+local L = ns.L
 
 local Q = Enum.ItemQuality
 local ItemBind = Enum.ItemBind
@@ -73,30 +74,78 @@ local function IsBindOnEquip(bindType, isBound)
 	return bindType == ItemBind.OnEquip or bindType == ItemBind.ToBnetAccountUntilEquipped
 end
 
+local GEAR_CLASSES = {
+	[Enum.ItemClass.Weapon] = true,
+	[Enum.ItemClass.Armor] = true,
+}
+
+-- Appearance lookups are relatively expensive, so cache them per item link.
+local transmogCache = {}
+ns:RegisterEvent("TRANSMOG_COLLECTION_UPDATED", function() wipe(transmogCache) end)
+
+local function IsUncollectedAppearance(link)
+	if not link or not C_TransmogCollection then return false end
+	local cached = transmogCache[link]
+	if cached == nil then
+		local appearanceID = C_TransmogCollection.GetItemInfo(link)
+		cached = appearanceID ~= nil and not C_TransmogCollection.PlayerHasTransmogByItemInfo(link)
+		transmogCache[link] = cached
+	end
+	return cached
+end
+
+--- True when a piece of gear in your bags is at or above your equipped item level.
+local function IsAtEquippedItemLevel(entry)
+	if not entry.bag then return false end
+	local location = ItemLocation:CreateFromBagAndSlot(entry.bag, entry.slot)
+	if not C_Item.DoesItemExist(location) then return false end
+	local level = C_Item.GetCurrentItemLevel(location)
+	local _, equipped = GetAverageItemLevel()
+	return level ~= nil and equipped ~= nil and equipped > 0 and level >= math.floor(equipped)
+end
+
 --- Returns a reason string when an item must not be sold, or nil if it's sellable.
 --- `entry` is a bag entry from ns:GetBagItems() (or anything with the same fields).
 function ns:GetKeepReason(entry)
-	local opts = self.db.options
+	local opts = self.opts
 
+	if self.db.hidden[entry.itemID] then
+		return L["Hidden (right-click to show it again)"]
+	end
 	if self.db.kept[entry.itemID] then
-		return "On your keep list"
+		return L["On your keep list"]
 	end
 	if entry.inEquipmentSet then
-		return "Part of an equipment set"
+		return L["Part of an equipment set"]
 	end
 
 	local data = entry.data
 	if opts.keepTradeGoods and data and data.classID == Enum.ItemClass.Tradegoods then
-		return "Keep trade goods is on"
+		return L["Keep trade goods is on"]
 	end
 
-	local boeColor = (entry.quality == Q.Uncommon and opts.keepGreenBoE and "green")
-		or (entry.quality == Q.Rare and opts.keepBlueBoE and "blue")
-		or (entry.quality == Q.Epic and opts.keepEpicBoE and "epic")
-	if boeColor then
+	local boeReason = (entry.quality == Q.Uncommon and opts.keepGreenBoE and L["Keep green BoE items is on"])
+		or (entry.quality == Q.Rare and opts.keepBlueBoE and L["Keep blue BoE items is on"])
+		or (entry.quality == Q.Epic and opts.keepEpicBoE and L["Keep epic BoE items is on"])
+	if boeReason then
 		-- Item info not loaded yet: we can't tell if it's BoE, so play it safe.
 		if not data or IsBindOnEquip(data.bindType, entry.isBound) then
-			return ("Keep %s BoE items is on"):format(boeColor)
+			return boeReason
+		end
+	end
+
+	local isGear = data and GEAR_CLASSES[data.classID]
+	if opts.keepUpgrades and isGear and IsAtEquippedItemLevel(entry) then
+		return L["At or above your equipped item level"]
+	end
+	if opts.keepUncollected and isGear and IsUncollectedAppearance(entry.link) then
+		return L["Appearance not collected yet"]
+	end
+
+	if opts.keepAuctionValue and not entry.isBound and data and data.sellPrice > 0 then
+		local auction = ns:GetAuctionValue(entry.link, entry.itemID)
+		if auction and auction >= data.sellPrice * (opts.auctionMultiplier or 5) then
+			return L["Worth %s on the Auction House"]:format(GetMoneyString(auction, true))
 		end
 	end
 
@@ -105,6 +154,11 @@ end
 
 function ns:ToggleKept(itemID)
 	self.db.kept[itemID] = not self.db.kept[itemID] or nil
+	self:Fire("LOOT_CHANGED")
+end
+
+function ns:ToggleHidden(itemID)
+	self.db.hidden[itemID] = not self.db.hidden[itemID] or nil
 	self:Fire("LOOT_CHANGED")
 end
 
@@ -125,9 +179,22 @@ ns:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() ns:ProtectEquippedItems(
 -- Bag contents
 ---------------------------------------------------------------------------
 
+-- Several parts of the UI ask for bag contents while redrawing. Scanning once per frame and
+-- sharing the result keeps that cheap, even with full bags.
+local bagCache, bagCacheTime
+
+local function InvalidateBagCache()
+	bagCache = nil
+end
+ns:RegisterEvent("BAG_UPDATE", InvalidateBagCache)
+ns:On("ITEM_INFO_READY", InvalidateBagCache)
+
 --- Aggregates bag contents by itemID.
---- Returns { [itemID] = { itemID, link, icon, quality, count, bag, slot, isBound, hasNoValue, ... } }
+--- Returns { [itemID] = { itemID, link, icon, quality, count, slots, bag, slot, isBound, hasNoValue, ... } }
 function ns:GetBagItems()
+	local now = GetTime()
+	if bagCache and bagCacheTime == now then return bagCache end
+
 	local result = {}
 	for bag, slot, info in ns.IterateBags() do
 		local entry = result[info.itemID]
@@ -140,6 +207,7 @@ function ns:GetBagItems()
 				icon = info.iconFileID,
 				quality = info.quality or Q.Common,
 				count = 0,
+				slots = 0,
 				bag = bag,
 				slot = slot,
 				isBound = info.isBound,
@@ -151,7 +219,9 @@ function ns:GetBagItems()
 			result[info.itemID] = entry
 		end
 		entry.count = entry.count + (info.stackCount or 1)
+		entry.slots = entry.slots + 1
 	end
+	bagCache, bagCacheTime = result, now
 	return result
 end
 
@@ -185,6 +255,8 @@ local function IsAtNonLootWindow()
 	return (MailFrame and MailFrame:IsShown()) or (TradeFrame and TradeFrame:IsShown()) or false
 end
 
+ns.IsAtNonLootWindow = IsAtNonLootWindow
+
 local function TakeSnapshot()
 	local counts = {}
 	for _, _, info in ns.IterateBags() do
@@ -200,6 +272,8 @@ local function CurrentZone()
 	end
 	return zone
 end
+
+ns.GetCurrentZone = CurrentZone
 
 function ns:RecordLoot(itemID, zone)
 	zone = zone or CurrentZone()
@@ -227,8 +301,10 @@ ns:RegisterEvent("BAG_UPDATE_DELAYED", function()
 		local zone = CurrentZone()
 		local gained = false
 		for itemID, count in pairs(current) do
-			if count > (snapshot[itemID] or 0) then
+			local delta = count - (snapshot[itemID] or 0)
+			if delta > 0 then
 				ns:RecordLoot(itemID, zone)
+				ns:Fire("ITEMS_GAINED", itemID, delta)
 				gained = true
 			end
 		end
@@ -271,13 +347,16 @@ end
 
 --- Items looted in `zone` (or anywhere, when zone is nil) that are still in your bags
 --- and can be sold to a vendor. Kept items are included and flagged with keepReason.
-function ns:GetLootedItems(zone)
+--- Hidden items are left out unless includeHidden is true.
+function ns:GetLootedItems(zone, includeHidden)
 	local bagItems = self:GetBagItems()
 	local result = {}
 
 	local function consider(itemID)
 		local entry = bagItems[itemID]
-		if entry and not entry.hasNoValue and not entry.hasLoot and not result[itemID] then
+		if entry and not entry.hasNoValue and not entry.hasLoot and not result[itemID]
+			and (includeHidden or not self.db.hidden[itemID]) then
+			entry.hidden = self.db.hidden[itemID] or false
 			entry.keepReason = self:GetKeepReason(entry)
 			result[itemID] = entry
 		end
@@ -299,12 +378,15 @@ end
 ---------------------------------------------------------------------------
 
 local SELL_INTERVAL = 0.2
+local BUYBACK_SLOTS = 12
+ns.BUYBACK_SLOTS = BUYBACK_SLOTS
 local SELL_PER_TICK = 8
 local MAX_TICKS = 150
 
 ns.atMerchant = false
 local sellTicker
-local sold = { count = 0, money = 0 }
+local sold = { count = 0, money = 0, itemIDs = {} }
+local lastSale -- { count, itemIDs } for "Undo Last Sale"
 
 local function StopSelling(showSummary)
 	if sellTicker then
@@ -312,10 +394,15 @@ local function StopSelling(showSummary)
 		sellTicker = nil
 	end
 	if showSummary and sold.count > 0 then
-		ns.Print("Sold %d item%s for %s.", sold.count, sold.count == 1 and "" or "s", GetMoneyString(sold.money, true))
+		ns.Print(L["Sold %d item(s) for %s."], sold.count, GetMoneyString(sold.money, true))
+		ns.session.soldCount = ns.session.soldCount + sold.count
+		ns.session.soldMoney = ns.session.soldMoney + sold.money
 	end
-	sold.count, sold.money = 0, 0
-	ns:PruneLootHistory()
+	if sold.count > 0 then
+		lastSale = { count = math.min(sold.count, BUYBACK_SLOTS), itemIDs = sold.itemIDs }
+	end
+	sold.count, sold.money, sold.itemIDs = 0, 0, {}
+	-- Loot history isn't pruned here, so anything you buy back shows up on the Loot tab again.
 	ns:Fire("LOOT_CHANGED")
 	ns:Fire("SELLING_CHANGED", false)
 end
@@ -345,6 +432,9 @@ function ns:SellItems(itemIDs)
 					quality = info.quality,
 					isBound = info.isBound,
 					data = ns:GetItemData(info.itemID),
+					link = info.hyperlink,
+					bag = bag,
+					slot = slot,
 					inEquipmentSet = C_Container.GetContainerItemEquipmentSetInfo
 						and C_Container.GetContainerItemEquipmentSetInfo(bag, slot) or false,
 				}
@@ -355,6 +445,7 @@ function ns:SellItems(itemIDs)
 						C_Container.UseContainerItem(bag, slot)
 						soldThisTick = soldThisTick + 1
 						sold.count = sold.count + 1
+						sold.itemIDs[info.itemID] = true
 						sold.money = sold.money + (entry.data and entry.data.sellPrice or 0) * (info.stackCount or 1)
 					end
 				end
@@ -367,6 +458,47 @@ function ns:SellItems(itemIDs)
 	end)
 	self:Fire("SELLING_CHANGED", true)
 end
+
+local function BuybackItemID(index)
+	local link = GetBuybackItemLink(index)
+	return link and C_Item.GetItemInfoInstant(link)
+end
+
+--- True when the newest items on the vendor's buyback list are the ones we just sold.
+function ns:CanUndoLastSale()
+	if not self.atMerchant or not lastSale or self:IsSelling() then return false end
+	local newest = GetNumBuybackItems()
+	return newest > 0 and lastSale.itemIDs[BuybackItemID(newest)] == true
+end
+
+function ns:GetLastSaleCount()
+	return lastSale and lastSale.count or 0
+end
+
+--- Buys back the stacks from the last sale, newest first, stopping at anything we didn't sell.
+function ns:UndoLastSale()
+	if not self:CanUndoLastSale() then return end
+
+	local newest = GetNumBuybackItems()
+	local bought, spent = 0, 0
+	for index = newest, math.max(1, newest - lastSale.count + 1), -1 do
+		local itemID = BuybackItemID(index)
+		if not itemID or not lastSale.itemIDs[itemID] then break end
+		local price = select(3, GetBuybackItemInfo(index)) or 0
+		BuybackItem(index)
+		bought = bought + 1
+		spent = spent + price
+	end
+
+	lastSale = nil
+	self.session.soldMoney = math.max(0, self.session.soldMoney - spent)
+	self.session.soldCount = math.max(0, self.session.soldCount - bought)
+	self.Print(L["Bought back %d item(s) for %s."], bought, GetMoneyString(spent, true))
+	self:Fire("LOOT_CHANGED")
+	self:Fire("SELLING_CHANGED", false)
+end
+
+ns:RegisterEvent("MERCHANT_UPDATE", function() ns:Fire("SELLING_CHANGED", ns:IsSelling()) end)
 
 function ns:SellJunk()
 	local junk = {}
@@ -381,7 +513,7 @@ end
 ns:RegisterEvent("MERCHANT_SHOW", function()
 	ns.atMerchant = true
 	ns:Fire("MERCHANT_CHANGED", true)
-	if ns.db.options.autoSellJunk then
+	if ns.opts.autoSellJunk then
 		ns:SellJunk()
 	end
 end)

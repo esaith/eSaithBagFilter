@@ -2,9 +2,10 @@
 -- Automation: quick loot, auto-greed, quest helper, container opener and coordinates.
 
 local _, ns = ...
+local L = ns.L
 
 local function Option(name)
-	return ns.db and ns.db.options[name]
+	return ns.opts and ns.opts[name]
 end
 
 ---------------------------------------------------------------------------
@@ -19,6 +20,33 @@ ns:RegisterEvent("LOOT_READY", function()
 		if not locked then
 			LootSlot(i)
 		end
+	end
+end)
+
+---------------------------------------------------------------------------
+-- Auto-repair at vendors (guild funds first, when allowed)
+---------------------------------------------------------------------------
+
+local function CanUseGuildFunds(cost)
+	if not IsInGuild() or not CanGuildBankRepair or not CanGuildBankRepair() then return false end
+	local available = GetGuildBankWithdrawMoney and GetGuildBankWithdrawMoney()
+	-- -1 means unlimited withdrawals (guild leaders).
+	return available ~= nil and (available == -1 or available >= cost)
+end
+
+ns:RegisterEvent("MERCHANT_SHOW", function()
+	if not Option("autoRepair") or not CanMerchantRepair() then return end
+	local cost, canRepair = GetRepairAllCost()
+	if not canRepair or not cost or cost <= 0 then return end
+
+	if Option("repairWithGuildFunds") and CanUseGuildFunds(cost) then
+		RepairAllItems(true)
+		ns.Print(L["Repaired everything for %s (guild bank)."], GetMoneyString(cost, true))
+	elseif GetMoney() >= cost then
+		RepairAllItems()
+		ns.Print(L["Repaired everything for %s."], GetMoneyString(cost, true))
+	else
+		ns.Print(L["Not enough gold to repair (%s needed)."], GetMoneyString(cost, true))
 	end
 end)
 
@@ -94,18 +122,18 @@ end
 function ns:OpenContainers()
 	if openTicker then return end
 	if ns.atMerchant then
-		ns.Print("Close the vendor window first so nothing gets sold by accident.")
+		ns.Print(L["Close the vendor window first so nothing gets sold by accident."])
 		return
 	end
 
 	tried, lootOpenTicks = {}, 0
 	openTicker = C_Timer.NewTicker(0.6, function()
 		if InCombatLockdown() then
-			ns:StopOpeningContainers("Stopped opening containers: you entered combat.")
+			ns:StopOpeningContainers(L["Stopped opening containers: you entered combat."])
 			return
 		end
 		if ns.atMerchant then
-			ns:StopOpeningContainers("Stopped opening containers: a vendor window opened.")
+			ns:StopOpeningContainers(L["Stopped opening containers: a vendor window opened."])
 			return
 		end
 
@@ -113,7 +141,7 @@ function ns:OpenContainers()
 		if GetNumLootItems() > 0 then
 			lootOpenTicks = lootOpenTicks + 1
 			if lootOpenTicks > 5 then
-				ns:StopOpeningContainers("Stopped opening containers: your bags may be full.")
+				ns:StopOpeningContainers(L["Stopped opening containers: your bags may be full."])
 			end
 			return
 		end
@@ -128,7 +156,7 @@ function ns:OpenContainers()
 			end
 		end
 
-		ns:StopOpeningContainers("Finished opening containers.")
+		ns:StopOpeningContainers(L["Finished opening containers."])
 	end)
 	ns:Fire("CONTAINERS_CHANGED", true)
 end

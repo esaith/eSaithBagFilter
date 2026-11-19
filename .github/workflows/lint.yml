@@ -1,0 +1,18 @@
+# Checks every Lua file for syntax errors, undefined globals (usually typos) and unused variables.
+# Configuration lives in .luacheckrc.
+
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Run luacheck
+        uses: lunarmodules/luacheck@v1

@@ -2,15 +2,24 @@
 -- Window: the main frame, its tabs, shared widget helpers and the vendor button.
 
 local _, ns = ...
+local L = ns.L
 
 local UI = {}
 ns.UI = UI
 
-local MIN_WIDTH, MIN_HEIGHT = 640, 440
+local MIN_WIDTH, MIN_HEIGHT = 700, 440
 local MAX_WIDTH, MAX_HEIGHT = 1600, 1100
 
-UI.ACCENT = CreateColor(0.17, 0.76, 0.89)    -- the addon's signature cyan
-UI.MUTED = CreateColor(0.62, 0.62, 0.62)
+-- Shared look: every tab uses these, so the window reads as one design.
+UI.ACCENT = CreateColor(0.17, 0.76, 0.89)    -- the addon's signature cyan: addon-specific highlights
+UI.MUTED = CreateColor(0.62, 0.62, 0.62)     -- secondary text, counts, empty cells
+UI.GOOD = CreateColor(0.3, 0.9, 0.3)         -- complete / ready
+UI.WARN = CreateColor(1, 0.55, 0.25)         -- saved / attention
+UI.SIDEBAR_WIDTH = 160                        -- left column on the Loot and Settings tabs
+UI.HEADER_BUTTON_WIDTH = 120                  -- buttons in the strip under the title
+UI.FOOTER_BUTTON_WIDTH = 130                  -- buttons in the bottom bar
+UI.HEADER_Y = -44                             -- vertical center of the strip under the title
+UI.HEADER_X = 66                              -- first control, just right of the portrait
 
 local frame
 local tabs = {}
@@ -50,6 +59,12 @@ function UI.CreateCheckbox(parent, label, tooltip, getValue, setValue)
 		self:SetChecked(getValue() and true or false)
 	end
 	check:SetScript("OnShow", check.Refresh)
+
+	--- Dependent options are greyed out while the option they depend on is off.
+	function check:SetDependentEnabled(enabled)
+		self:SetEnabled(enabled)
+		self.Text:SetFontObject(enabled and "GameFontHighlight" or "GameFontDisable")
+	end
 	return check
 end
 
@@ -60,6 +75,71 @@ function UI.CreateButton(parent, text, width, onClick)
 	button:SetMotionScriptsWhileDisabled(true)
 	button:SetScript("OnClick", onClick)
 	return button
+end
+
+--- "3d 4h", "2h 15m", "8m".
+function UI.FormatDuration(seconds)
+	seconds = math.max(0, seconds or 0)
+	local days = math.floor(seconds / 86400)
+	local hours = math.floor((seconds % 86400) / 3600)
+	if days > 0 then return L["%dd %dh"]:format(days, hours) end
+	local minutes = math.floor((seconds % 3600) / 60)
+	if hours > 0 then return L["%dh %dm"]:format(hours, minutes) end
+	return L["%dm"]:format(math.max(1, minutes))
+end
+
+--- A sidebar / page background matching the Loot tab's sidebar.
+function UI.CreateSidebar(parent)
+	local sidebar = CreateFrame("Frame", nil, parent)
+	sidebar:SetPoint("TOPLEFT")
+	sidebar:SetPoint("BOTTOMLEFT")
+	sidebar:SetWidth(UI.SIDEBAR_WIDTH)
+
+	local bg = sidebar:CreateTexture(nil, "BACKGROUND")
+	bg:SetAllPoints()
+	bg:SetColorTexture(0, 0, 0, 0.25)
+
+	local divider = sidebar:CreateTexture(nil, "ARTWORK")
+	divider:SetColorTexture(1, 1, 1, 0.08)
+	divider:SetWidth(1)
+	divider:SetPoint("TOPRIGHT")
+	divider:SetPoint("BOTTOMRIGHT")
+	return sidebar
+end
+
+--- A label with a dropdown of choices to its right. choices = { { value, label }, ... }.
+function UI.CreateDropdownRow(parent, label, tooltip, choices, getValue, setValue)
+	local row = CreateFrame("Frame", nil, parent)
+	row:SetSize(360, 28)
+
+	row.label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	row.label:SetPoint("LEFT", 4, 0)
+	row.label:SetText(label)
+
+	row.dropdown = CreateFrame("DropdownButton", nil, row, "WowStyle1DropdownTemplate")
+	row.dropdown:SetWidth(170)
+	row.dropdown:SetPoint("LEFT", row.label, "RIGHT", 10, 0)
+	row.dropdown:SetupMenu(function(_, root)
+		for _, choice in ipairs(choices) do
+			root:CreateRadio(choice[2],
+				function() return getValue() == choice[1] end,
+				function() setValue(choice[1]) end)
+		end
+	end)
+	if tooltip then
+		row:EnableMouse(true)
+		UI.SetTooltip(row, label, tooltip)
+	end
+
+	function row:Refresh()
+		self.dropdown:GenerateMenu()
+	end
+
+	function row:SetEnabled(enabled)
+		self.dropdown:SetEnabled(enabled)
+		self.label:SetFontObject(enabled and "GameFontHighlight" or "GameFontDisable")
+	end
+	return row
 end
 
 --- A gold section title with a faint rule underneath.
@@ -87,6 +167,28 @@ function UI.CreateScrollArea(parent)
 		content:SetWidth(width)
 	end)
 	return scroll, content
+end
+
+--- A button that opens a menu of checkboxes, e.g. which characters to show.
+--- getItems() returns { { key = ..., label = ... }, ... }.
+function UI.CreateFilterButton(parent, text, emptyText, getItems, isChecked, setChecked)
+	local button = UI.CreateButton(parent, text, 130, nil)
+	button:SetScript("OnClick", function(self)
+		MenuUtil.CreateContextMenu(self, function(_, root)
+			local items = getItems()
+			if #items == 0 then
+				root:CreateTitle(emptyText)
+				return
+			end
+			root:SetScrollMode(400)
+			for _, item in ipairs(items) do
+				root:CreateCheckbox(item.label,
+					function() return isChecked(item.key) end,
+					function() setChecked(item.key, not isChecked(item.key)) end)
+			end
+		end)
+	end)
+	return button
 end
 
 --- Simple object pool: pool:Acquire() returns a new or recycled object, pool:ReleaseAll() hides them all.
@@ -230,6 +332,7 @@ local function CreateWindow()
 		ns:Fire("WINDOW_TOGGLED", false)
 	end)
 
+	frame:SetScale(ns.opts.uiScale or 1)
 	frame:SetTitle(ns.title)
 	frame:SetPortraitToAsset(ns.icon)
 	tinsert(UISpecialFrames, frame:GetName()) -- close with Escape
@@ -287,7 +390,7 @@ end
 ---------------------------------------------------------------------------
 
 StaticPopupDialogs.ESAITHBAGFILTER_RESET = {
-	text = "Reset eSaith Bag Filter?\n\nThis erases your keep list, loot history, lockouts for every character and all settings.",
+	text = L["Reset eSaith Bag Filter?\n\nThis erases your keep list, hidden items, loot history, lockouts for every character and all settings."],
 	button1 = YES,
 	button2 = NO,
 	OnAccept = function() ns:ResetEverything() end,
@@ -337,16 +440,20 @@ local function CreateMerchantTab()
 		PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
 		ns:ToggleWindow("loot")
 	end)
-	UI.SetTooltip(tab, ns.title, "Choose which looted items to sell to this vendor.")
+	UI.SetTooltip(tab, ns.title, L["Choose which looted items to sell to this vendor."])
 
 	ns:On("WINDOW_TOGGLED", UpdateTabState)
 end
 
 ns:RegisterEvent("PLAYER_LOGIN", CreateMerchantTab)
 
+ns:On("SETTINGS_CHANGED", function()
+	if frame then frame:SetScale(ns.opts.uiScale or 1) end
+end)
+
 ns:On("MERCHANT_CHANGED", function(atMerchant)
 	if atMerchant then
-		if ns.db.options.openWithVendor and not ns:IsWindowShown() then
+		if ns.opts.openWithVendor and not ns:IsWindowShown() then
 			openedByVendor = true
 			ns:ShowWindow("loot")
 		end

@@ -2,6 +2,7 @@
 -- Core: namespace, saved variables, migrations, events and slash commands.
 
 local ADDON_NAME, ns = ...
+local L = ns.L
 
 ns.name = ADDON_NAME
 ns.title = "eSaith Bag Filter"
@@ -66,16 +67,36 @@ local DEFAULTS = {
 		keepBlueBoE = false,
 		keepEpicBoE = false,
 		keepTradeGoods = false,
+		keepUpgrades = false,
+		keepUncollected = false,
+		confirmSales = true,
+		autoRepair = false,
+		repairWithGuildFunds = true,
+		keepAuctionValue = false,
+		auctionMultiplier = 5,
+		markBagItems = true,
+		uiScale = 1,
 		quickLoot = true,
 		autoGreedGreens = false,
 		saveLootBetweenSessions = true,
 		autoQuest = false,
 		showCoordinates = false,
 		openWithVendor = false,
+		showMinimapButton = true,
 	},
 	filters = { [0] = true, [1] = true, [2] = true, [3] = true, [4] = true },
-	kept = {},
+	showHidden = false,
+	kept = {},   -- [itemID] = true: never sold
+	hidden = {}, -- [itemID] = true: never sold and not listed
 	window = { width = 760, height = 520 },
+	minimap = { angle = 225 },
+	runs = {}, -- recent dungeon/raid/delve runs, newest first (see Runs.lua)
+}
+
+-- Per-character: whether this character uses its own copy of the options.
+local CHARACTER_DEFAULTS = {
+	useCharacterSettings = false,
+	options = {},
 }
 
 local LOCKOUT_DEFAULTS = {
@@ -83,6 +104,7 @@ local LOCKOUT_DEFAULTS = {
 	players = {},        -- ["Name (Realm)"] = { name, realm, class, shown }
 	shownInstances = {}, -- ["Instance - Difficulty"] = true/false
 	lockouts = {},       -- ["Instance - Difficulty"] = { ["Name (Realm)"] = resetTimestamp }
+	currencyInfo = {},   -- [currencyID] = { name, icon }
 }
 
 -- Pre-2.0 options used different names.
@@ -161,12 +183,16 @@ local function InitializeDatabase()
 	eSaithBagFilterVar = CopyDefaults(DEFAULTS, MigrateSettings(eSaithBagFilterVar) or {})
 	eSaithBagFilterInstances = CopyDefaults(LOCKOUT_DEFAULTS, MigrateLockouts(eSaithBagFilterInstances) or {})
 
+	eSaithBagFilterCharVar = CopyDefaults(CHARACTER_DEFAULTS, eSaithBagFilterCharVar or {})
+
 	ns.db = eSaithBagFilterVar
 	ns.lockoutDB = eSaithBagFilterInstances
+	ns.charDB = eSaithBagFilterCharVar
+	ns:UpdateActiveOptions()
 
 	-- Loot history: { [zoneName] = { [itemID] = true } }
 	local loot = eSaithBagFilterInstanceLoot
-	if type(loot) ~= "table" or not ns.db.options.saveLootBetweenSessions then
+	if type(loot) ~= "table" or not ns.opts.saveLootBetweenSessions then
 		loot = {}
 	end
 	loot.All = nil -- older versions stored a duplicate "All" bucket; it is now computed
@@ -174,16 +200,42 @@ local function InitializeDatabase()
 	ns.lootDB = loot
 end
 
+--- ns.opts is the options table in use: the account-wide one, or this character's own copy.
+function ns:UpdateActiveOptions()
+	if self.charDB.useCharacterSettings then
+		CopyDefaults(DEFAULTS.options, self.charDB.options)
+		self.opts = self.charDB.options
+	else
+		self.opts = self.db.options
+	end
+end
+
+function ns:SetUseCharacterSettings(enabled)
+	if enabled and next(self.charDB.options) == nil then
+		-- Start from the current account-wide settings.
+		for key, value in pairs(self.db.options) do
+			self.charDB.options[key] = value
+		end
+	end
+	self.charDB.useCharacterSettings = enabled and true or false
+	self:UpdateActiveOptions()
+	self:Fire("SETTINGS_CHANGED")
+end
+
+--- Gold made from sales through the addon since you logged in.
+ns.session = { soldCount = 0, soldMoney = 0 }
+
 function ns:ResetEverything()
 	eSaithBagFilterVar = nil
 	eSaithBagFilterInstances = nil
 	eSaithBagFilterInstanceLoot = nil
+	eSaithBagFilterCharVar = nil
 	InitializeDatabase()
 	ns:ProtectEquippedItems()
 	ns:Fire("SETTINGS_CHANGED")
 	ns:Fire("LOOT_CHANGED")
 	ns:Fire("LOCKOUTS_CHANGED")
-	ns.Print("All settings and history have been reset.")
+	ns.Print(L["All settings and history have been reset."])
 end
 
 ---------------------------------------------------------------------------
@@ -232,7 +284,7 @@ ns:RegisterEvent("ADDON_LOADED", function(_, name)
 end)
 
 ns:RegisterEvent("PLAYER_LOGOUT", function()
-	if not ns.db.options.saveLootBetweenSessions then
+	if not ns.opts.saveLootBetweenSessions then
 		eSaithBagFilterInstanceLoot = {}
 	end
 end)
@@ -256,13 +308,20 @@ SlashCmdList.ESAITHBAGFILTER = function(msg)
 		ns:ShowWindow("lockouts")
 	elseif command == "settings" or command == "options" then
 		ns:ShowWindow("settings")
+	elseif command == "debug" then
+		ns:PrintDebugInfo()
+	elseif command == "minimap" then
+		ns.opts.showMinimapButton = not ns.opts.showMinimapButton
+		ns:Fire("SETTINGS_CHANGED")
 	elseif command == "help" then
-		ns.Print("Commands:")
-		print("  /efilter - toggle the window")
-		print("  /efilter lockouts - show raid & dungeon lockouts")
-		print("  /efilter settings - show settings")
-		print("  /efilter center - move the window back to the center")
-		print("  /efilter reset - erase all settings and history")
+		ns.Print(L["Commands:"])
+		print("  /efilter - " .. L["toggle the window"])
+		print("  /efilter lockouts - " .. L["show lockouts, keystones and the Great Vault"])
+		print("  /efilter settings - " .. L["show settings"])
+		print("  /efilter minimap - " .. L["show or hide the minimap button"])
+		print("  /efilter center - " .. L["move the window back to the center"])
+		print("  /efilter debug - " .. L["print diagnostic info (hover an item first to include it)"])
+		print("  /efilter reset - " .. L["erase all settings and history"])
 	else
 		ns:ToggleWindow()
 	end
@@ -275,7 +334,7 @@ end
 function eSaithBagFilter_OnAddonCompartmentEnter(_, button)
 	GameTooltip:SetOwner(button, "ANCHOR_LEFT")
 	GameTooltip:SetText(ns.title)
-	GameTooltip:AddLine("Click to open. Type /efilter help for commands.", 1, 1, 1, true)
+	GameTooltip:AddLine(L["Click to open. Type /efilter help for commands."], 1, 1, 1, true)
 	GameTooltip:Show()
 end
 

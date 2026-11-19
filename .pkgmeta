@@ -1,0 +1,14 @@
+package-as: eSaithBagFilter
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .github
+  - .vscode
+  - .vs
+  - Libs
+  - .gitignore
+  - .luacheckrc
+  - docs
