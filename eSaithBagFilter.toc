@@ -1,12 +1,21 @@
-﻿## Interface: 110107
+## Interface: 120105
 ## Title: eSaith Bag Filter
-## Version: 1.39
-## Notes: Allows mass selling of bag items to vendor by rarity, instance, and zones.
+## Notes: Sell your loot by zone and quality, keep what matters, and track raid & dungeon lockouts across characters.
 ## Author: eSaith
-## SavedVariables: eSaithBagFilterInstances, eSaithBagFilterVar, eSaithBagFilterInstanceLoot
+## Version: 2.0.0
+## Category: Inventory
+## IconTexture: Interface\Icons\Ability_BossFelOrcs_Necromancer_Orange
+## AddonCompartmentFunc: eSaithBagFilter_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: eSaithBagFilter_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: eSaithBagFilter_OnAddonCompartmentLeave
+## SavedVariables: eSaithBagFilterVar, eSaithBagFilterInstances, eSaithBagFilterInstanceLoot
 
-Libs\LibStub\LibStub.lua
-Libs\CallbackHandler-1.0.lua
-Libs\lib-st.xml
-eSaithBagFilter.lua
-eSaithBagFilter.xml
+Core.lua
+Items.lua
+Lockouts.lua
+Automation.lua
+
+UI\Window.lua
+UI\LootTab.lua
+UI\LockoutsTab.lua
+UI\SettingsTab.lua

@@ -1,8 +1,6 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Editor / IDE
+.vs/
+.vscode/
 
-/.vs/eSaithBagFilter/v15/.suo
-/.vs/VSWorkspaceState.json
-/.vs/slnx.sqlite
-/.vs/ProjectSettings.json
+# Libraries used by versions before 2.0 (no longer needed)
+Libs/

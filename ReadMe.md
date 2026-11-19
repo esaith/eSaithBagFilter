@@ -1,10 +1,91 @@
- Special Thanks To:
-  Stepphy - Nathezrim for the initial tester. You helped modify the original architecture from dependent on default bags to allowable of all bag addons
-  JuniorDeBoss - For helping me out with tooltip bugs and reducing spamming number
-  Podden - For helping me out with additional tooltip bugs from (possibly) other addons that have extensive tooltip use
-  Guild Master - Feedback on overall product
-  _Max_Cavalera_ - For the suggestion to adding an option to keep all BOE when picking up. This is the "Keep All BOE" option on the Options page
- 
+# eSaith Bag Filter
+
+Sell the loot you picked up by **zone** and **quality**, protect the things you want to keep, and see which of your characters are **saved** to which raids and dungeons.
+
+Updated for **World of Warcraft: Midnight** (12.1.x).
+
+## Features
+
+**Loot tab**
+- Everything you loot is remembered along with the zone (or dungeon/raid) it came from.
+- Pick a zone from the dropdown (or *All zones*) and toggle qualities on the left: Poor, Common, Uncommon, Rare, Epic.
+- Items are grouped by quality with their stack counts. The status bar shows how much they'll sell for.
+- **Click an item to keep it.** Kept items are faded, show a lock, and are never sold. Shift-click to link an item, Ctrl-click to preview it.
+- At a vendor, press **Sell Items** to sell everything shown that isn't faded.
+- Always protected: anything you've equipped, and anything in an equipment set.
+
+**Lockouts tab**
+- A grid of your characters (class colored) against every instance they're saved to, with the time left until each save resets.
+- Log in on each character once and they're added automatically.
+
+**Settings tab**
+- Selling: auto-sell junk, keep green/blue/epic BoE items, keep trade goods, open with vendor.
+- Looting: quick loot, auto-greed green items, remember loot after logout.
+- Extras: quest helper (hold Shift to skip it), coordinates under the minimap.
+- Tools: open containers, clear loot history, clear keep list, reset everything.
+- Choose which characters and instances appear on the Lockouts tab.
+
+## Opening it
+
+- The **eFilter** tab on the vendor window, next to Buyback
+- The addon compartment (the addons button by the minimap)
+- `/efilter` or `/esbf`
+
+| Command | What it does |
+| --- | --- |
+| `/efilter` | Toggle the window |
+| `/efilter lockouts` | Open the Lockouts tab |
+| `/efilter settings` | Open the Settings tab |
+| `/efilter center` | Move the window back to the middle of the screen |
+| `/efilter reset` | Erase all settings and history (asks first) |
+| `/efilter help` | List commands |
+
+## Changelog
+
+### 2.0.0 (Midnight)
+Rewritten for the Midnight API and given a new interface. Your settings, keep list, loot history and lockouts carry over automatically.
+
+**New look**
+- Standard Blizzard-style window with a portrait, title and resize grip (drag the bottom-right corner). Size and position are remembered.
+- Three tabs: Loot, Lockouts and Settings. Settings used to hide behind a cog.
+- Native item buttons with quality borders, stack counts and a lock icon on kept items.
+- The Lockouts grid shows time left on each save and class colors.
+- Option descriptions are in tooltips, and the Settings tab is split into sections.
+
+**Midnight / API updates**
+- Interface version 120105.
+- Loot is now tracked by watching your bags change. Midnight hides loot chat messages from addons inside instances, which broke per-dungeon tracking. This also means it works in every game language.
+- Dropdowns use the new Menu system (`WowStyle1DropdownTemplate`). The old `UIDropDownMenu` code is gone.
+- Item details now come from Blizzard's bag and item data instead of English text like "Trade Goods", so they work in any language.
+- Values Midnight may hide from addons are checked before use (`issecretvalue`).
+- Addon compartment support and a TOC icon.
+- LibStub, CallbackHandler and lib-st are no longer needed.
+
+**Fixes**
+- Opening containers called a function removed in Dragonflight, and its loop stopped running once the vendor window closed.
+- Turning coordinates off didn't save.
+- The window couldn't be kept on screen (`IsClampedToScreen` was used where `SetClampedToScreen` was meant).
+- Quick loot tried to loot one slot too many.
+- The quest helper called `AcceptQuest` on quests you'd already accepted, and checked rewards instead of reward choices.
+- Auto-greed could error on uncached items. It now reads the roll's own item info and only greeds when Greed is allowed.
+- Options added in later versions got no default for players upgrading from older versions.
+- Reset now asks for confirmation.
+- Items in the reagent bag are included.
+
+**New options**
+- Keep epic BoE items.
+
+## Credits
+
+- Stepphy (Nathezrim): first tester. Helped move the original design away from depending on the default bags so it works with any bag addon.
+- JuniorDeBoss: helped with tooltip bugs and reducing spam.
+- Podden: helped with more tooltip bugs from addons that make heavy use of tooltips.
+- Guild Master: feedback on the overall product.
+- _Max_Cavalera_: suggested the "Keep all BoE" option.
+
+## Older versions
+
+```text
   1.38
 	Update for BFA 8.0
 	Reverted Hitem to link
@@ -117,3 +198,4 @@
 1.0 
  Initial Version 3 tabs (Zone, iLVL, Rarity). Allows mass auto-sell. 
  "Keep item" when addon is visible. ALT + Click item, blue haze adds item to auto-sellable list. Alt + Click again to unlink it
+```
