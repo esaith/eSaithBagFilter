@@ -4,3 +4,4 @@
 
 # Libraries used by versions before 2.0 (no longer needed)
 Libs/
+*.zip
