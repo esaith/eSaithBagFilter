@@ -15,7 +15,7 @@ Sell your loot by zone and quality without losing anything valuable, and see eve
 ### Sell safely
 - Pick a zone (or *All zones*), filter by quality, or search by name.
 - **Click** an item to keep it, **right-click** to hide it for good.
-- Keep rules protect BoE items, gear at your item level, uncollected transmog, trade goods, and items worth more on the Auction House (with TradeSkillMaster or Auctionator).
+- Keep rules protect BoE items, gear at your item level, trade goods, and items worth more on the Auction House (with TradeSkillMaster or Auctionator).
 - Big sales ask first, and **Undo Last Sale** buys everything back from the vendor.
 - Optional auto-sell junk and auto-repair (guild funds first).
 - A small coin marks sellable items in your bags (Blizzard bags and Baganator).

@@ -79,21 +79,6 @@ local GEAR_CLASSES = {
 	[Enum.ItemClass.Armor] = true,
 }
 
--- Appearance lookups are relatively expensive, so cache them per item link.
-local transmogCache = {}
-ns:RegisterEvent("TRANSMOG_COLLECTION_UPDATED", function() wipe(transmogCache) end)
-
-local function IsUncollectedAppearance(link)
-	if not link or not C_TransmogCollection then return false end
-	local cached = transmogCache[link]
-	if cached == nil then
-		local appearanceID = C_TransmogCollection.GetItemInfo(link)
-		cached = appearanceID ~= nil and not C_TransmogCollection.PlayerHasTransmogByItemInfo(link)
-		transmogCache[link] = cached
-	end
-	return cached
-end
-
 --- True when a piece of gear in your bags is at or above your equipped item level.
 local function IsAtEquippedItemLevel(entry)
 	if not entry.bag then return false end
@@ -137,9 +122,6 @@ function ns:GetKeepReason(entry)
 	local isGear = data and GEAR_CLASSES[data.classID]
 	if opts.keepUpgrades and isGear and IsAtEquippedItemLevel(entry) then
 		return L["At or above your equipped item level"]
-	end
-	if opts.keepUncollected and isGear and IsUncollectedAppearance(entry.link) then
-		return L["Appearance not collected yet"]
 	end
 
 	if opts.keepAuctionValue and not entry.isBound and data and data.sellPrice > 0 then

@@ -86,8 +86,6 @@ local PAGE_DEFINITIONS = {
 		{ "check", "keepEpicBoE", L["Keep epic BoE items"], L["Never sell epic (purple) Bind on Equip items."] },
 		{ "check", "keepUpgrades", L["Keep gear at your item level"],
 			L["Never sell weapons or armor at or above your equipped item level, including gear for your other specs."] },
-		{ "check", "keepUncollected", L["Keep uncollected appearances"],
-			L["Never sell weapons or armor whose transmog appearance you haven't collected yet."] },
 		{ "check", "keepTradeGoods", L["Keep trade goods"], L["Never sell crafting materials and other trade goods."] },
 		{ "check", "keepAuctionValue", L["Keep items worth more on the Auction House"],
 			L["Never sell items that would fetch much more on the Auction House than from a vendor."] },

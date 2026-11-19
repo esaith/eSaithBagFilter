@@ -23,6 +23,9 @@
 - `.luacheckrc` and a GitHub Actions lint workflow catch typos and undefined globals on every push.
 - Bags are scanned once per redraw instead of several times.
 
+**Removed**
+- "Keep uncollected appearances". It isn't needed any more: gear that binds on pickup is collected when you loot it, and selling a Bind on Equip item to a vendor adds its appearance to your collection.
+
 ## 2.1.0
 
 **Selling**

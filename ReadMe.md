@@ -24,7 +24,7 @@ Updated for **World of Warcraft: Midnight** (12.1.x). See [CHANGELOG.md](CHANGEL
 
 **Settings tab**
 - **Selling:** auto-sell junk, confirm big sales, auto-repair (guild funds first), open with vendor.
-- **Keep Rules:** green/blue/epic BoE items, gear at your item level, uncollected appearances, trade goods, and items worth more on the Auction House (needs TradeSkillMaster or Auctionator).
+- **Keep Rules:** green/blue/epic BoE items, gear at your item level, trade goods, and items worth more on the Auction House (needs TradeSkillMaster or Auctionator).
 - **Looting & Quests:** quick loot, auto-greed green items, remember loot after logout, quest helper (hold Shift to skip it).
 - **Interface:** window size, minimap button, coins on sellable items in your bags (Blizzard bags and Baganator), coordinates under the minimap.
 - **This Character:** give a character its own settings.

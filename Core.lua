@@ -68,7 +68,6 @@ local DEFAULTS = {
 		keepEpicBoE = false,
 		keepTradeGoods = false,
 		keepUpgrades = false,
-		keepUncollected = false,
 		confirmSales = true,
 		autoRepair = false,
 		repairWithGuildFunds = true,
@@ -188,6 +187,12 @@ local function InitializeDatabase()
 	ns.db = eSaithBagFilterVar
 	ns.lockoutDB = eSaithBagFilterInstances
 	ns.charDB = eSaithBagFilterCharVar
+
+	-- Options that no longer exist (2.2.0 removed "keep uncollected appearances").
+	for _, options in ipairs({ ns.db.options, ns.charDB.options }) do
+		options.keepUncollected = nil
+	end
+
 	ns:UpdateActiveOptions()
 
 	-- Loot history: { [zoneName] = { [itemID] = true } }
